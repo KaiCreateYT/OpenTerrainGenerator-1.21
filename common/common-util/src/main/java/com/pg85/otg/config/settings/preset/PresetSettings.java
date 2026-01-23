@@ -52,7 +52,7 @@ public abstract class PresetSettings implements ConfigFile {
 		if (otgWorldInfo == null) {
             switch (dimensionSettings.getDimensionType()) {
                 case NETHER, END -> otgWorldInfo = new OTGWorldInfo(0, 127);
-                case OVERWORLD -> otgWorldInfo = new OTGWorldInfo(-64, 319);
+                case OVERWORLD, OTG -> otgWorldInfo = new OTGWorldInfo(-64, 319);
                 default -> {
 					int maxY = dimensionSettings.getMinY() + dimensionSettings.getHeight() - 1;
 					return otgWorldInfo = new OTGWorldInfo(dimensionSettings.getMinY(), maxY);
