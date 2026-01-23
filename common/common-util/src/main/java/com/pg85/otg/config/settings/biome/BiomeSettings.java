@@ -128,7 +128,7 @@ public abstract class BiomeSettings implements ConfigFile {
         mobSettings = MobSettings.getMobSettings(settingsMap);
         generationSettings = BiomePlacementConfig.getGenerationSettings(settingsMap, presetSettings.getGenerationSettings());
         structureSettings = BiomeStructureSettings.getBiomeStructureSettings(settingsMap, presetSettings.getStructureSettings());
-        terrainSettings = BiomeTerrainSettings.getBiomeTerrainSettings(settingsMap, presetSettings.getTerrainSettings());
+        terrainSettings = BiomeTerrainSettings.getBiomeTerrainSettings(settingsMap, presetSettings.getTerrainSettings(), presetSettings.getWorldInfo().getHeight());
         visualSettings = BiomeVisualSettings.getBiomeVisualSettings(settingsMap, presetSettings.getVisualSettings());
 
         biomeTagSettings = BiomeTagSettings.getBiomeTagConfig(settingsMap, identitySettings);

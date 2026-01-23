@@ -37,6 +37,10 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
     // "It's a number that made the worldgen look good!" - Dinnerbone 2020
     private static final double WORLD_GEN_CONSTANT = 684.412;
 
+    // Reference Y sections from old 256-block world (256/8 + 1 = 33)
+    // Used to keep terrain at consistent absolute heights regardless of world height
+    private static final int REFERENCE_Y_SECTIONS = 33;
+
     private static final float[] BIOME_WEIGHT_TABLE = make(
             new float[65 * 65], (array) -> {
                 for (int x = -32; x <= 32; ++x) {
@@ -300,7 +304,6 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
     private void generateNoiseColumn(double[] noiseColumn, int noiseX, int noiseZ) {
         BiomeSettings center = this.cachedBiomeProvider.getNoiseBiomeConfig(noiseX, noiseZ, true);
 
-        final int usedYSections = otgWorldInfo.getHeight() / 8 + 1;
         float height = 0; // depth
         float volatility = 0; // scale
         double volatility1 = 0;
@@ -400,8 +403,8 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
         volatility = volatility * 0.9f + 0.1f;
         height = (height * 4.0F - 1.0F) / 8.0F;
 
-        // Factor in y sections
-        height = usedYSections * (2.0f + height + extraHeight) / 4.0f;
+        // Factor in y sections (use reference from old 256-block world for consistent terrain height)
+        height = REFERENCE_Y_SECTIONS * (2.0f + height + extraHeight) / 4.0f;
 
         double falloff;
         double horizontalScale;
@@ -553,7 +556,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
 
                     // [0, 8] -> y noise pieces
                     for (int pieceY = 8 - 1; pieceY >= 0; --pieceY) {
-                        realY = noiseY * 8 + pieceY;
+                        realY = worldHeight.minY() + noiseY * 8 + pieceY;
 
                         // progress within loop
                         yLerp = (double) pieceY / 8.0;
@@ -663,7 +666,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                                 chunkZ,
                                 carvingMask,
                                 this.cachedBiomeProvider,
-                                Constants.DEFAULT_WORLD_INFO
+                                this.otgWorldInfo
                         );
                     }
 
@@ -680,7 +683,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                                 chunkZ,
                                 carvingMask,
                                 this.cachedBiomeProvider,
-                                Constants.DEFAULT_WORLD_INFO
+                                this.otgWorldInfo
                         );
                     }
                 }

@@ -32,7 +32,7 @@ public class FabricEngine extends OTGEngine {
     }
 
     @Override
-    public File getJarFile() {
+    public File getJarFileFromModLoader() {
         // get the jar file of the mod from fabric itself
         List<File> jarFiles = new ArrayList<>();
         FabricLoader.getInstance().getModContainer(Constants.MOD_ID_SHORT).ifPresent(modContainer -> {

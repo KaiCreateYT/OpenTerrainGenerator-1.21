@@ -103,7 +103,8 @@ public class IcebergSurfaceGenerator extends MultipleLayersSurfaceGenerator
 		LocalMaterialData blockOnPreviousPos = null;
 
 		int topY = chunkBuffer.getHighestBlockForColumn(internalX, internalZ);
-		for (int y = Math.max(topY, (int)icebergHeight + 1); y >= 0; y--)
+		int minY = generatingChunk.getWorldHeight().minY();
+		for (int y = Math.max(topY, (int)icebergHeight + 1); y >= minY; y--)
 		{
 			if (generatingChunk.mustCreateBedrockAt(surfaceSettings.getBlockSettings().isFlatBedrock(), surfaceSettings.getBlockSettings().isDisableBedrock(), surfaceSettings.getBlockSettings().isCeilingBedrock(), y))
 			{

@@ -64,7 +64,12 @@ public class SimpleSurfaceGenerator implements ISurfaceGenerator
 		LocalMaterialData blockOnPreviousPos = null;
 		
 		int highestBlockInColumn = chunkBuffer.getHighestBlockForColumn(internalX, internalZ);
-		for (int y = highestBlockInColumn; y >= 0; y--)
+		int minY = generatingChunk.getWorldHeight().minY();
+		// Skip if no blocks were placed in this column (highestBlockInColumn is uninitialized)
+		if (highestBlockInColumn < minY) {
+			return;
+		}
+		for (int y = highestBlockInColumn; y >= minY; y--)
 		{
 			if (generatingChunk.mustCreateBedrockAt(surfaceSettings.getBlockSettings().isFlatBedrock(), surfaceSettings.getBlockSettings().isDisableBedrock(), surfaceSettings.getBlockSettings().isCeilingBedrock(), y))
 			{

@@ -326,7 +326,7 @@ public class MesaSurfaceGenerator implements ISurfaceGenerator
 			maxHeight = (int)bryceHeight;
 		}
 		
-		int minHeight = 0;
+		int minHeight = generatingChunk.getWorldHeight().minY();
 		LocalMaterialData worldMaterial = null;
 		
 		for (int y = maxHeight; y >= minHeight; y--)

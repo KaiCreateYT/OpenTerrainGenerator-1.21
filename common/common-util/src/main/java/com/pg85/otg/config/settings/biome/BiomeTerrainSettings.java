@@ -112,7 +112,7 @@ public class BiomeTerrainSettings extends ConfigSection {
     );
 
 
-    public static BiomeTerrainSettings getBiomeTerrainSettings(SettingsMap reader, TerrainSettings parent) {
+    public static BiomeTerrainSettings getBiomeTerrainSettings(SettingsMap reader, TerrainSettings parent, int worldHeight) {
         BiomeTerrainSettingsBuilder builder = BiomeTerrainSettings.builder();
 
         builder.parent(parent);
@@ -136,15 +136,15 @@ public class BiomeTerrainSettings extends ConfigSection {
         }
 
         builder.disableBiomeHeight(reader.getSetting(DISABLE_BIOME_HEIGHT));
-        builder.customHeightControl(builder.readHeightSettings(reader));
+        builder.customHeightControl(builder.readHeightSettings(reader, worldHeight));
 
         return builder.fixSettings().build();
     }
 
     public static class BiomeTerrainSettingsBuilder {
-        protected double[] readHeightSettings(SettingsMap settings)
+        protected double[] readHeightSettings(SettingsMap settings, int worldHeight)
         {
-            double[] heightMatrix = new double[this.parent.getWorldHeightCap() / Constants.PIECE_Y_SIZE + 1];
+            double[] heightMatrix = new double[worldHeight / Constants.PIECE_Y_SIZE + 1];
             double[] keys = settings.getSetting(CUSTOM_HEIGHT_CONTROL);
             for (int i = 0; i < heightMatrix.length && i < keys.length; i++)
             {
