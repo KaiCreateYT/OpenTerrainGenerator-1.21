@@ -73,7 +73,13 @@ public abstract class BiomeSettings implements ConfigFile {
 
     // Height / volatility
     public double getCHCData(int controlLayer) {
-        return this.getTerrainSettings().getCustomHeightControl()[controlLayer];
+        double[] chc = this.getTerrainSettings().getCustomHeightControl();
+        if (controlLayer < 0 || controlLayer >= chc.length) {
+            // DEBUG: Log this and return 0 instead of crashing
+            System.err.println("DEBUG: CHC index out of bounds! controlLayer=" + controlLayer + ", chc.length=" + chc.length + ", biome=" + this.getConfigName());
+            return 0.0;
+        }
+        return chc[controlLayer];
     }
 
     // OTG Custom structures (BO's)

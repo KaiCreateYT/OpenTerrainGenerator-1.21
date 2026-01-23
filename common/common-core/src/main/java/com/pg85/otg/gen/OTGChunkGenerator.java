@@ -282,7 +282,10 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
             if (noiseHeight < -1.0D) {
                 noiseHeight = -1.0D;
             }
-            noiseHeight /= maxAverageDepth;
+            // Guard against division by zero when maxAverageDepth is 0 (default value)
+            if (maxAverageDepth != 0.0D) {
+                noiseHeight /= maxAverageDepth;
+            }
             noiseHeight /= 1.4D;
             noiseHeight /= 2.0D;
         } else {
@@ -337,7 +340,26 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
             cacheX = x1 + largestRadius;
             for (int z1 = -smoothRadius; z1 <= smoothRadius; ++z1) {
                 cacheZ = z1 + largestRadius;
-                biome = biomes[cacheX * areaSize + cacheZ];
+                int biomeIndex = cacheX * areaSize + cacheZ;
+                if (biomeIndex < 0 || biomeIndex >= biomes.length) {
+                    OTG.getEngine().getLogger().log(
+                        com.pg85.otg.util.logging.LogLevel.ERROR,
+                        LogCategory.MAIN,
+                        String.format("DEBUG: Invalid biome index %d (max=%d) at noiseX=%d, noiseZ=%d, x1=%d, z1=%d, areaSize=%d",
+                            biomeIndex, biomes.length, noiseX, noiseZ, x1, z1, areaSize)
+                    );
+                    continue;
+                }
+                biome = biomes[biomeIndex];
+                if (biome == null) {
+                    OTG.getEngine().getLogger().log(
+                        com.pg85.otg.util.logging.LogLevel.ERROR,
+                        LogCategory.MAIN,
+                        String.format("DEBUG: Null biome at noiseX=%d, noiseZ=%d, index=%d",
+                            noiseX, noiseZ, biomeIndex)
+                    );
+                    continue;
+                }
                 biomeTerrainSettings = biome.getTerrainSettings();
                 heightAt = biomeTerrainSettings.getBiomeHeight();
                 // TODO: vanilla reduces the weight by half when the depth here is greater than the center depth, but OTG doesn't do that?
@@ -365,7 +387,11 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
             cacheX = x1 + largestRadius;
             for (int z1 = -chcSmoothRadius; z1 <= chcSmoothRadius; ++z1) {
                 cacheZ = z1 + largestRadius;
-                biome = biomes[cacheX * areaSize + cacheZ];
+                int chcBiomeIndex = cacheX * areaSize + cacheZ;
+                if (chcBiomeIndex < 0 || chcBiomeIndex >= biomes.length || biomes[chcBiomeIndex] == null) {
+                    continue;
+                }
+                biome = biomes[chcBiomeIndex];
 
                 heightAt = biome.getTerrainSettings().getBiomeHeight();
                 weightAt = BIOME_WEIGHT_TABLE[x1 + 32 + (z1 + 32) * 65] / (heightAt + 2.0F);
@@ -406,6 +432,13 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
         // Factor in y sections (use reference from old 256-block world for consistent terrain height)
         height = REFERENCE_Y_SECTIONS * (2.0f + height + extraHeight) / 4.0f;
 
+        // DEBUG: Log noise details for edge chunks (first column only)
+        boolean debugThisColumn = (Math.abs(noiseX) >= 68 || Math.abs(noiseZ) >= 68) && (noiseX % 4 == 0) && (noiseZ % 4 == 0);
+        if (debugThisColumn) {
+            System.err.println(String.format("DEBUG NOISE at [%d,%d]: height=%.2f, volatility=%.2f, weight=%.2f, biome=%s",
+                noiseX, noiseZ, height, volatility, weight, center.getConfigName()));
+        }
+
         double falloff;
         double horizontalScale;
         double verticalScale;
@@ -437,6 +470,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                 // Add the falloff at this height
                 noise += falloff;
 
+                // TODO: This probably should be changed to reflect the new world height cap
                 // Reduce the last 4 layers
                 if (y > 28) {
                     noise = MathHelper.clampedLerp(noise, -10, ((double) y - 28) / 4.0);
@@ -448,6 +482,11 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
 
             // Store value
             noiseColumn[y] = noise;
+
+            // DEBUG: Log noise values for edge chunks at specific Y levels
+            if (debugThisColumn && (y == 0 || y == 8 || y == 16 || y == 24 || y == 32)) {
+                System.err.println(String.format("  y=%d: noise=%.2f, falloff=%.2f", y, noise, falloff));
+            }
         }
     }
 
@@ -461,6 +500,10 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
             Random random
     ) {
         ILogger logger = OTG.getEngine().getLogger();
+
+        // DEBUG: Track block placement
+        int[] debugBlockCount = {0}; // Using array to allow modification in lambda-like context
+        int[] debugWaterCount = {0};
 
         ObjectListIterator<JigsawStructureData> structureIterator = structures.iterator();
 
@@ -609,6 +652,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                                             biomeConfig.getSurfaceSettings().getStoneBlockReplaced(realY)
                                     );
                                     buffer.setHighestBlockForColumn(pieceX + noiseX * 4, noiseZ * 4 + pieceZ, realY);
+                                    debugBlockCount[0]++;
                                 } else if (realY < waterLevel[localX * 16 + localZ]
                                            && realY > biomeConfig.getSurfaceSettings().getWaterLevelMin()) {
                                     buffer.setBlock(
@@ -618,6 +662,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                                             biomeConfig.getSurfaceSettings().getWaterBlockReplaced(realY)
                                     );
                                     buffer.setHighestBlockForColumn(pieceX + noiseX * 4, noiseZ * 4 + pieceZ, realY);
+                                    debugWaterCount[0]++;
                                 }
                             }
                         }
@@ -632,6 +677,21 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
         }
 
         doSurfaceAndGroundControl(biomes, random, worldHeight, this.seed, buffer, waterLevel);
+
+        // DEBUG: Log chunk info if it has very few blocks (potential empty chunk)
+        if (debugBlockCount[0] < 1000) { // Normal chunk should have many more stone blocks
+            logger.log(
+                    com.pg85.otg.util.logging.LogLevel.WARN,
+                    LogCategory.MAIN,
+                    String.format("DEBUG CHUNK [%d, %d]: stone=%d, water=%d, noiseSizeY=%d, worldHeightCap=%d",
+                        chunkCoord.getChunkX(),
+                        chunkCoord.getChunkZ(),
+                        debugBlockCount[0],
+                        debugWaterCount[0],
+                        this.noiseSizeY,
+                        this.otgWorldInfo.getHeight())
+            );
+        }
 
         if (logger.getLogCategoryEnabled(LogCategory.PERFORMANCE) && (System.currentTimeMillis() - startTime) > 50) {
             logger.warn(
