@@ -32,6 +32,7 @@ import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.materials.LocalMaterialData;
 import com.pg85.otg.util.materials.LocalMaterials;
+import com.pg85.otg.util.materials.MaterialSet;
 
 // TODO: Refactor type hierarchy for customobject/structure
 public class BO4 implements StructuredCustomObject
@@ -148,8 +149,9 @@ public class BO4 implements StructuredCustomObject
 	
 	@Override
 	public boolean spawnAsTree(CustomStructureCache structureCache, IWorldGenRegion world,
-							   Random random, int x, int z, int minY, int maxY)
+							   Random random, int x, int z, int minY, int maxY, MaterialSet sourceBlocks)
 	{
+		// BO4 cannot spawn as tree
 		return false;
 	}
 

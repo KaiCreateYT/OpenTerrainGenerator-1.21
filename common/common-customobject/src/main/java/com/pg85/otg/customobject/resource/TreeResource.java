@@ -14,6 +14,7 @@ import com.pg85.otg.interfaces.IWorldGenRegion;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.logging.LogLevel;
+import com.pg85.otg.util.materials.MaterialSet;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -29,8 +30,9 @@ public class TreeResource extends BiomeResourceBase implements ICustomObjectReso
 	private int[] treeObjectMinChances;
 	private int[] treeObjectMaxChances;
 	private boolean treesLoaded = false;
-	private final boolean useExtendedParams;	
+	private final boolean useExtendedParams;
 	private final int maxSpawn;
+	private final MaterialSet sourceBlocks;
 
 	public TreeResource(BiomeSettings biomeConfig, List<String> args) throws InvalidConfigException
 	{
@@ -42,9 +44,9 @@ public class TreeResource extends BiomeResourceBase implements ICustomObjectReso
 		this.treeChances = new ArrayList<>();
 
 		// If there is a boolean parameter "true" after source blocks, read extended parameters (maxSpawn)
-		boolean useExtendedParams = false;		
+		boolean useExtendedParams = false;
 		int maxSpawn = 0;
-		if(args.get(args.size() - 2).toLowerCase().trim().equals("true"))
+		if(args.size() >= 2 && args.get(args.size() - 2).toLowerCase().trim().equals("true"))
 		{
 			try
 			{
@@ -58,11 +60,50 @@ public class TreeResource extends BiomeResourceBase implements ICustomObjectReso
 		this.useExtendedParams = useExtendedParams;
 		this.maxSpawn = maxSpawn;
 
-		for (int i = 1; i < args.size() - 1; i += 2)
+		// Parse tree names and chances (pairs: treeName, chance)
+		// Find where tree definitions end (first arg that looks like a material/block)
+		int treeDefEnd = findTreeDefinitionEnd(args);
+
+		for (int i = 1; i < treeDefEnd; i += 2)
 		{
 			this.treeNames.add(args.get(i));
 			this.treeChances.add(readInt(args.get(i + 1), 1, 100));
 		}
+
+		// Parse optional sourceBlocks from remaining arguments
+		if (treeDefEnd < args.size()) {
+			this.sourceBlocks = readMaterials(args, treeDefEnd);
+		} else {
+			this.sourceBlocks = null; // Will use defaults in TreeObject
+		}
+	}
+
+	/**
+	 * Find where tree definitions end and source blocks begin.
+	 * Tree definitions are pairs of (treeName, chance) where chance is 1-100.
+	 * Source blocks are material names like "minecraft:grass_block".
+	 */
+	private int findTreeDefinitionEnd(List<String> args) {
+		// Start from index 1 (index 0 is frequency)
+		for (int i = 1; i < args.size(); i += 2) {
+			// Check if this looks like a tree definition (name followed by number)
+			if (i + 1 >= args.size()) {
+				// Odd number of remaining args - must be source blocks
+				return i;
+			}
+			try {
+				int chance = Integer.parseInt(args.get(i + 1).trim());
+				if (chance < 1 || chance > 100) {
+					// Not a valid chance, must be source blocks starting here
+					return i;
+				}
+				// Valid tree definition, continue
+			} catch (NumberFormatException e) {
+				// Not a number, must be source blocks starting here
+				return i;
+			}
+		}
+		return args.size(); // All args are tree definitions
 	}
 	
 	@Override
@@ -75,22 +116,23 @@ public class TreeResource extends BiomeResourceBase implements ICustomObjectReso
 		CustomObject tree;
 		int spawned = 0;
 		for (int i = 0; i < this.frequency; i++)
-		{			
+		{
 			for (int treeNumber = 0; treeNumber < this.treeNames.size(); treeNumber++)
-			{							
+			{
 				if (random.nextInt(100) < this.treeChances.get(treeNumber))
 				{
 					x = worldGenRegion.getDecorationArea().getChunkBeingDecoratedMinX() + random.nextInt(Constants.CHUNK_SIZE);
 					z = worldGenRegion.getDecorationArea().getChunkBeingDecoratedMinZ() + random.nextInt(Constants.CHUNK_SIZE);
-					
+
 					tree = this.treeObjects[treeNumber];
 					// Min/Max == -1 means use bo2/bo3 internal min/max height, otherwise use the optional min/max height defined with Tree()
-					if(tree != null && tree.spawnAsTree(structureCache, worldGenRegion,
-														random, x, z, this.treeObjectMinChances[treeNumber], this.treeObjectMaxChances[treeNumber]))
-					{
-						// Success!
-						spawned++;
-						break;
+					if(tree != null) {
+						boolean success = tree.spawnAsTree(structureCache, worldGenRegion,
+								random, x, z, this.treeObjectMinChances[treeNumber], this.treeObjectMaxChances[treeNumber], this.sourceBlocks);
+						if (success) {
+							spawned++;
+							break;
+						}
 					}
 				}
 			}
@@ -176,6 +218,10 @@ public class TreeResource extends BiomeResourceBase implements ICustomObjectReso
 		for (int i = 0; i < this.treeNames.size(); i++)
 		{
 			output.append(",").append(this.treeNames.get(i)).append(",").append(this.treeChances.get(i));
+		}
+		if(this.sourceBlocks != null)
+		{
+			output.append(makeMaterials(this.sourceBlocks));
 		}
 		if(this.useExtendedParams)
 		{

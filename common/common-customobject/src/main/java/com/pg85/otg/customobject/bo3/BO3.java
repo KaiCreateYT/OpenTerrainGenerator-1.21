@@ -37,6 +37,7 @@ import com.pg85.otg.util.gen.DecorationArea;
 import com.pg85.otg.util.helpers.MathHelper;
 import com.pg85.otg.util.helpers.RandomHelper;
 import com.pg85.otg.util.materials.LocalMaterialData;
+import com.pg85.otg.util.materials.MaterialSet;
 
 public class BO3 implements StructuredCustomObject
 {
@@ -278,8 +279,9 @@ public class BO3 implements StructuredCustomObject
 	// Used for trees during decoration
 	@Override
 	public boolean spawnAsTree(CustomStructureCache structureCache, IWorldGenRegion world,
-							   Random random, int x, int z, int minY, int maxY)
+							   Random random, int x, int z, int minY, int maxY, MaterialSet sourceBlocks)
 	{
+		// BO3 has its own sourceBlocks defined in config, so we ignore the passed sourceBlocks
 		// A bit ugly, but avoids having to create and implement another spawnAsTree method.
 		if(minY == -1)
 		{

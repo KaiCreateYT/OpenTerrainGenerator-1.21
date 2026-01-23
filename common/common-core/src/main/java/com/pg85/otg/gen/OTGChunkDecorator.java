@@ -174,7 +174,17 @@ public class OTGChunkDecorator implements IChunkDecorator
 		
 		long startTimeAll = System.currentTimeMillis();
 		// Resource sequence
-		for (ConfigFunction<BiomeSettings> res : ((BiomeConfig)biomeConfig).getResourceQueue())
+		var resourceQueue = ((BiomeConfig)biomeConfig).getResourceQueue();
+		// DEBUG: Log resource queue size
+		if (resourceQueue.isEmpty()) {
+			System.err.println("DEBUG DECORATE: Empty resource queue for biome " + biomeConfig.getIdentitySettings().getBiomeName() + " at chunk [" + chunkCoord.getChunkX() + "," + chunkCoord.getChunkZ() + "]");
+		} else if (chunkCoord.getChunkX() == 0 && chunkCoord.getChunkZ() == 0) {
+			System.err.println("DEBUG DECORATE: " + resourceQueue.size() + " resources for biome " + biomeConfig.getIdentitySettings().getBiomeName());
+			for (var r : resourceQueue) {
+				System.err.println("  - " + r.getClass().getSimpleName() + ": " + r.toString());
+			}
+		}
+		for (ConfigFunction<BiomeSettings> res : resourceQueue)
 		{
 			long startTime = System.currentTimeMillis();
 			if (res instanceof ICustomObjectResource)

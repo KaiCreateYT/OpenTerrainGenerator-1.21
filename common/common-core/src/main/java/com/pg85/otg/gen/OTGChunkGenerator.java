@@ -433,11 +433,11 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
         height = REFERENCE_Y_SECTIONS * (2.0f + height + extraHeight) / 4.0f;
 
         // DEBUG: Log noise details for edge chunks (first column only)
-        boolean debugThisColumn = (Math.abs(noiseX) >= 68 || Math.abs(noiseZ) >= 68) && (noiseX % 4 == 0) && (noiseZ % 4 == 0);
-        if (debugThisColumn) {
-            System.err.println(String.format("DEBUG NOISE at [%d,%d]: height=%.2f, volatility=%.2f, weight=%.2f, biome=%s",
-                noiseX, noiseZ, height, volatility, weight, center.getConfigName()));
-        }
+//        boolean debugThisColumn = (Math.abs(noiseX) >= 68 || Math.abs(noiseZ) >= 68) && (noiseX % 4 == 0) && (noiseZ % 4 == 0);
+//        if (debugThisColumn) {
+//            System.err.println(String.format("DEBUG NOISE at [%d,%d]: height=%.2f, volatility=%.2f, weight=%.2f, biome=%s",
+//                noiseX, noiseZ, height, volatility, weight, center.getConfigName()));
+//        }
 
         double falloff;
         double horizontalScale;
@@ -484,9 +484,9 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
             noiseColumn[y] = noise;
 
             // DEBUG: Log noise values for edge chunks at specific Y levels
-            if (debugThisColumn && (y == 0 || y == 8 || y == 16 || y == 24 || y == 32)) {
-                System.err.println(String.format("  y=%d: noise=%.2f, falloff=%.2f", y, noise, falloff));
-            }
+//            if (debugThisColumn && (y == 0 || y == 8 || y == 16 || y == 24 || y == 32)) {
+//                System.err.println(String.format("  y=%d: noise=%.2f, falloff=%.2f", y, noise, falloff));
+//            }
         }
     }
 

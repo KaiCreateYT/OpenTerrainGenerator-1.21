@@ -33,7 +33,7 @@ public class FabricMaterials extends LocalMaterials
 		STRUCTURE_VOID = FabricMaterialData.ofBlockState(Blocks.STRUCTURE_VOID.defaultBlockState());
 		COMMAND_BLOCK = FabricMaterialData.ofBlockState(Blocks.COMMAND_BLOCK.defaultBlockState());
 		STRUCTURE_BLOCK = FabricMaterialData.ofBlockState(Blocks.STRUCTURE_BLOCK.defaultBlockState());
-		GRASS = FabricMaterialData.ofBlockState(Blocks.GRASS.defaultBlockState());
+		GRASS = FabricMaterialData.ofBlockState(Blocks.GRASS_BLOCK.defaultBlockState());
 		DIRT = FabricMaterialData.ofBlockState(Blocks.DIRT.defaultBlockState());
 		CLAY = FabricMaterialData.ofBlockState(Blocks.CLAY.defaultBlockState());
 		TERRACOTTA = FabricMaterialData.ofBlockState(Blocks.TERRACOTTA.defaultBlockState());

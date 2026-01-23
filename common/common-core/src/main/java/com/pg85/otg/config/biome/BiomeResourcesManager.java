@@ -72,38 +72,51 @@ public class BiomeResourcesManager implements IConfigFunctionProvider
 		}
 
 		// Get a config function
-		try
-		{
-			Constructor<? extends ConfigFunction<?>> constructor = getConstructor(holder, clazz);
-            assert constructor != null;
-            return (ConfigFunction<T>) constructor.newInstance(holder, args);
-		}
-		catch (NoSuchMethodException e1)
-		{
-			// Probably uses another holder type
-			return null;
-		}
-		catch (InstantiationException | IllegalAccessException e)
-		{
-			throw new RuntimeException(e);
-		}
-		catch (InvocationTargetException e)
-		{
-			Throwable cause = e.getCause();
-			return new ErroredFunction<T>(name, args, "Resource type " + name + " had invalid parameters and could not be parsed, error: " + cause);
-		}
-	}
-
-	private static <T> Constructor<? extends ConfigFunction<?>> getConstructor(T holder, Class<? extends ConfigFunction<?>> clazz) throws NoSuchMethodException {
-		Constructor<? extends ConfigFunction<?>> constructor = null;
 		if(holder instanceof BiomeSettings)
 		{
-			// Every BiomeConfig resource should have a constructor that conforms to this method signature
-			constructor = clazz.getConstructor(BiomeSettings.class, List.class, OTGWorldInfo.class);
+			try
+			{
+				// Try 2-parameter constructor first (BiomeSettings, List) - this is what most resources use
+				Constructor<? extends ConfigFunction<?>> constructor = clazz.getConstructor(BiomeSettings.class, List.class);
+				return (ConfigFunction<T>) constructor.newInstance(holder, args);
+			}
+			catch (NoSuchMethodException e)
+			{
+				// Try 3-parameter constructor (BiomeSettings, List, OTGWorldInfo) for resources that need world info
+				try
+				{
+					Constructor<? extends ConfigFunction<?>> constructor = clazz.getConstructor(BiomeSettings.class, List.class, OTGWorldInfo.class);
+					return (ConfigFunction<T>) constructor.newInstance(holder, args, this.worldInfo);
+				}
+				catch (NoSuchMethodException e2)
+				{
+					// Probably uses another holder type
+					return null;
+				}
+				catch (InstantiationException | IllegalAccessException e2)
+				{
+					throw new RuntimeException(e2);
+				}
+				catch (InvocationTargetException e2)
+				{
+					Throwable cause = e2.getCause();
+					return new ErroredFunction<T>(name, args, "Resource type " + name + " had invalid parameters and could not be parsed, error: " + cause);
+				}
+			}
+			catch (InstantiationException | IllegalAccessException e)
+			{
+				throw new RuntimeException(e);
+			}
+			catch (InvocationTargetException e)
+			{
+				Throwable cause = e.getCause();
+				return new ErroredFunction<T>(name, args, "Resource type " + name + " had invalid parameters and could not be parsed, error: " + cause);
+			}
 		}
-		else {
-			throw new NoSuchMethodException("No valid constructor found for " + clazz.getName() + " with holder " + holder.getClass().getName());
+		else
+		{
+			// Unknown holder type
+			return null;
 		}
-		return constructor;
 	}
 }

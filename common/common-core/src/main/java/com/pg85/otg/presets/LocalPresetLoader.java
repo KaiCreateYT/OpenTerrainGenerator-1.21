@@ -83,6 +83,10 @@ public abstract class LocalPresetLoader
 		
 	public void loadPresetsFromDisk()
 	{
+		// Clear existing presets and aliases before reloading (important for developer mode reload)
+		this.presets.clear();
+		this.aliasMap.clear();
+
 		if(this.presetsDir.exists() && this.presetsDir.isDirectory())
 		{
 			OTGLog.getLogger().log(
@@ -99,7 +103,11 @@ public abstract class LocalPresetLoader
 						if(file.getName().equals(Constants.PRESET_CONFIG_FILE) || file.getName().equals(Constants.LEGACY_WORLD_CONFIG_FILE))
 						{
 							Preset preset = loadPreset(presetDir.toPath());
+							// DEBUG: Log preset loading
+							System.err.println("DEBUG loadPresetsFromDisk: Loading preset " + preset.getFolderName() + " with registry name " + preset.getPresetRegistryName());
+							System.err.println("DEBUG loadPresetsFromDisk: Current aliasMap keys: " + this.aliasMap.keySet());
 							if (this.aliasMap.containsKey(preset.getPresetRegistryName())) {
+								System.err.println("DEBUG loadPresetsFromDisk: DUPLICATE! Existing entry: " + this.aliasMap.get(preset.getPresetRegistryName()));
 								OTGLog.getLogger().log(
 									LogLevel.ERROR,
 									LogCategory.MAIN,

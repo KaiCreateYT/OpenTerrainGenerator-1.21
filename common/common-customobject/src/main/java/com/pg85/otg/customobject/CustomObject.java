@@ -7,6 +7,7 @@ import com.pg85.otg.interfaces.IMaterialReader;
 import com.pg85.otg.interfaces.IModLoadedChecker;
 import com.pg85.otg.interfaces.IWorldGenRegion;
 import com.pg85.otg.util.bo3.Rotation;
+import com.pg85.otg.util.materials.MaterialSet;
 
 import java.nio.file.Path;
 import java.util.Random;
@@ -64,9 +65,14 @@ public interface CustomObject extends SpawnableObject, ICustomObject {
 	 * location by itself. If the object isn't a tree, it shouldn't spawn and it
 	 * should return false.
 	 *
-	 * @param world
-	 * @param x
-	 * @param z
+	 * @param structureCache The structure cache.
+	 * @param world The world to spawn in.
+	 * @param random Random number generator.
+	 * @param x X coordinate.
+	 * @param z Z coordinate.
+	 * @param minY Minimum Y height (-1 for default).
+	 * @param maxY Maximum Y height (-1 for default).
+	 * @param sourceBlocks Valid blocks the tree can spawn on (null for defaults).
 	 * @return Whether the attempt was successful.
 	 */
     boolean spawnAsTree(
@@ -76,7 +82,8 @@ public interface CustomObject extends SpawnableObject, ICustomObject {
 			int x,
 			int z,
 			int minY,
-			int maxY
+			int maxY,
+			MaterialSet sourceBlocks
     );
 
     /**
