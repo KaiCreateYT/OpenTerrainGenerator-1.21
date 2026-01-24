@@ -308,5 +308,5 @@ SpawnWaterAmbientCreatures: []
 
 SpawnMiscCreatures: []
 
-InheritMobsBiomeName: minecraft:tall_birch_forest
+InheritMobsBiomeName: minecraft:old_growth_birch_forest
 

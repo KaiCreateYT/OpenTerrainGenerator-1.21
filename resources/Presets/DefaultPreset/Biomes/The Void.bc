@@ -298,5 +298,5 @@ SpawnWaterAmbientCreatures: []
 
 SpawnMiscCreatures: []
 
-InheritMobsBiomeName: minecraft:void
+InheritMobsBiomeName: minecraft:the_void
 

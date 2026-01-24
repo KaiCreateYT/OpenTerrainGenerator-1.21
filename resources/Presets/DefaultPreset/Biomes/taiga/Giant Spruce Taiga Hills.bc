@@ -305,5 +305,5 @@ SpawnWaterAmbientCreatures: []
 
 SpawnMiscCreatures: []
 
-InheritMobsBiomeName: minecraft:giant_spruce_taiga_hills
+InheritMobsBiomeName: minecraft:old_growth_spruce_taiga
 

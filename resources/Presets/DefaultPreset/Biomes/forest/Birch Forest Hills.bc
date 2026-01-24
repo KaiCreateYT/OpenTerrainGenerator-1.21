@@ -308,5 +308,5 @@ SpawnWaterAmbientCreatures: []
 
 SpawnMiscCreatures: []
 
-InheritMobsBiomeName: minecraft:birch_forest_hills
+InheritMobsBiomeName: minecraft:birch_forest
 

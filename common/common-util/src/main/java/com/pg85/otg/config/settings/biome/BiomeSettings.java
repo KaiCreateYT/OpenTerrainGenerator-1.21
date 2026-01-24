@@ -9,8 +9,10 @@ import com.pg85.otg.config.settings.biome.generated.BiomePlacementSettings;
 import com.pg85.otg.config.settings.biome.generated.BiomeStructureTagSettings;
 import com.pg85.otg.config.settings.preset.PresetSettings;
 import com.pg85.otg.config.settingtype.Setting;
+import com.pg85.otg.interfaces.IBiomeResourceLocation;
 import com.pg85.otg.interfaces.ICustomStructureGen;
 import com.pg85.otg.interfaces.ISaplingSpawner;
+import com.pg85.otg.util.biome.OTGBiomeID;
 import com.pg85.otg.util.materials.LocalMaterialData;
 import com.pg85.otg.util.minecraft.SaplingType;
 import lombok.Getter;
@@ -48,6 +50,17 @@ public abstract class BiomeSettings implements ConfigFile {
     @Getter
     @Setter
     protected ICustomStructureGen structureGen;
+
+    // OTG biome registration fields - needed for both BiomeConfig and BiomeTemplate
+    @Getter
+    protected OTGBiomeID OTGBiomeID;
+    @Setter
+    @Getter
+    protected IBiomeResourceLocation registryKey;
+
+    public void setOTGBiomeId(int id) {
+        this.OTGBiomeID = new OTGBiomeID(id, this.getRegistryKey(), this.getConfigName());
+    }
 
     protected BiomeSettings(SettingsMap reader, PresetSettings presetSettings, IConfigFunctionProvider provider) {
         this.configName = reader.getName();

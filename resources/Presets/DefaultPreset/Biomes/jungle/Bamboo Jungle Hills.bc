@@ -304,5 +304,5 @@ SpawnWaterAmbientCreatures: []
 
 SpawnMiscCreatures: []
 
-InheritMobsBiomeName: minecraft:bamboo_jungle_hills
+InheritMobsBiomeName: minecraft:bamboo_jungle
 

@@ -303,5 +303,5 @@ SpawnWaterAmbientCreatures: []
 
 SpawnMiscCreatures: []
 
-InheritMobsBiomeName: minecraft:swamp_hills
+InheritMobsBiomeName: minecraft:swamp
 

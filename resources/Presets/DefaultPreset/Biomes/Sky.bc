@@ -298,5 +298,5 @@ SpawnWaterAmbientCreatures: []
 
 SpawnMiscCreatures: []
 
-InheritMobsBiomeName: minecraft:sky
+InheritMobsBiomeName: minecraft:the_end
 

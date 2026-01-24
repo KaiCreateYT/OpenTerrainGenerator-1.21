@@ -308,5 +308,5 @@ SpawnWaterAmbientCreatures: []
 
 SpawnMiscCreatures: []
 
-InheritMobsBiomeName: minecraft:wooded_hills
+InheritMobsBiomeName: minecraft:forest
 

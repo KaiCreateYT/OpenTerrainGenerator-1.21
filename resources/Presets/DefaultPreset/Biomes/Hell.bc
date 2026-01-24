@@ -298,5 +298,5 @@ SpawnWaterAmbientCreatures: []
 
 SpawnMiscCreatures: []
 
-InheritMobsBiomeName: minecraft:hell
+InheritMobsBiomeName: minecraft:nether_wastes
 

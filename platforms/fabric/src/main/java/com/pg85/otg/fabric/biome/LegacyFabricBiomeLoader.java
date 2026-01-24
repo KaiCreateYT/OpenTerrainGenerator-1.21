@@ -10,6 +10,9 @@ import com.pg85.otg.OTG;
 import com.pg85.otg.config.ConfigFunction;
 import com.pg85.otg.config.biome.BiomeConfig;
 import com.pg85.otg.config.biome.BiomeGroupFunction;
+import com.pg85.otg.config.biome.BiomeTemplate;
+import com.pg85.otg.config.biome.TemplateBiome;
+import com.pg85.otg.config.preset.PresetConfig;
 import com.pg85.otg.config.settings.biome.BiomeVisualSettings;
 import com.pg85.otg.config.settings.biome.MobSettings;
 import com.pg85.otg.constants.Constants;
@@ -24,6 +27,7 @@ import com.pg85.otg.config.settings.preset.PresetSettings;
 import com.pg85.otg.presets.LocalPresetLoader;
 import com.pg85.otg.presets.Preset;
 import com.pg85.otg.util.OTGLog;
+import com.pg85.otg.util.biome.MCBiomeResourceLocation;
 import com.pg85.otg.util.biome.OTGBiomeResourceLocation;
 import com.pg85.otg.util.biome.WeightedMobSpawnGroup;
 import com.pg85.otg.util.logging.LogCategory;
@@ -160,19 +164,20 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
         int[] oceanTemperatures = new int[]{0, 0, 0, 0};
 
         List<BiomeConfig> biomeConfigs = preset.getBiomeConfigList();
+        List<BiomeTemplate> biomeTemplates = preset.getBiomeTemplateList();
 
         Map<Integer, List<BiomeData>> isleBiomesAtDepth = new HashMap<>();
         Map<Integer, List<BiomeData>> borderBiomesAtDepth = new HashMap<>();
 
         Map<String, List<Integer>> worldBiomes = new HashMap<>();
-        Map<String, BiomeConfig> biomeConfigsByName = new HashMap<>();
+        Map<String, BiomeSettings> biomeConfigsByName = new HashMap<>();
 
-        // Create registry keys for each biomeconfig, create template 
+        // Create registry keys for each biomeconfig, create template
         // biome configs for any non-otg biomes targeted via TemplateForBiome.
-        Map<IBiomeResourceLocation, BiomeConfig> biomeConfigsByResourceLocation = new LinkedHashMap<>();
+        Map<IBiomeResourceLocation, BiomeSettings> biomeConfigsByResourceLocation = new LinkedHashMap<>();
         List<String> blackListedBiomes = presetConfig.getGenerationSettings().getBlackListedBiomes();
 
-        //processTemplateBiomes(preset.getFolderName(), presetConfig, biomeConfigs, biomeConfigsByResourceLocation, biomeConfigsByName, blackListedBiomes);
+        processTemplateBiomes(preset.getFolderName(), presetConfig, biomeTemplates, biomeConfigsByResourceLocation, biomeConfigsByName, blackListedBiomes, biomeRegistry);
 
         for(BiomeConfig biomeConfig : biomeConfigs)
         {
@@ -190,16 +195,16 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
 
         IBiome[] presetIdMapping = new IBiome[biomeConfigsByResourceLocation.size()];
         boolean hasOceanBiome = false;
-        for(Entry<IBiomeResourceLocation, BiomeConfig> biomeConfigEntry : biomeConfigsByResourceLocation.entrySet())
+        for(Entry<IBiomeResourceLocation, BiomeSettings> biomeSettingsEntry : biomeConfigsByResourceLocation.entrySet())
         {
-            IBiomeResourceLocation iBiomeResourceLocation = biomeConfigEntry.getKey();
-            BiomeConfig biomeConfig = biomeConfigEntry.getValue();
+            IBiomeResourceLocation iBiomeResourceLocation = biomeSettingsEntry.getKey();
+            BiomeSettings biomeSettings = biomeSettingsEntry.getValue();
             boolean isOceanBiome = false;
-            // Biome id 0 is reserved for ocean, used when a land column has 
+            // Biome id 0 is reserved for ocean, used when a land column has
             // no biome assigned, which can happen due to biome group rarity.
-            if(biomeConfig.getIdentitySettings().getBiomeName().equals(presetConfig.getGenerationSettings().getDefaultOceanBiome()))
+            if(biomeSettings.getIdentitySettings().getBiomeName().equals(presetConfig.getGenerationSettings().getDefaultOceanBiome()))
             {
-                oceanBiomeConfig = biomeConfig;
+                oceanBiomeConfig = biomeSettings;
                 isOceanBiome = true;
                 hasOceanBiome = true;
             }
@@ -232,13 +237,13 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
             Holder.Reference<Biome> ref;
             // templates, and non-developer refresh, both just get the biome from the registry
             if(
-                biomeConfig.getIdentitySettings().isTemplateForBiome()
+                biomeSettings.getIdentitySettings().isTemplateForBiome()
             ) {
                 biome = biomeRegistry.get(resourceLocation);
                 if (biome == null) {
                     if(OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.BIOME_REGISTRY))
                     {
-                        OTG.log(LogLevel.ERROR, LogCategory.BIOME_REGISTRY, "Could not find biome " + resourceLocation + " for biomeconfig " + biomeConfig.getIdentitySettings().getBiomeName());
+                        OTG.log(LogLevel.ERROR, LogCategory.BIOME_REGISTRY, "Could not find biome " + resourceLocation + " for biomeconfig " + biomeSettings.getIdentitySettings().getBiomeName());
                     }
                     continue;
                 }
@@ -247,7 +252,7 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
                 if (resourceKey == null) {
                     if(OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.BIOME_REGISTRY))
                     {
-                        OTG.getEngine().getLogger().log(LogLevel.ERROR, LogCategory.BIOME_REGISTRY, "Could not find resource key for biome " + resourceLocation + " for biomeconfig " + biomeConfig.getIdentitySettings().getBiomeName());
+                        OTG.getEngine().getLogger().log(LogLevel.ERROR, LogCategory.BIOME_REGISTRY, "Could not find resource key for biome " + resourceLocation + " for biomeconfig " + biomeSettings.getIdentitySettings().getBiomeName());
                     }
                     continue;
                 }
@@ -258,94 +263,95 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
                 {
                     if(OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.BIOME_REGISTRY))
                     {
-                        OTG.getEngine().getLogger().log(LogLevel.ERROR, LogCategory.BIOME_REGISTRY, "Could not process template biomeconfig " + biomeConfig.getIdentitySettings().getBiomeName() + ", did you set TemplateForBiome:true in the BiomeConfig?");
+                        OTG.getEngine().getLogger().log(LogLevel.ERROR, LogCategory.BIOME_REGISTRY, "Could not process template biomeconfig " + biomeSettings.getIdentitySettings().getBiomeName() + ", did you set TemplateForBiome:true in the BiomeConfig?");
                     }
                     continue;
                 }
                 resourceKey = ResourceKey.create(Registries.BIOME, resourceLocation);
                 // For OTG biomes, add Fabric biome dictionary tags.
-
+                // Cast to BiomeConfig - we know it's not a template biome here
+                BiomeConfig biomeConfig = (BiomeConfig) biomeSettings;
                 biome = LegacyFabricBiomeLoader.createOTGBiome(preset.getPresetConfig(), biomeConfig, featureHolder, carverHolder);
 
                 ref = biomeRegistry.register(resourceKey, biome, Lifecycle.stable());
             }
             presetBiomes.add(resourceKey);
 
-            biomeConfig.setOTGBiomeId(otgBiomeId);
+            biomeSettings.setOTGBiomeId(otgBiomeId);
 
             // Populate our map for syncing
-            //OTGClientSyncManager.getSyncedData().put(resourceLocation.toString(), new FabricBiomeSyncWrapper(biomeConfig));
+            //OTGClientSyncManager.getSyncedData().put(resourceLocation.toString(), new FabricBiomeSyncWrapper(biomeSettings));
 
             // Ocean temperature mappings. Probably a better way to do this?
-            if (biomeConfig.getIdentitySettings().getBiomeName().equals(presetConfig.getGenerationSettings().getDefaultWarmOceanBiome()))
+            if (biomeSettings.getIdentitySettings().getBiomeName().equals(presetConfig.getGenerationSettings().getDefaultWarmOceanBiome()))
             {
                 oceanTemperatures[0] = otgBiomeId;
             }
-            if (biomeConfig.getIdentitySettings().getBiomeName().equals(presetConfig.getGenerationSettings().getDefaultLukewarmOceanBiome()))
+            if (biomeSettings.getIdentitySettings().getBiomeName().equals(presetConfig.getGenerationSettings().getDefaultLukewarmOceanBiome()))
             {
                 oceanTemperatures[1] = otgBiomeId;
             }
-            if (biomeConfig.getIdentitySettings().getBiomeName().equals(presetConfig.getGenerationSettings().getDefaultColdOceanBiome()))
+            if (biomeSettings.getIdentitySettings().getBiomeName().equals(presetConfig.getGenerationSettings().getDefaultColdOceanBiome()))
             {
                 oceanTemperatures[2] = otgBiomeId;
             }
-            if (biomeConfig.getIdentitySettings().getBiomeName().equals(presetConfig.getGenerationSettings().getDefaultFrozenOceanBiome()))
+            if (biomeSettings.getIdentitySettings().getBiomeName().equals(presetConfig.getGenerationSettings().getDefaultFrozenOceanBiome()))
             {
                 oceanTemperatures[3] = otgBiomeId;
             }
 
-            IBiome otgBiome = new FabricBiome(biomeConfig, biome, ref);
+            IBiome otgBiome = new FabricBiome(biomeSettings, biome, ref);
 
             presetIdMapping[otgBiomeId] = otgBiome;
 
-            List<Integer> idsForBiome = worldBiomes.computeIfAbsent(biomeConfig.getIdentitySettings().getBiomeName(), k -> new ArrayList<>());
+            List<Integer> idsForBiome = worldBiomes.computeIfAbsent(biomeSettings.getIdentitySettings().getBiomeName(), k -> new ArrayList<>());
             idsForBiome.add(otgBiomeId);
 
             // Make a list of isle and border biomes per generation depth
-            if(biomeConfig.getGenerationSettings().isIsleBiome())
+            if(biomeSettings.getGenerationSettings().isIsleBiome())
             {
                 // Make or get a list for this group depth, then add
-                List<BiomeData> biomesAtDepth = isleBiomesAtDepth.getOrDefault(biomeConfig.getGenerationSettings().getBiomeSizeWhenIsle(), new ArrayList<>());
+                List<BiomeData> biomesAtDepth = isleBiomesAtDepth.getOrDefault(biomeSettings.getGenerationSettings().getBiomeSizeWhenIsle(), new ArrayList<>());
                 biomesAtDepth.add(
                         new BiomeData(
                                 otgBiomeId,
-                                biomeConfig.getGenerationSettings().getBiomeRarityWhenIsle(),
-                                biomeConfig.getGenerationSettings().getBiomeSizeWhenIsle(),
-                                biomeConfig.getVisualSettings().getBiomeTemperature(),
-                                biomeConfig.getGenerationSettings().getIsleInBiomes(),
-                                biomeConfig.getGenerationSettings().getBorderInBiomes(),
-                                biomeConfig.getGenerationSettings().getOnlyBorderNear(),
-                                biomeConfig.getGenerationSettings().getNotBorderNear()
+                                biomeSettings.getGenerationSettings().getBiomeRarityWhenIsle(),
+                                biomeSettings.getGenerationSettings().getBiomeSizeWhenIsle(),
+                                biomeSettings.getVisualSettings().getBiomeTemperature(),
+                                biomeSettings.getGenerationSettings().getIsleInBiomes(),
+                                biomeSettings.getGenerationSettings().getBorderInBiomes(),
+                                biomeSettings.getGenerationSettings().getOnlyBorderNear(),
+                                biomeSettings.getGenerationSettings().getNotBorderNear()
                         )
                 );
-                isleBiomesAtDepth.put(biomeConfig.getGenerationSettings().getBiomeSizeWhenIsle(), biomesAtDepth);
+                isleBiomesAtDepth.put(biomeSettings.getGenerationSettings().getBiomeSizeWhenIsle(), biomesAtDepth);
             }
 
-            if(biomeConfig.getGenerationSettings().isBorderBiome())
+            if(biomeSettings.getGenerationSettings().isBorderBiome())
             {
                 // Make or get a list for this group depth, then add
-                List<BiomeData> biomesAtDepth = borderBiomesAtDepth.getOrDefault(biomeConfig.getGenerationSettings().getBiomeSizeWhenBorder(), new ArrayList<>());
+                List<BiomeData> biomesAtDepth = borderBiomesAtDepth.getOrDefault(biomeSettings.getGenerationSettings().getBiomeSizeWhenBorder(), new ArrayList<>());
                 biomesAtDepth.add(
                         new BiomeData(
                                 otgBiomeId,
-                                biomeConfig.getGenerationSettings().getBiomeRarity(),
-                                biomeConfig.getGenerationSettings().getBiomeSizeWhenBorder(),
-                                biomeConfig.getVisualSettings().getBiomeTemperature(),
-                                biomeConfig.getGenerationSettings().getIsleInBiomes(),
-                                biomeConfig.getGenerationSettings().getBorderInBiomes(),
-                                biomeConfig.getGenerationSettings().getOnlyBorderNear(),
-                                biomeConfig.getGenerationSettings().getNotBorderNear()
+                                biomeSettings.getGenerationSettings().getBiomeRarity(),
+                                biomeSettings.getGenerationSettings().getBiomeSizeWhenBorder(),
+                                biomeSettings.getVisualSettings().getBiomeTemperature(),
+                                biomeSettings.getGenerationSettings().getIsleInBiomes(),
+                                biomeSettings.getGenerationSettings().getBorderInBiomes(),
+                                biomeSettings.getGenerationSettings().getOnlyBorderNear(),
+                                biomeSettings.getGenerationSettings().getNotBorderNear()
                         )
                 );
-                borderBiomesAtDepth.put(biomeConfig.getGenerationSettings().getBiomeSizeWhenBorder(), biomesAtDepth);
+                borderBiomesAtDepth.put(biomeSettings.getGenerationSettings().getBiomeSizeWhenBorder(), biomesAtDepth);
             }
 
             // Index BiomeColor for FromImageMode and /otg map
-            biomeColorMap.put(biomeConfig.getGenerationSettings().getBiomeMapColor().getColor(), otgBiomeId);
+            biomeColorMap.put(biomeSettings.getGenerationSettings().getBiomeMapColor().getColor(), otgBiomeId);
 
             if(OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.BIOME_REGISTRY))
             {
-                OTG.getEngine().getLogger().log(LogLevel.INFO, LogCategory.BIOME_REGISTRY, "Registered biome " + resourceLocation.toString() + " | " + biomeConfig.getIdentitySettings().getBiomeName() + " with OTG id " + otgBiomeId);
+                OTG.getEngine().getLogger().log(LogLevel.INFO, LogCategory.BIOME_REGISTRY, "Registered biome " + resourceLocation.toString() + " | " + biomeSettings.getIdentitySettings().getBiomeName() + " with OTG id " + otgBiomeId);
             }
 
             currentId += isOceanBiome ? 0 : 1;
@@ -554,7 +560,7 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
         }
     }
 
-    private Map<Integer, BiomeGroup> processBiomeGroups(String presetFolderName, PresetSettings presetConfig, Map<IBiomeResourceLocation, BiomeConfig> biomeConfigsByResourceLocation, Map<String, BiomeConfig> biomeConfigsByName, List<String> blackListedBiomes, Set<Integer> biomeDepths, Map<Integer, List<BiomeGroup>> groupDepths)
+    private Map<Integer, BiomeGroup> processBiomeGroups(String presetFolderName, PresetSettings presetConfig, Map<IBiomeResourceLocation, BiomeSettings> biomeConfigsByResourceLocation, Map<String, BiomeSettings> biomeConfigsByName, List<String> blackListedBiomes, Set<Integer> biomeDepths, Map<Integer, List<BiomeGroup>> groupDepths)
     {
         int genDepth = presetConfig.getGenerationSettings().getGenerationDepth();
         Map<Integer, BiomeGroup> groupRegistry = new HashMap<>();
@@ -574,11 +580,11 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
 
             float totalTemp = 0;
 
-            HashMap<String, BiomeConfig> groupBiomes = new LinkedHashMap<>();
+            HashMap<String, BiomeSettings> groupBiomes = new LinkedHashMap<>();
 
             for (String biomeGroupEntry : group.getBiomes()) {
-                BiomeConfig biomeConfig = biomeConfigsByName.get(biomeGroupEntry);
-                if(biomeConfig == null)
+                BiomeSettings biomeSettings = biomeConfigsByName.get(biomeGroupEntry);
+                if(biomeSettings == null)
                 {
                     if(OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.BIOME_REGISTRY))
                     {
@@ -586,16 +592,16 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
                     }
                     continue;
                 }
-                groupBiomes.put(biomeGroupEntry, biomeConfig);
+                groupBiomes.put(biomeGroupEntry, biomeSettings);
             }
 
 
             // Add each biome to the group
-            for (Entry<String, BiomeConfig> biome : groupBiomes.entrySet())
+            for (Entry<String, BiomeSettings> biome : groupBiomes.entrySet())
             {
                 if(biome.getValue() != null)
                 {
-                    BiomeConfig config = biome.getValue();
+                    BiomeSettings config = biome.getValue();
                     // Make and add the generation data
                     BiomeData newBiomeData = new BiomeData(
                             config.getOTGBiomeID().id(),
@@ -651,5 +657,198 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
         float skyColor = temp / 3.0F;
         skyColor = Mth.clamp(skyColor, -1.0F, 1.0F);
         return Mth.hsvToRgb(0.62222224F - skyColor * 0.05F, 0.5F + skyColor * 0.1F, 1.0F);
+    }
+
+    private void processTemplateBiomes(
+        String presetFolderName,
+        PresetSettings presetConfig,
+        List<BiomeTemplate> biomeTemplates,
+        Map<IBiomeResourceLocation, BiomeSettings> biomeConfigsByResourceLocation,
+        Map<String, BiomeSettings> biomeConfigsByName,
+        List<String> blackListedBiomes,
+        Registry<Biome> biomeRegistry
+    ) {
+        if (!(presetConfig instanceof PresetConfig)) {
+            return;
+        }
+
+        for (TemplateBiome templateBiome : ((PresetConfig) presetConfig).getGenerationSettings().getTemplateBiomes()) {
+            if (OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.BIOME_REGISTRY)) {
+                OTG.getEngine().getLogger().log(LogLevel.INFO, LogCategory.BIOME_REGISTRY, "Processing template biome: " + templateBiome.toString());
+            }
+
+            // Find the OTG biome template that defines this template biome
+            BiomeTemplate biomeTemplate = biomeTemplates.stream()
+                .filter(bt -> bt.getIdentitySettings().getBiomeName().equalsIgnoreCase(templateBiome.getName()))
+                .findFirst()
+                .orElse(null);
+
+            if (biomeTemplate == null) {
+                OTG.getEngine().getLogger().log(LogLevel.WARN, LogCategory.BIOME_REGISTRY,
+                    "No BiomeTemplate found for template biome: " + templateBiome.getName());
+                continue;
+            }
+
+            // Add the template to biomeConfigsByName so BiomeGroups can find it
+            // BiomeTemplate extends BiomeSettings which is compatible with where BiomeConfig is expected
+            // We use a workaround by storing the template name -> first matched biome config mapping
+            // This allows BiomeGroups to resolve template names like "tagWater" to actual biomes
+
+            // Parse tag criteria
+            List<String> includeTags = new ArrayList<>();
+            List<String> excludeTags = new ArrayList<>();
+            List<String> includeMods = new ArrayList<>();
+            List<String> excludeMods = new ArrayList<>();
+
+            for (String tagString : templateBiome.getTags()) {
+                String tag = tagString.trim().toLowerCase();
+
+                if (tag.startsWith(Constants.MOD_BIOME_DICT_TAG_LABEL_EXCLUDE) ||
+                    tag.startsWith(Constants.MC_BIOME_DICT_TAG_LABEL_EXCLUDE) ||
+                    tag.startsWith(Constants.BIOME_DICT_TAG_LABEL_EXCLUDE)) {
+                    // Exclude tag: -modtag.*, -mctag.*, -tag.*
+                    String tagName = tag.replace(Constants.MOD_BIOME_DICT_TAG_LABEL_EXCLUDE, "")
+                                        .replace(Constants.MC_BIOME_DICT_TAG_LABEL_EXCLUDE, "")
+                                        .replace(Constants.BIOME_DICT_TAG_LABEL_EXCLUDE, "");
+                    excludeTags.add(tagName);
+                } else if (tag.startsWith(Constants.MOD_BIOME_CATEGORY_LABEL_EXCLUDE) ||
+                           tag.startsWith(Constants.MC_BIOME_CATEGORY_LABEL_EXCLUDE) ||
+                           tag.startsWith(Constants.BIOME_CATEGORY_LABEL_EXCLUDE)) {
+                    // Exclude category (treat as tag): -modcategory.*, -mccategory.*, -category.*
+                    String tagName = tag.replace(Constants.MOD_BIOME_CATEGORY_LABEL_EXCLUDE, "")
+                                        .replace(Constants.MC_BIOME_CATEGORY_LABEL_EXCLUDE, "")
+                                        .replace(Constants.BIOME_CATEGORY_LABEL_EXCLUDE, "");
+                    excludeTags.add(tagName);
+                } else if (tag.startsWith(Constants.MOD_LABEL_EXCLUDE)) {
+                    // Exclude mod: -mod.*
+                    excludeMods.add(tag.replace(Constants.MOD_LABEL_EXCLUDE, ""));
+                } else if (tag.startsWith(Constants.MOD_BIOME_DICT_TAG_LABEL) ||
+                           tag.startsWith(Constants.MC_BIOME_DICT_TAG_LABEL) ||
+                           tag.startsWith(Constants.BIOME_DICT_TAG_LABEL)) {
+                    // Include tag: modtag.*, mctag.*, tag.*
+                    String tagName = tag.replace(Constants.MOD_BIOME_DICT_TAG_LABEL, "")
+                                        .replace(Constants.MC_BIOME_DICT_TAG_LABEL, "")
+                                        .replace(Constants.BIOME_DICT_TAG_LABEL, "");
+                    includeTags.add(tagName);
+                } else if (tag.startsWith(Constants.MOD_BIOME_CATEGORY_LABEL) ||
+                           tag.startsWith(Constants.MC_BIOME_CATEGORY_LABEL) ||
+                           tag.startsWith(Constants.BIOME_CATEGORY_LABEL)) {
+                    // Include category (treat as tag): modcategory.*, mccategory.*, category.*
+                    String tagName = tag.replace(Constants.MOD_BIOME_CATEGORY_LABEL, "")
+                                        .replace(Constants.MC_BIOME_CATEGORY_LABEL, "")
+                                        .replace(Constants.BIOME_CATEGORY_LABEL, "");
+                    includeTags.add(tagName);
+                } else if (tag.startsWith(Constants.MOD_LABEL)) {
+                    // Include mod: mod.*
+                    includeMods.add(tag.replace(Constants.MOD_LABEL, ""));
+                } else if (tag.contains(":")) {
+                    // Direct biome reference like minecraft:plains
+                    processDirectBiomeReference(tag, presetFolderName, biomeTemplate, biomeConfigsByResourceLocation, biomeConfigsByName, biomeRegistry);
+                }
+            }
+
+            // If we have tag criteria, iterate all biomes and find matches
+            if (!includeTags.isEmpty()) {
+                for (ResourceKey<Biome> biomeKey : biomeRegistry.registryKeySet()) {
+                    // Check blacklist
+                    if (blackListedBiomes.contains(biomeKey.location().toString())) {
+                        continue;
+                    }
+
+                    // Check mod namespace filter
+                    String namespace = biomeKey.location().getNamespace();
+                    if (!includeMods.isEmpty() && !includeMods.contains(namespace)) {
+                        continue;
+                    }
+                    if (excludeMods.contains(namespace)) {
+                        continue;
+                    }
+
+                    // Check include tags (all must match)
+                    boolean matchesAllInclude = true;
+                    for (String includeTag : includeTags) {
+                        if (!FabricBiomeTagMapper.biomeHasTag(biomeRegistry, biomeKey, includeTag)) {
+                            matchesAllInclude = false;
+                            break;
+                        }
+                    }
+                    if (!matchesAllInclude) {
+                        continue;
+                    }
+
+                    // Check exclude tags (none must match)
+                    boolean matchesAnyExclude = false;
+                    for (String excludeTag : excludeTags) {
+                        if (FabricBiomeTagMapper.biomeHasTag(biomeRegistry, biomeKey, excludeTag)) {
+                            matchesAnyExclude = true;
+                            break;
+                        }
+                    }
+                    if (matchesAnyExclude) {
+                        continue;
+                    }
+
+                    // Check temperature filter
+                    Biome biome = biomeRegistry.get(biomeKey);
+                    if (biome != null && !templateBiome.temperatureAllowed(biome.getBaseTemperature())) {
+                        continue;
+                    }
+
+                    // Biome matches! Add to maps using MCBiomeResourceLocation for template biomes
+                    IBiomeResourceLocation location = new MCBiomeResourceLocation(
+                        biomeKey.location().getNamespace(),
+                        biomeKey.location().getPath(),
+                        presetFolderName
+                    );
+
+                    if (!biomeConfigsByResourceLocation.containsKey(location)) {
+                        biomeTemplate.setRegistryKey(location);
+                        biomeConfigsByResourceLocation.put(location, biomeTemplate);
+                        biomeConfigsByName.put(biomeTemplate.getIdentitySettings().getBiomeName(), biomeTemplate);
+
+                        if (OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.BIOME_REGISTRY)) {
+                            OTG.getEngine().getLogger().log(LogLevel.INFO, LogCategory.BIOME_REGISTRY,
+                                "Template biome " + templateBiome.getName() + " matched: " + biomeKey.location());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void processDirectBiomeReference(
+        String biomeId,
+        String presetFolderName,
+        BiomeSettings biomeSettings,
+        Map<IBiomeResourceLocation, BiomeSettings> biomeConfigsByResourceLocation,
+        Map<String, BiomeSettings> biomeConfigsByName,
+        Registry<Biome> biomeRegistry
+    ) {
+        ResourceLocation location = new ResourceLocation(biomeId);
+        ResourceKey<Biome> biomeKey = ResourceKey.create(Registries.BIOME, location);
+
+        if (biomeRegistry.containsKey(biomeKey)) {
+            IBiomeResourceLocation otgLocation = new MCBiomeResourceLocation(
+                location.getNamespace(),
+                location.getPath(),
+                presetFolderName
+            );
+
+            if (!biomeConfigsByResourceLocation.containsKey(otgLocation)) {
+                biomeSettings.setRegistryKey(otgLocation);
+                biomeConfigsByResourceLocation.put(otgLocation, biomeSettings);
+                biomeConfigsByName.put(biomeSettings.getIdentitySettings().getBiomeName(), biomeSettings);
+
+                if (OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.BIOME_REGISTRY)) {
+                    OTG.getEngine().getLogger().log(LogLevel.INFO, LogCategory.BIOME_REGISTRY,
+                        "Direct biome reference matched: " + biomeId);
+                }
+            }
+        } else {
+            if (OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.BIOME_REGISTRY)) {
+                OTG.getEngine().getLogger().log(LogLevel.WARN, LogCategory.BIOME_REGISTRY,
+                    "Direct biome reference not found in registry: " + biomeId);
+            }
+        }
     }
 }

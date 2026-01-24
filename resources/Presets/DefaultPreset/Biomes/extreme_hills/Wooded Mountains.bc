@@ -300,5 +300,5 @@ SpawnWaterAmbientCreatures: []
 
 SpawnMiscCreatures: []
 
-InheritMobsBiomeName: minecraft:wooded_mountains
+InheritMobsBiomeName: minecraft:windswept_forest
 

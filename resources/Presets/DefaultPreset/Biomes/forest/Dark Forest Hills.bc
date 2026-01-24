@@ -304,5 +304,5 @@ SpawnWaterAmbientCreatures: []
 
 SpawnMiscCreatures: []
 
-InheritMobsBiomeName: minecraft:dark_forest_hills
+InheritMobsBiomeName: minecraft:dark_forest
 

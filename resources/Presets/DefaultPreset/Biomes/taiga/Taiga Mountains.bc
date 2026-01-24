@@ -300,5 +300,5 @@ SpawnWaterAmbientCreatures: []
 
 SpawnMiscCreatures: []
 
-InheritMobsBiomeName: minecraft:taiga_mountains
+InheritMobsBiomeName: minecraft:taiga
 

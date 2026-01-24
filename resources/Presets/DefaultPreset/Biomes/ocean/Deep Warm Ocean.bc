@@ -302,5 +302,5 @@ SpawnWaterAmbientCreatures: []
 
 SpawnMiscCreatures: []
 
-InheritMobsBiomeName: minecraft:deep_warm_ocean
+InheritMobsBiomeName: minecraft:warm_ocean
 

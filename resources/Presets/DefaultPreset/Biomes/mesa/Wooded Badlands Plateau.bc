@@ -301,5 +301,5 @@ SpawnWaterAmbientCreatures: []
 
 SpawnMiscCreatures: []
 
-InheritMobsBiomeName: minecraft:wooded_badlands_plateau
+InheritMobsBiomeName: minecraft:wooded_badlands
 

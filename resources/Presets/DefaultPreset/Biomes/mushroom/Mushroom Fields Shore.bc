@@ -299,5 +299,5 @@ SpawnWaterAmbientCreatures: []
 
 SpawnMiscCreatures: []
 
-InheritMobsBiomeName: minecraft:mushroom_field_shore
+InheritMobsBiomeName: minecraft:mushroom_fields
 

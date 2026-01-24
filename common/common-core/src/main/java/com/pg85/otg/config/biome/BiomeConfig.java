@@ -13,7 +13,6 @@ import com.pg85.otg.customobject.resource.SaplingResource;
 import com.pg85.otg.customobject.resource.TreeResource;
 import com.pg85.otg.gen.resource.*;
 import com.pg85.otg.interfaces.*;
-import com.pg85.otg.util.biome.OTGBiomeID;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -70,8 +69,6 @@ public class BiomeConfig extends BiomeSettings
 	}
 
 	private final PresetConfig parent;
-	@Getter
-	private OTGBiomeID OTGBiomeID;
 	@Setter
 	private MobSettings mergedMobSettings = null;
 
@@ -80,14 +77,6 @@ public class BiomeConfig extends BiomeSettings
 		super(settingsMap, presetSettings, new BiomeResourcesManager(presetSettings.getWorldInfo()));
 		parent = presetSettings;
 	}
-
-	public void setOTGBiomeId(int id) {
-		this.OTGBiomeID = new OTGBiomeID(id, this.getRegistryKey(), this.getConfigName());
-	}
-
-	@Setter
-    @Getter
-    private IBiomeResourceLocation registryKey;
 
 	@Override
 	public void writeConfigSettings(SettingsMap writer) {

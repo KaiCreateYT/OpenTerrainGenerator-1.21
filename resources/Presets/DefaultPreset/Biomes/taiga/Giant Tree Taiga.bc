@@ -305,5 +305,5 @@ SpawnWaterAmbientCreatures: []
 
 SpawnMiscCreatures: []
 
-InheritMobsBiomeName: minecraft:giant_tree_taiga
+InheritMobsBiomeName: minecraft:old_growth_pine_taiga
 

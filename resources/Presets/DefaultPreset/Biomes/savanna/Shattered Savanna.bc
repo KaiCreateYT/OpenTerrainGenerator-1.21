@@ -56,7 +56,7 @@ BiomeSizeWhenBorder: 8
 
 BiomeHeight: 0.3625
 
-BiomeVolatility: 1.225
+BiomeVolatility: 0.5
 
 SmoothRadius: 8
 
@@ -299,5 +299,5 @@ SpawnWaterAmbientCreatures: []
 
 SpawnMiscCreatures: []
 
-InheritMobsBiomeName: minecraft:shattered_savanna
+InheritMobsBiomeName: minecraft:windswept_savanna
 

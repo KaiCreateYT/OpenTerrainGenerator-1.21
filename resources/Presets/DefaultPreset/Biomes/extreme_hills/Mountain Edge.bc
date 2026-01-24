@@ -300,5 +300,5 @@ SpawnWaterAmbientCreatures: []
 
 SpawnMiscCreatures: []
 
-InheritMobsBiomeName: minecraft:mountain_edge
+InheritMobsBiomeName: minecraft:windswept_hills
 

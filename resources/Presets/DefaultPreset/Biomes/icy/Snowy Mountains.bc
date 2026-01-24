@@ -298,5 +298,5 @@ SpawnWaterAmbientCreatures: []
 
 SpawnMiscCreatures: []
 
-InheritMobsBiomeName: minecraft:snowy_mountains
+InheritMobsBiomeName: minecraft:snowy_plains
 

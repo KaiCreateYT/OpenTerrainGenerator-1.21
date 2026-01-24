@@ -298,5 +298,5 @@ SpawnWaterAmbientCreatures: []
 
 SpawnMiscCreatures: []
 
-InheritMobsBiomeName: minecraft:stone_shore
+InheritMobsBiomeName: minecraft:stony_shore
 
