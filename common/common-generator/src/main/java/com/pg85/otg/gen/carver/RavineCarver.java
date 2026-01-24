@@ -51,17 +51,19 @@ public class RavineCarver extends Carver
 		branchCount = branchCount - random.nextInt(branchCount / 4);		
 		double yawPitchRatio = presetConfig.getCarverSettings().getRavineDepth();
 
-		this.carveRavine(noiseProvider, chunk, random.nextLong(), mainChunkX, mainChunkZ, x, y, z, width, yaw, pitch, 0, branchCount, yawPitchRatio, bitSet, cachedBiomeProvider);
+		this.carveRavine(noiseProvider, chunk, random.nextLong(), mainChunkX, mainChunkZ, x, y, z, width, yaw, pitch, 0, branchCount, yawPitchRatio, bitSet, cachedBiomeProvider, otgWorldInfo);
 		return true;
 	}
 
-	private void carveRavine(ISurfaceGeneratorNoiseProvider noiseProvider, ChunkBuffer chunk, long seed, int mainChunkX, int mainChunkZ, double x, double y, double z, float width, float yaw, float pitch, int branchStartIndex, int branchCount, double yawPitchRatio, BitSet carvingMask, ICachedBiomeProvider cachedBiomeProvider)
+	private void carveRavine(ISurfaceGeneratorNoiseProvider noiseProvider, ChunkBuffer chunk, long seed, int mainChunkX, int mainChunkZ, double x, double y, double z, float width, float yaw, float pitch, int branchStartIndex, int branchCount, double yawPitchRatio, BitSet carvingMask, ICachedBiomeProvider cachedBiomeProvider, OTGWorldInfo otgWorldInfo)
 	{
 		Random random = new Random(seed);
 		float stretchFactor = 1.0F;
 
-		float[] heightToHorizontalStretchFactor = new float[1024];
-		for (int y1 = 0; y1 < Constants.WORLD_HEIGHT; ++y1)
+		// Use world height for array size (1.18+ can have 384 height)
+		int worldHeight = otgWorldInfo.maxY() - otgWorldInfo.minY() + 1;
+		float[] heightToHorizontalStretchFactor = new float[worldHeight];
+		for (int y1 = 0; y1 < worldHeight; ++y1)
 		{
 			if (y1 == 0 || random.nextInt(3) == 0)
 			{
@@ -102,15 +104,21 @@ public class RavineCarver extends Carver
 					return;
 				}
 				this.carveRegion(noiseProvider, heightToHorizontalStretchFactor, chunk, seed, mainChunkX, mainChunkZ, x, y, z, currentYaw, currentPitch, carvingMask, cachedBiomeProvider,
-                                 Constants.DEFAULT_WORLD_INFO
+                                 otgWorldInfo
                 );
 			}
 		}
 	}
 
 	@Override
-	protected boolean isPositionExcluded(float[] cache, double scaledRelativeX, double scaledRelativeY, double scaledRelativeZ, int y)
+	protected boolean isPositionExcluded(float[] cache, double scaledRelativeX, double scaledRelativeY, double scaledRelativeZ, int y, OTGWorldInfo otgWorldInfo)
 	{
-		return (scaledRelativeX * scaledRelativeX + scaledRelativeZ * scaledRelativeZ) * (double) cache[y - 1] + scaledRelativeY * scaledRelativeY / 6.0D >= 1.0D;
+		// Offset Y by minY for 1.18+ worlds with negative Y coordinates
+		int cacheIndex = y - otgWorldInfo.minY();
+		// Bounds check to prevent ArrayIndexOutOfBoundsException
+		if (cacheIndex < 0 || cacheIndex >= cache.length) {
+			return true;
+		}
+		return (scaledRelativeX * scaledRelativeX + scaledRelativeZ * scaledRelativeZ) * (double) cache[cacheIndex] + scaledRelativeY * scaledRelativeY / 6.0D >= 1.0D;
 	}
 }

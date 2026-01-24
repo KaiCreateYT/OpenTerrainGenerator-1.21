@@ -120,7 +120,8 @@ public abstract class Carver {
                                 scaledX,
                                 scaledY,
                                 scaledZ,
-                                currentY
+                                currentY,
+                                otgWorldInfo
                         )) {
                             carved |= this.carveAtPoint(
                                     noiseProvider,
@@ -132,7 +133,8 @@ public abstract class Carver {
                                     currentY,
                                     currentZ,
                                     foundSurface,
-                                    biomeConfig
+                                    biomeConfig,
+                                    otgWorldInfo
                             );
                         }
                     }
@@ -152,10 +154,13 @@ public abstract class Carver {
             int y,
             int relativeZ,
             MutableBoolean foundSurface,
-            BiomeSettings biomeConfig
+            BiomeSettings biomeConfig,
+            OTGWorldInfo otgWorldInfo
     ) {
         SurfaceSettings surface = biomeConfig.getSurfaceSettings();
-        int i = relativeX | relativeZ << 4 | y << 8;
+        // Offset Y by minY to ensure non-negative index for BitSet (1.18+ worlds can have negative Y)
+        int offsetY = y - otgWorldInfo.minY();
+        int i = relativeX | relativeZ << 4 | offsetY << 8;
         if (carvingMask.get(i)) {
             return false;
         }
@@ -301,6 +306,7 @@ public abstract class Carver {
             double scaledRelativeX,
             double scaledRelativeY,
             double scaledRelativeZ,
-            int y
+            int y,
+            OTGWorldInfo otgWorldInfo
     );
 }

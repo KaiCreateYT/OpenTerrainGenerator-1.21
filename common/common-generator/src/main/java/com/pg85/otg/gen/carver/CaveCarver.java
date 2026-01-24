@@ -109,7 +109,8 @@ public class CaveCarver extends Carver {
                         branchCount,
                         this.getTunnelSystemHeightWidthRatio(),
                         carvingMask,
-                        cachedBiomeProvider
+                        cachedBiomeProvider,
+                        otgWorldInfo
                 );
             }
         }
@@ -217,7 +218,8 @@ public class CaveCarver extends Carver {
             int branchCount,
             double yawPitchRatio,
             BitSet carvingMask,
-            ICachedBiomeProvider cachedBiomeProvider
+            ICachedBiomeProvider cachedBiomeProvider,
+            OTGWorldInfo otgWorldInfo
     ) {
         Random random = new Random(seed);
         int nextBranchIndex = random.nextInt(branchCount / 2) + branchCount / 4;
@@ -270,7 +272,8 @@ public class CaveCarver extends Carver {
                         branchCount,
                         1.0D,
                         carvingMask,
-                        cachedBiomeProvider
+                        cachedBiomeProvider,
+                        otgWorldInfo
                 );
                 this.carveTunnels(
                         noiseProvider,
@@ -288,7 +291,8 @@ public class CaveCarver extends Carver {
                         branchCount,
                         1.0D,
                         carvingMask,
-                        cachedBiomeProvider
+                        cachedBiomeProvider,
+                        otgWorldInfo
                 );
                 return;
             }
@@ -320,7 +324,7 @@ public class CaveCarver extends Carver {
                         currentPitch,
                         carvingMask,
                         cachedBiomeProvider,
-                        Constants.DEFAULT_WORLD_INFO
+                        otgWorldInfo
                 );
             }
         }
@@ -332,7 +336,8 @@ public class CaveCarver extends Carver {
             double scaledRelativeX,
             double scaledRelativeY,
             double scaledRelativeZ,
-            int y
+            int y,
+            OTGWorldInfo otgWorldInfo
     ) {
         return scaledRelativeY <= -0.7D
                || scaledRelativeX * scaledRelativeX

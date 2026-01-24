@@ -69,7 +69,7 @@ public class Constants
 	// Region size for BO3/BO4 structure data files
 	public static final int REGION_SIZE = 100;
 
-	public static final OTGWorldInfo DEFAULT_WORLD_INFO = new OTGWorldInfo(0, 255);
+	public static final OTGWorldInfo DEFAULT_WORLD_INFO = new OTGWorldInfo(-64, 319);
 
 
 	// World constants

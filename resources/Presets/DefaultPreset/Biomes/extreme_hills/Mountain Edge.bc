@@ -39,7 +39,7 @@ BiomeRarityWhenIsle: 97
 # Border biomes #
 #################
 
-BiomeIsBorder: Extreme Hills
+BiomeIsBorder: Mountains
 
 OnlyBorderNear: 
 
@@ -58,7 +58,7 @@ BiomeHeight: 0.8
 
 BiomeVolatility: 0.3
 
-SmoothRadius: 2
+SmoothRadius: 8
 
 CustomHeightControlSmoothRadius: 2
 

@@ -281,12 +281,13 @@ public class PresetWriter {
         );
 
         writer.putSetting(TerrainSettings.WORLD_HEIGHT_SCALE_BITS, presetConfig.getTerrainSettings().getWorldHeightScale(),
-                "The height scale of the world. Increasing this by one doubles the terrain height of the world, substracting one halves the terrain height. Values must be between 5 and 8, inclusive."
+                "The height scale of the world. Increasing this by one doubles the terrain height of the world, substracting one halves the terrain height.",
+                "Values must be between 5 and 9, inclusive. For 1.18+ worlds with 384 height, use 8 (256) or 9 (512)."
         );
 
         writer.putSetting(TerrainSettings.WORLD_HEIGHT_CAP_BITS, presetConfig.getTerrainSettings().getWorldHeightCap(),
                 "The height cap of the world. A cap of 7 will make sure that there is no terrain above 128 (y=2^7). Near this cap less and less terrain generates with no terrain above this cap.",
-                "Values must be between 5 and 8 (inclusive), and may not be lower that WorldHeightScaleBits."
+                "Values must be between 5 and 9 (inclusive), and may not be lower that WorldHeightScaleBits. For 1.18+ worlds with 384 height, use 9 (512)."
         );
 
         writer.putSetting(TerrainSettings.FRACTURE_HORIZONTAL, presetConfig.getTerrainSettings().getFractureHorizontal(),

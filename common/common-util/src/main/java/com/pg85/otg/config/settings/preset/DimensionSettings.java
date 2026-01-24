@@ -68,19 +68,19 @@ public class DimensionSettings extends ConfigSection {
             "Can be either overworld/nether/end (or potentially modded)."
     );
     public static final Setting<Integer> MIN_Y = Settings.intSetting(
-            "MinY", 0, Constants.WORLD_START_MIN_Y, Constants.WORLD_END_MAX_Y-15,
+            "MinY", -64, Constants.WORLD_START_MIN_Y, Constants.WORLD_END_MAX_Y-15,
             t -> ((DimensionSettings) t).getMinY(),
-            "Minimum Y value for this dimension, 0 by default.",
+            "Minimum Y value for this dimension, -64 by default (1.18+ Overworld).",
             "Must be a multiple of 16."
     );
     public static final Setting<Integer> HEIGHT = Settings.intSetting(
-            "Height", 256, 16, Constants.WORLD_MAX_HEIGHT,
+            "Height", 384, 16, Constants.WORLD_MAX_HEIGHT,
             t -> ((DimensionSettings) t).getHeight(),
-            "Total height of this dimension, 256 by default (0 to 255).",
+            "Total height of this dimension, 384 by default (1.18+ Overworld: -64 to 319).",
             "Must be a multiple of 16."
     );
     public static final Setting<Integer> LOGICAL_HEIGHT = Settings.intSetting(
-            "LogicalHeight", 256, 16, Constants.WORLD_MAX_HEIGHT,
+            "LogicalHeight", 384, 16, Constants.WORLD_MAX_HEIGHT,
             t -> ((DimensionSettings) t).getLogicalHeight(),
             "The max height at which nether portals and chorus fruits can safely teleport players in this dimension.",
             "Does not affect existing portals.",

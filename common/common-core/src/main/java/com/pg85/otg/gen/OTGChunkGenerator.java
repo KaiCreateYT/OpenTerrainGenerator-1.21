@@ -470,10 +470,20 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                 // Add the falloff at this height
                 noise += falloff;
 
-                // TODO: This probably should be changed to reflect the new world height cap
-                // Reduce the last 4 layers
-                if (y > 28) {
-                    noise = MathHelper.clampedLerp(noise, -10, ((double) y - 28) / 4.0);
+                // Anti-floating terrain: aggressive falloff for heights significantly above expected surface
+                // This prevents isolated pockets of terrain from forming floating islands
+                double heightDiff = y - height;
+                if (heightDiff > 4) {
+                    // Quadratic penalty for terrain above expected height + 4 layers buffer
+                    double floatingPenalty = (heightDiff - 4) * (heightDiff - 4) * 0.5;
+                    noise -= floatingPenalty;
+                }
+
+                // Reduce the last 4 layers (dynamically calculated based on world height)
+                // For 256 world (32 layers): y > 28, for 384 world (48 layers): y > 44
+                int reductionStartY = this.noiseSizeY - 4;
+                if (y > reductionStartY) {
+                    noise = MathHelper.clampedLerp(noise, -10, ((double) y - reductionStartY) / 4.0);
                 }
             }
 

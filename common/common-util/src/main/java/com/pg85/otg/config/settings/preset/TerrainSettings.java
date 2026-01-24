@@ -29,16 +29,18 @@ public class TerrainSettings extends ConfigSection {
             "Also causes snow to fall through leaves, leaves can carry 3 layers while the rest falls through."
     );
     public static final Setting<Integer> WORLD_HEIGHT_SCALE_BITS = Settings.intSetting(
-            "WorldHeightScaleBits", 7, 5, 8,
+            "WorldHeightScaleBits", 8, 5, 9,
             t -> ((TerrainSettings) t).getWorldHeightScale(),
             "The height scale of the world. Increasing this by one doubles the terrain height of the world,",
-            "substracting one halves the terrain height. Values must be between 5 and 8, inclusive."
+            "substracting one halves the terrain height. Values must be between 5 and 9, inclusive.",
+            "For 1.18+ worlds with 384 height, use 8 (256) or 9 (512)."
     );
     public static final Setting<Integer> WORLD_HEIGHT_CAP_BITS = Settings.intSetting(
-            "WorldHeightCapBits", 8, 5, 8,
+            "WorldHeightCapBits", 9, 5, 9,
             t -> ((TerrainSettings) t).getWorldHeightCap(),
             "The height cap of the world. A cap of 7 will make sure that there is no terrain above 128 (y=2^7). Near this cap less and less terrain generates with no terrain above this cap.",
-            "Values must be between 5 and 8 (inclusive), and may not be lower that WorldHeightScaleBits."
+            "Values must be between 5 and 9 (inclusive), and may not be lower that WorldHeightScaleBits.",
+            "For 1.18+ worlds with 384 height, use 9 (512)."
     );
     public static final Setting<Integer> WATER_LEVEL_MAX = Settings.intSetting(
             "WaterLevelMax", 63, Constants.WORLD_START_MIN_Y, Constants.WORLD_END_MAX_Y,

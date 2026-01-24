@@ -58,7 +58,7 @@ BiomeHeight: 0.225
 
 BiomeVolatility: 0.25
 
-SmoothRadius: 2
+SmoothRadius: 8
 
 CustomHeightControlSmoothRadius: 2
 
