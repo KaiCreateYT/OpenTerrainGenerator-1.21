@@ -41,9 +41,9 @@ BiomeRarityWhenIsle: 97
 
 BiomeIsBorder: Mesa
 
-OnlyBorderNear: 
+OnlyBorderNear:
 
-NotBorderNear: Cold Ocean, Deep Cold Ocean, Deep Frozen Ocean, Deep Lukewarm Ocean, Deep Ocean, Deep Warm Ocean, Frozen Ocean, Lukewarm Ocean, Ocean, Warm Ocean, Badlands Plateau, Eroded Badlands, Modified Badlands Plateau, Modified Wooded Badlands Plateau, Wooded Badlands Plateau
+NotBorderNear: Cold Ocean, Deep Cold Ocean, Deep Frozen Ocean, Frozen Ocean, Taiga, Taiga Hills, Taiga Mountains, Snowy Taiga, Snowy Taiga Hills, Snowy Taiga Mountains, Snowy Tundra, Snowy Mountains, Snowy Beach, Ice Spikes, Giant Tree Taiga, Giant Spruce Taiga
 
 BiomeSizeWhenBorder: 8
 
@@ -54,7 +54,7 @@ BiomeSizeWhenBorder: 8
 # +-----------------------------------------------------------------+ #
 #######################################################################
 
-BiomeHeight: 0.125
+BiomeHeight: 0.25
 
 BiomeVolatility: 0.05
 
