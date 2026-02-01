@@ -11,6 +11,9 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.storage.LevelResource;
 
 import java.io.IOException;
@@ -40,11 +43,93 @@ public class FabricDimensionHelper {
                 new ResourceLocation(Constants.MOD_ID_SHORT, dimensionName));
         ServerLevel level = player.server.getLevel(dimKey);
         if (level != null) {
-            BlockPos spawn = level.getSharedSpawnPos();
-            player.teleportTo(level, spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5, player.getYRot(), player.getXRot());
+            BlockPos safeSpawn = findSafeSpawn(level);
+            player.teleportTo(level, safeSpawn.getX() + 0.5, safeSpawn.getY(), safeSpawn.getZ() + 0.5, player.getYRot(), player.getXRot());
         } else {
             OTGLog.warn("Cannot teleport to dimension %s - not loaded (server restart may be required)", dimensionName);
         }
+    }
+
+    /**
+     * Finds a safe spawn location in the given level.
+     * Searches in a spiral pattern from 0,0 for solid ground with air above.
+     */
+    public BlockPos findSafeSpawn(ServerLevel level) {
+        // First try the world spawn
+        BlockPos worldSpawn = level.getSharedSpawnPos();
+        BlockPos safe = findSafeY(level, worldSpawn.getX(), worldSpawn.getZ());
+        if (safe != null) {
+            return safe;
+        }
+
+        // Search in spiral pattern from 0,0
+        int maxRadius = 1000;
+        int step = 16; // Check every chunk
+
+        for (int radius = 0; radius <= maxRadius; radius += step) {
+            // Check points at this radius
+            for (int dx = -radius; dx <= radius; dx += step) {
+                for (int dz = -radius; dz <= radius; dz += step) {
+                    // Only check points on the edge of the square
+                    if (Math.abs(dx) != radius && Math.abs(dz) != radius) {
+                        continue;
+                    }
+
+                    safe = findSafeY(level, dx, dz);
+                    if (safe != null) {
+                        OTGLog.info("Found safe spawn at %d, %d, %d", safe.getX(), safe.getY(), safe.getZ());
+                        return safe;
+                    }
+                }
+            }
+        }
+
+        // Fallback: return high Y at 0,0 and hope for the best
+        OTGLog.warn("Could not find safe spawn, using fallback at 0, 256, 0");
+        return new BlockPos(0, 256, 0);
+    }
+
+    /**
+     * Finds a safe Y level at the given X,Z coordinates.
+     * Returns null if no safe spot found.
+     */
+    private BlockPos findSafeY(ServerLevel level, int x, int z) {
+        // Make sure chunk is loaded/generated
+        ChunkAccess chunk = level.getChunk(x >> 4, z >> 4, ChunkStatus.FULL, true);
+        if (chunk == null) {
+            return null;
+        }
+
+        int minY = level.getMinBuildHeight();
+        int maxY = level.getMaxBuildHeight();
+
+        // Scan from top down to find solid ground with air above
+        for (int y = maxY - 2; y > minY; y--) {
+            BlockPos pos = new BlockPos(x, y, z);
+            BlockPos above1 = pos.above();
+            BlockPos above2 = above1.above();
+
+            BlockState ground = level.getBlockState(pos);
+            BlockState air1 = level.getBlockState(above1);
+            BlockState air2 = level.getBlockState(above2);
+
+            // Need solid ground, with 2 blocks of air above for player
+            if (isSolidGround(ground) && isPassable(air1) && isPassable(air2)) {
+                return above1; // Return the position where player feet will be
+            }
+        }
+
+        return null;
+    }
+
+    private boolean isSolidGround(BlockState state) {
+        // Check if block is solid and not liquid
+        return state.isSolid() && !state.liquid();
+    }
+
+    private boolean isPassable(BlockState state) {
+        // Air or non-solid blocks player can stand in
+        return state.isAir() || (!state.isSolid() && !state.liquid());
     }
 
     public List<ServerPlayer> getPlayersInDimension(MinecraftServer server, String dimensionName) {

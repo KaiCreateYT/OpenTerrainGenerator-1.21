@@ -146,6 +146,10 @@ public class FabricDimensionManager {
         helper.teleportToDimension(player, dimensionName.toLowerCase().replace(" ", "_"));
     }
 
+    public FabricDimensionHelper getHelper() {
+        return helper;
+    }
+
     // Result classes
     public record CreateResult(boolean success, String error, DimensionInfo info) {
         public static CreateResult success(DimensionInfo info) {

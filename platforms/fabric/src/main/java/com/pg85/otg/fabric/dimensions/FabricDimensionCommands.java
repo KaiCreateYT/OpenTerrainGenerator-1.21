@@ -213,7 +213,9 @@ public class FabricDimensionCommands {
         if (vanillaKey != null) {
             ServerLevel targetLevel = player.getServer().getLevel(vanillaKey);
             if (targetLevel != null) {
-                player.teleportTo(targetLevel, player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
+                // Use world spawn for vanilla dimensions
+                var spawn = targetLevel.getSharedSpawnPos();
+                player.teleportTo(targetLevel, spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5, player.getYRot(), player.getXRot());
                 ctx.getSource().sendSuccess(() -> Component.literal(
                         "Teleported to " + dimensionName
                 ), false);
@@ -232,12 +234,13 @@ public class FabricDimensionCommands {
 
         var infoOpt = manager.getDimensionInfo(dimensionName);
         if (infoOpt.isEmpty()) {
-            // Try to find it as a generic dimension key
+            // Try to find it as a generic dimension key (for dimensions not in storage)
             ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION,
                     new ResourceLocation("otg", dimensionName));
             ServerLevel targetLevel = player.getServer().getLevel(dimKey);
             if (targetLevel != null) {
-                player.teleportTo(targetLevel, player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
+                var spawn = manager.getHelper().findSafeSpawn(targetLevel);
+                player.teleportTo(targetLevel, spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5, player.getYRot(), player.getXRot());
                 ctx.getSource().sendSuccess(() -> Component.literal(
                         "Teleported to otg:" + dimensionName
                 ), false);
