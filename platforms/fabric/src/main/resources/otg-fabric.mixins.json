@@ -12,7 +12,9 @@
     "WorldPresetTagsMixin",
     "CocoaDecoratorMixin",
     "StructureManagerAccessor",
-    "WorldSaveMixin"
+    "WorldSaveMixin",
+    "MinecraftServerAccessor",
+    "MappedRegistryAccessor"
   ],
   "client": [
   ],
