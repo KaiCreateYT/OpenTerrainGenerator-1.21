@@ -10,10 +10,16 @@ import com.pg85.otg.presets.Preset;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -33,12 +39,17 @@ public class FabricDimensionCommands {
     };
 
     private static final SuggestionProvider<CommandSourceStack> DIMENSION_SUGGESTIONS = (context, builder) -> {
-        if (manager == null) {
-            return builder.buildFuture();
+        List<String> dimensions = new ArrayList<>();
+        // Add vanilla dimensions
+        dimensions.add("overworld");
+        dimensions.add("the_nether");
+        dimensions.add("the_end");
+        // Add OTG dimensions
+        if (manager != null) {
+            manager.listDimensions().stream()
+                    .map(DimensionInfo::getName)
+                    .forEach(dimensions::add);
         }
-        List<String> dimensions = manager.listDimensions().stream()
-                .map(DimensionInfo::getName)
-                .toList();
         return SharedSuggestionProvider.suggest(dimensions, builder);
     };
 
@@ -190,11 +201,6 @@ public class FabricDimensionCommands {
     }
 
     private static int teleport(CommandContext<CommandSourceStack> ctx) {
-        if (manager == null) {
-            ctx.getSource().sendFailure(Component.literal("Dimension manager not initialized"));
-            return 0;
-        }
-
         String dimensionName = StringArgumentType.getString(ctx, "dimension");
 
         if (!(ctx.getSource().getEntity() instanceof ServerPlayer player)) {
@@ -202,8 +208,42 @@ public class FabricDimensionCommands {
             return 0;
         }
 
+        // Check for vanilla dimensions first
+        ResourceKey<Level> vanillaKey = getVanillaDimensionKey(dimensionName);
+        if (vanillaKey != null) {
+            ServerLevel targetLevel = player.getServer().getLevel(vanillaKey);
+            if (targetLevel != null) {
+                player.teleportTo(targetLevel, player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
+                ctx.getSource().sendSuccess(() -> Component.literal(
+                        "Teleported to " + dimensionName
+                ), false);
+                return 1;
+            } else {
+                ctx.getSource().sendFailure(Component.literal("Dimension " + dimensionName + " is not loaded"));
+                return 0;
+            }
+        }
+
+        // Check for OTG dimensions
+        if (manager == null) {
+            ctx.getSource().sendFailure(Component.literal("Dimension manager not initialized"));
+            return 0;
+        }
+
         var infoOpt = manager.getDimensionInfo(dimensionName);
         if (infoOpt.isEmpty()) {
+            // Try to find it as a generic dimension key
+            ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION,
+                    new ResourceLocation("otg", dimensionName));
+            ServerLevel targetLevel = player.getServer().getLevel(dimKey);
+            if (targetLevel != null) {
+                player.teleportTo(targetLevel, player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
+                ctx.getSource().sendSuccess(() -> Component.literal(
+                        "Teleported to otg:" + dimensionName
+                ), false);
+                return 1;
+            }
+
             ctx.getSource().sendFailure(Component.literal(
                     "Unknown dimension '" + dimensionName + "'. Use /otg dimension list"
             ));
@@ -215,5 +255,14 @@ public class FabricDimensionCommands {
                 "Teleported to otg:" + infoOpt.get().getName()
         ), false);
         return 1;
+    }
+
+    private static ResourceKey<Level> getVanillaDimensionKey(String name) {
+        return switch (name.toLowerCase()) {
+            case "overworld", "minecraft:overworld" -> Level.OVERWORLD;
+            case "the_nether", "nether", "minecraft:the_nether" -> Level.NETHER;
+            case "the_end", "end", "minecraft:the_end" -> Level.END;
+            default -> null;
+        };
     }
 }
