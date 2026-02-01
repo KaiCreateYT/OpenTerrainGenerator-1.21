@@ -48,6 +48,7 @@ public class LocalMaterials
 	public static LocalMaterialData RED_TERRACOTTA;
 	public static LocalMaterialData SILVER_TERRACOTTA;
 	public static LocalMaterialData STONE;
+	public static LocalMaterialData DEEPSLATE;
 	public static LocalMaterialData NETHERRACK;
 	public static LocalMaterialData END_STONE;
 	public static LocalMaterialData SAND;

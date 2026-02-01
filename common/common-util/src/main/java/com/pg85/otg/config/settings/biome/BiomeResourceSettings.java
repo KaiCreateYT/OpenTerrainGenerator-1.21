@@ -129,29 +129,20 @@ public class BiomeResourceSettings extends ConfigSection {
         builder.customStructures(new ArrayList<>());
         builder.resourceQueue(new ArrayList<>());
 
-        // DEBUG: Log incoming resources
-        System.err.println("DEBUG BiomeResourceSettings: Received " + resources.size() + " resources to process");
-
         BiomeResourceSettings settings = builder.build();
         settings.readResourceSettings(resources);
-
-        // DEBUG: Log final queue size
-        System.err.println("DEBUG BiomeResourceSettings: Final queue has " + settings.resourceQueue.size() + " resources");
 
         return settings;
     }
 
     protected void readResourceSettings(List<ConfigFunction<BiomeSettings>> resources)
     {
-        int added = 0;
-        int saplings = 0;
         for (ConfigFunction<BiomeSettings> res : resources)
         {
             if (res != null)
             {
                 if (res instanceof ISaplingSpawner sapling)
                 {
-                    saplings++;
                     if (sapling.getSaplingType() == SaplingType.Custom)
                     {
                         // Puts big custom saplings in the big list and small in the small list
@@ -166,7 +157,6 @@ public class BiomeResourceSettings extends ConfigSection {
                     }
                 } else {
                     this.resourceQueue.add(res);
-                    added++;
                     if (res instanceof ICustomStructureGen)
                     {
                         this.customStructures.add((ICustomStructureGen) res);
@@ -174,6 +164,5 @@ public class BiomeResourceSettings extends ConfigSection {
                 }
             }
         }
-        System.err.println("DEBUG readResourceSettings: Added " + added + " resources, " + saplings + " saplings");
     }
 }

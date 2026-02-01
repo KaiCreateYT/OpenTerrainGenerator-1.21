@@ -29,6 +29,7 @@ import net.minecraft.data.worldgen.features.TreeFeatures;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.IntTag;
 import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.monster.Guardian;
@@ -537,10 +538,9 @@ public class FabricWorldGenRegion extends LocalWorldGenRegion {
             nbtTagCompound = new CompoundTag();
             if (entityData.getNameTagOrNBTFileName().toLowerCase().trim().endsWith(".txt")) {
                 try {
-                    var inputStream =
-                        new DataInputStream(new ByteArrayInputStream(entityData.getMetaData().getBytes()));
-                    nbtTagCompound = NbtIo.read(inputStream);
-                } catch (IOException | ReportedException e) {
+                    // Parse SNBT (text-based NBT format like {PersistenceRequired:1})
+                    nbtTagCompound = TagParser.parseTag(entityData.getMetaData());
+                } catch (Exception e) {
                     if (OTGLog.getLogger().getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS)) {
                         OTGLog.log(
                             LogLevel.ERROR,

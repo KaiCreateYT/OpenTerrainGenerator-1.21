@@ -181,8 +181,14 @@ public abstract class BiomeSettings implements ConfigFile {
             writeConfigSection(writer, surfaceSettings);
         if (visualSettings != null)
             writeConfigSection(writer, visualSettings);
-        if (resourceSettings != null)
+        if (resourceSettings != null) {
             writeConfigSection(writer, resourceSettings);
+            // Write resource queue and saplings as ConfigFunctions
+            writer.addConfigFunctions(resourceSettings.getResourceQueue());
+            writer.addConfigFunctions(resourceSettings.getSaplingGrowers().values());
+            writer.addConfigFunctions(resourceSettings.getCustomSaplingGrowers().values());
+            writer.addConfigFunctions(resourceSettings.getCustomBigSaplingGrowers().values());
+        }
         if (structureSettings != null)
             writeConfigSection(writer, structureSettings);
         if (mobSettings != null)

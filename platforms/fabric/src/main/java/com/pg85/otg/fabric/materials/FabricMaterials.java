@@ -44,6 +44,7 @@ public class FabricMaterials extends LocalMaterials
 		RED_TERRACOTTA = FabricMaterialData.ofBlockState(Blocks.RED_TERRACOTTA.defaultBlockState());
 		SILVER_TERRACOTTA = FabricMaterialData.ofBlockState(Blocks.LIGHT_GRAY_TERRACOTTA.defaultBlockState());
 		STONE = FabricMaterialData.ofBlockState(Blocks.STONE.defaultBlockState());
+		DEEPSLATE = FabricMaterialData.ofBlockState(Blocks.DEEPSLATE.defaultBlockState());
 		NETHERRACK = FabricMaterialData.ofBlockState(Blocks.NETHERRACK.defaultBlockState());
 		END_STONE = FabricMaterialData.ofBlockState(Blocks.END_STONE.defaultBlockState());
 		SAND = FabricMaterialData.ofBlockState(Blocks.SAND.defaultBlockState());

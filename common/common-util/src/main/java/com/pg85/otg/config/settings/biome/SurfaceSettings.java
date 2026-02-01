@@ -282,10 +282,12 @@ public class SurfaceSettings extends ConfigSection {
         return cooledLavaBlock;
     }
     public LocalMaterialData getStoneBlockReplaced(int y) {
+        // Use deepslate below Y=0 (1.18+ terrain generation)
+        LocalMaterialData baseBlock = (y < 0) ? LocalMaterials.DEEPSLATE : stoneBlock;
         if (replacedBlocks.replacesStone) {
-            return replacedBlocks.replaceBlock(y, stoneBlock);
+            return replacedBlocks.replaceBlock(y, baseBlock);
         }
-        return stoneBlock;
+        return baseBlock;
     }
 
     public LocalMaterialData getBedrockBlockReplaced(int y) {

@@ -283,8 +283,9 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
             if (noiseHeight < -1.0D) {
                 noiseHeight = -1.0D;
             }
-            // Guard against division by zero when maxAverageDepth is 0 (default value)
-            if (maxAverageDepth != 0.0D) {
+            // Guard against division by near-zero or negative maxAverageDepth which causes terrain spikes
+            // Only divide when maxAverageDepth is positive and significant
+            if (maxAverageDepth > 0.1) {
                 noiseHeight /= maxAverageDepth;
             }
             noiseHeight /= 1.4D;

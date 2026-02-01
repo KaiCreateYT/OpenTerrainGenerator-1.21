@@ -87,12 +87,6 @@ public final class SimpleSettingsMap implements SettingsMap
 	public <T> List<ConfigFunction<T>> getConfigFunctions(T holder, IConfigFunctionProvider configFunctionProvider, String presetFolderName)
 	{
 		ILogger logger = OTGLog.getLogger();
-		// DEBUG: Log how many config functions are found
-		if (configFunctions.isEmpty()) {
-			System.err.println("DEBUG getConfigFunctions: No config functions found in " + this.name);
-		} else if (this.name.contains("Forest") || this.name.contains("Jungle")) {
-			System.err.println("DEBUG getConfigFunctions: Found " + configFunctions.size() + " functions in " + this.name);
-		}
 		List<ConfigFunction<T>> result = new ArrayList<ConfigFunction<T>>(configFunctions.size());
 		for (RawSettingValue configFunctionLine : configFunctions)
 		{
