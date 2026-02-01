@@ -64,15 +64,14 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
             RecordCodecBuilder.create(instance ->
                     instance.group(
                             OTGFabricBiomeProvider.CODEC.fieldOf("biome_source").forGetter(OTGFabricChunkGenerator::getBiomeSource),
-                            NoiseGeneratorSettings.CODEC.fieldOf("settings").forGetter(OTGFabricChunkGenerator::getSettings),
-                            RegistryCodecs.fullCodec(Registries.BIOME, Lifecycle.stable(), Biome.DIRECT_CODEC).fieldOf("biomeRegistry").forGetter(OTGFabricChunkGenerator::getBiomeRegistry)
-                    ).apply(instance, instance.stable(OTGFabricChunkGenerator::new)));
+                            NoiseGeneratorSettings.CODEC.fieldOf("settings").forGetter(OTGFabricChunkGenerator::getSettings)
+                    ).apply(instance, instance.stable(OTGFabricChunkGenerator::createFromCodec)));
 
     private final Holder<NoiseGeneratorSettings> settings;
     private final OTGFabricBiomeProvider biomeSource;
     private final OTGChunkGenerator internalGenerator;
     private final Preset preset;
-    private final Registry<Biome> biomeRegistry;
+    private Registry<Biome> biomeRegistry;
     private final NoiseBasedChunkGenerator horribleDelegateForCarvers;
     private final ShadowChunkGenerator shadowChunkGenerator;
     private Aquifer.FluidPicker globalFluidPicker = null;
@@ -81,6 +80,15 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
     private Long seed = 0L;
     private ServerLevel serverLevel = null;
     private final OTGWorldInfo otgWorldInfo;
+
+    /**
+     * Factory method for CODEC deserialization - biomeRegistry will be set later from ServerLevel
+     */
+    public static OTGFabricChunkGenerator createFromCodec(
+            OTGFabricBiomeProvider biomeSource, Holder<NoiseGeneratorSettings> settings
+    ) {
+        return new OTGFabricChunkGenerator(biomeSource, settings, null);
+    }
 
     public OTGFabricChunkGenerator(
             OTGFabricBiomeProvider biomeSource, Holder<NoiseGeneratorSettings> settings, Registry<Biome> biomeHolderGetter
@@ -119,6 +127,10 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
         synchronized (this) {
             if (this.serverLevel == null) {
                 this.serverLevel = serverLevel;
+                // Set biomeRegistry from server if not set during construction (datapack loading)
+                if (this.biomeRegistry == null) {
+                    this.biomeRegistry = serverLevel.registryAccess().registryOrThrow(Registries.BIOME);
+                }
             }
         }
     }

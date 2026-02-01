@@ -35,15 +35,12 @@ public class DimensionDatapack {
     public void createDimensionFiles(DimensionInfo info, DimensionSettings settings) throws IOException {
         ensurePackMcmeta();
 
-        // Create dimension_type JSON
-        Path dimTypePath = datapackPath.resolve("data")
-                .resolve(Constants.MOD_ID_SHORT)
-                .resolve("dimension_type")
-                .resolve(info.getName() + ".json");
-        Files.createDirectories(dimTypePath.getParent());
-        Files.writeString(dimTypePath, generateDimensionTypeJson(settings));
+        // NOTE: Do NOT create dimension_type JSON - OTG already registers dimension types
+        // for all presets via RegistryLoaderMixin. Creating a datapack dimension_type would
+        // cause a "duplicate ID" conflict.
 
-        // Create dimension JSON
+        // Create dimension JSON only - this defines the actual world/level using the
+        // dimension type that OTG already registered
         Path dimPath = datapackPath.resolve("data")
                 .resolve(Constants.MOD_ID_SHORT)
                 .resolve("dimension")
@@ -55,19 +52,22 @@ public class DimensionDatapack {
     }
 
     public void deleteDimensionFiles(String name) throws IOException {
-        Path dimTypePath = datapackPath.resolve("data")
-                .resolve(Constants.MOD_ID_SHORT)
-                .resolve("dimension_type")
-                .resolve(name + ".json");
         Path dimPath = datapackPath.resolve("data")
                 .resolve(Constants.MOD_ID_SHORT)
                 .resolve("dimension")
                 .resolve(name + ".json");
 
-        Files.deleteIfExists(dimTypePath);
         Files.deleteIfExists(dimPath);
 
         OTGLog.info("Deleted datapack files for dimension %s", name);
+    }
+
+    private String formatInfiniburn(String infiniburn) {
+        // Minecraft requires # prefix for tag references in datapacks
+        if (infiniburn != null && !infiniburn.startsWith("#")) {
+            return "#" + infiniburn;
+        }
+        return infiniburn;
     }
 
     private String generateDimensionTypeJson(DimensionSettings settings) {
@@ -88,7 +88,13 @@ public class DimensionDatapack {
                   "height": %d,
                   "infiniburn": "%s",
                   "effects": "%s",
-                  "monster_spawn_light_level": %d,
+                  "monster_spawn_light_level": {
+                    "type": "minecraft:uniform",
+                    "value": {
+                      "min_inclusive": %d,
+                      "max_inclusive": %d
+                    }
+                  },
                   "monster_spawn_block_light_limit": %d
                 }
                 """,
@@ -105,26 +111,35 @@ public class DimensionDatapack {
                 settings.getLogicalHeight(),
                 settings.getMinY(),
                 settings.getHeight(),
-                settings.getInfiniburn(),
+                formatInfiniburn(settings.getInfiniburn()),
                 settings.getEffectsLocation().toLowerCase(),
-                settings.getMonsterSpawnLightLimit(),
+                settings.getMonsterSpawnLightVariationMin(),
+                settings.getMonsterSpawnLightVariationMax(),
                 settings.getMonsterSpawnLightLimit()
         );
     }
 
     private String generateDimensionJson(DimensionInfo info) {
+        // Format must match OTGFabricChunkGenerator.CODEC:
+        // - biome_source: OTGFabricBiomeProvider with preset_name and seed
+        // - settings: reference to noise settings (use overworld as default)
         return String.format("""
                 {
                   "type": "%s:%s",
                   "generator": {
-                    "type": "%s:otg",
-                    "preset": "%s",
-                    "seed": %d
+                    "type": "%s:%s",
+                    "biome_source": {
+                      "type": "%s:%s",
+                      "preset_name": "%s",
+                      "seed": %d
+                    },
+                    "settings": "minecraft:overworld"
                   }
                 }
                 """,
                 Constants.MOD_ID_SHORT, info.getName(),
-                Constants.MOD_ID_SHORT,
+                Constants.MOD_ID_SHORT, Constants.MOD_ID_SHORT,
+                Constants.MOD_ID_SHORT, Constants.MOD_ID_SHORT,
                 info.getPreset(),
                 info.getSeed()
         );
