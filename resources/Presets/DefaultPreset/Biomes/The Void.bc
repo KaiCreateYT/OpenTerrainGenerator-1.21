@@ -70,9 +70,9 @@ Volatility1: 0.0
 
 Volatility2: 0.0
 
-VolatilityWeight1: 0.5
+VolatilityWeight1: 48.0
 
-VolatilityWeight2: 0.45
+VolatilityWeight2: 46.8
 
 DisableBiomeHeight: true
 
