@@ -25,6 +25,30 @@ We're always looking for people to contribute or collaborate with. For OTG 1.20,
 - All you have to do is Open IntelliJ and import the project folder, make sure you Trust the gradle project, and IntelliJ will do the rest :)
 - Follow the same instructions that you do for Eclipse if you want to build -- do note that IntelliJ has a gradle GUI that you can use once you've imported the project. (Should be on the right of the code.)
 
+## Commands
+
+### Dimension Management
+
+OTG supports creating custom dimensions from any preset:
+
+| Command | Permission | Description |
+|---------|------------|-------------|
+| `/otg dimension create <preset>` | OP (level 2) | Creates a new dimension using the specified preset. Requires server restart. |
+| `/otg dimension delete <name>` | OP (level 2) | Removes a dimension (keeps world data). |
+| `/otg dimension delete <name> --purge --confirm` | OP (level 2) | Removes a dimension and deletes all world data permanently. |
+| `/otg dimension list` | All players | Lists all OTG dimensions. |
+| `/otg dimension info <name>` | All players | Shows dimension details (preset, seed, creation date). |
+
+### Teleportation
+
+| Command | Permission | Description |
+|---------|------------|-------------|
+| `/otg tp <dimension>` | All players | Teleports to the specified dimension. Automatically finds safe spawn location. |
+
+Supported dimension names for `/otg tp`:
+- `overworld`, `the_nether`, `the_end` - vanilla dimensions
+- Any OTG dimension name (e.g., `void`, `biome_bundle`)
+
 ## Links
 * [CurseForge](https://minecraft.curseforge.com/projects/open-terrain-generator)
 * [Wiki](http://openterraingen.wikia.com/wiki/Open_Terrain_Generator_Wiki)
