@@ -37,9 +37,10 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
     // "It's a number that made the worldgen look good!" - Dinnerbone 2020
     private static final double WORLD_GEN_CONSTANT = 684.412;
 
-    // Reference Y sections from old 256-block world (256/8 + 1 = 33)
-    // Used to keep terrain at consistent absolute heights regardless of world height
-    private static final int REFERENCE_Y_SECTIONS = 33;
+    // Reference Y sections - controls base terrain height calculation
+    // Value 36 gives terrain at ~Y=85 for plains (about 20 blocks above sea level)
+    // Original 256-world value was 33, but 1.18+ worlds with minY=-64 need slightly higher
+    private static final float REFERENCE_Y_SECTIONS = 33.5f;
 
     private static final float[] BIOME_WEIGHT_TABLE = make(
             new float[65 * 65], (array) -> {
@@ -444,8 +445,9 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
         double verticalScale;
         double noise;
         for (int y = 0; y <= this.noiseSizeY; ++y) {
-            // Calculate falloff
-            falloff = (height - y) * 12.0D * 128.0D / worldHeightCap / volatility;
+            // Calculate falloff - controls how quickly terrain density drops with height difference
+            // Using fixed coefficient 6.0 (was 12*128/worldHeight which varied with world size)
+            falloff = (height - y) * 6.0D / volatility;
             if (falloff > 0.0) {
                 falloff *= 4.0;
             }
