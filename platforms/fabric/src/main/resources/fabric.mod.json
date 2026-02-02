@@ -21,6 +21,9 @@
   "entrypoints": {
     "main": [
       "com.pg85.otg.fabric.OTGPlugin"
+    ],
+    "cardinal-components-entity": [
+      "com.pg85.otg.fabric.portals.components.OTGComponents"
     ]
   },
   "mixins": [
@@ -30,9 +33,15 @@
   "depends": {
     "minecraft": "${minecraft_version}",
     "fabricloader": ">=${fabric_loader_version}",
-    "java": ">=17"
+    "java": ">=17",
+    "cardinal-components-entity": ">=5.2.0"
   },
   "suggests": {
     "another-mod": "*"
+  },
+  "custom": {
+    "cardinal-components": [
+      "otg:otg_player"
+    ]
   }
 }

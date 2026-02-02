@@ -3,6 +3,8 @@ package com.pg85.otg.fabric;
 import com.pg85.otg.OTG;
 import com.pg85.otg.fabric.dimensions.FabricDimensionCommands;
 import com.pg85.otg.fabric.dimensions.FabricDimensionManager;
+import com.pg85.otg.fabric.portals.FabricPortalBlocks;
+import com.pg85.otg.fabric.portals.PortalIgnitionHandler;
 import com.pg85.otg.fabric.events.WorldSaveCallback;
 import com.pg85.otg.fabric.gen.OTGFabricChunkGenerator;
 import com.pg85.otg.fabric.materials.FabricMaterialReader;
@@ -33,6 +35,7 @@ public class OTGPlugin implements ModInitializer {
 		registerWorldSave();
 		registerDimensionCommands();
 		registerServerEvents();
+		registerPortals();
 
 		OTG.log("OTG Engine started, presets loaded");
 	}
@@ -61,5 +64,11 @@ public class OTGPlugin implements ModInitializer {
 			FabricDimensionCommands.setManager(dimensionManager);
 			OTGLog.info("OTG Dimension Manager initialized");
 		});
+	}
+
+	void registerPortals() {
+		FabricPortalBlocks.register();
+		PortalIgnitionHandler.register();
+		OTGLog.info("OTG Portal blocks and ignition handler registered");
 	}
 }

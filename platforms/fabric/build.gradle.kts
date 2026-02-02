@@ -5,6 +5,13 @@ plugins {
     id("dev.architectury.loom")
 }
 
+repositories {
+    maven {
+        name = "Ladysnake Mods"
+        url = uri("https://maven.ladysnake.org/releases")
+    }
+}
+
 architectury {
     platformSetupLoomIde()
     fabric()
@@ -29,6 +36,9 @@ dependencies {
     compileOnly("org.projectlombok:lombok:1.18.32")
     annotationProcessor("org.projectlombok:lombok:1.18.32")
 
+    // Cardinal Components API for player portal state tracking
+    modImplementation("dev.onyxstudios.cardinal-components-api:cardinal-components-base:${project.property("cardinal_components_version")}")
+    modImplementation("dev.onyxstudios.cardinal-components-api:cardinal-components-entity:${project.property("cardinal_components_version")}")
 }
 
 loom {

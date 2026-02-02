@@ -539,4 +539,61 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
     {
         return this.shadowChunkGenerator.getMaterialInUnloadedChunk(this.serverLevel, this, this.otgWorldInfo, x, y, z);
     }
+
+    // Portal settings getters
+    public String getPortalColor() {
+        if (preset != null && preset.getPresetConfig() != null) {
+            return preset.getPresetConfig().getPortalSettings().getPortalColor();
+        }
+        return "default";
+    }
+
+    public List<LocalMaterialData> getPortalBlocks() {
+        if (preset != null && preset.getPresetConfig() != null) {
+            return preset.getPresetConfig().getPortalSettings().getPortalBlocks();
+        }
+        return new ArrayList<>();
+    }
+
+    public String getPortalMob() {
+        if (preset != null && preset.getPresetConfig() != null) {
+            return preset.getPresetConfig().getPortalSettings().getPortalMob();
+        }
+        return "minecraft:zombified_piglin";
+    }
+
+    public String getPortalIgnitionSource() {
+        if (preset != null && preset.getPresetConfig() != null) {
+            return preset.getPresetConfig().getPortalSettings().getPortalIgnitionSource();
+        }
+        return "minecraft:flint_and_steel";
+    }
+
+    public int getPortalMinWidth() {
+        if (preset != null && preset.getPresetConfig() != null) {
+            return preset.getPresetConfig().getPortalSettings().getPortalMinWidth();
+        }
+        return 2;
+    }
+
+    public int getPortalMaxWidth() {
+        if (preset != null && preset.getPresetConfig() != null) {
+            return preset.getPresetConfig().getPortalSettings().getPortalMaxWidth();
+        }
+        return 21;
+    }
+
+    public int getPortalMinHeight() {
+        if (preset != null && preset.getPresetConfig() != null) {
+            return preset.getPresetConfig().getPortalSettings().getPortalMinHeight();
+        }
+        return 3;
+    }
+
+    public int getPortalMaxHeight() {
+        if (preset != null && preset.getPresetConfig() != null) {
+            return preset.getPresetConfig().getPortalSettings().getPortalMaxHeight();
+        }
+        return 21;
+    }
 }

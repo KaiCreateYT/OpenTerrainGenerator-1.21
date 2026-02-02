@@ -49,6 +49,18 @@ Supported dimension names for `/otg tp`:
 - `overworld`, `the_nether`, `the_end` - vanilla dimensions
 - Any OTG dimension name (e.g., `void`, `biome_bundle`)
 
+## OTG Portals - Known Issues
+
+OTG supports nether-style portals with configurable colors and frame blocks. Current known issues:
+
+1. **Logout in OTG dimension** - After logging out while in an OTG dimension and logging back in, the player is teleported to the overworld instead of staying in the OTG dimension. The dimension is not loaded at server startup.
+
+2. **Frame block on return to overworld** - Auto-created portals in overworld use the destination preset's frame block, not the source. If overworld is not an OTG dimension, it falls back to quartz instead of the configured block.
+
+3. **Void-type presets (single island)** - Coordinate scaling 1:1 causes the portal in Void to be created in empty space instead of on the island, if the original overworld portal is far from (0,0).
+
+4. **Portal search radius** - The algorithm searches within 128 blocks. If the original portal is farther away, it creates a new one instead of linking to the existing one.
+
 ## Links
 * [CurseForge](https://minecraft.curseforge.com/projects/open-terrain-generator)
 * [Wiki](http://openterraingen.wikia.com/wiki/Open_Terrain_Generator_Wiki)
