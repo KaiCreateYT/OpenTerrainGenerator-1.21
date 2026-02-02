@@ -1,26 +1,52 @@
 package com.pg85.otg.fabric.dimensions;
 
+import com.google.common.collect.ImmutableList;
+import com.mojang.serialization.Lifecycle;
+import com.pg85.otg.OTG;
+import com.pg85.otg.config.settings.preset.DimensionSettings;
 import com.pg85.otg.constants.Constants;
+import com.pg85.otg.fabric.biome.OTGFabricBiomeProvider;
+import com.pg85.otg.fabric.gen.OTGFabricChunkGenerator;
+import com.pg85.otg.fabric.mixin.MappedRegistryAccessor;
 import com.pg85.otg.fabric.mixin.MinecraftServerAccessor;
+import com.pg85.otg.presets.Preset;
 import com.pg85.otg.util.OTGLog;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.MappedRegistry;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.progress.ChunkProgressListener;
+import net.minecraft.tags.TagKey;
+import net.minecraft.util.valueproviders.UniformInt;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkStatus;
+import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.dimension.LevelStem;
+import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
+import net.minecraft.world.level.storage.DerivedLevelData;
 import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.level.storage.LevelStorageSource;
+import net.minecraft.world.level.storage.WorldData;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.Executor;
 
 public class FabricDimensionHelper {
 
@@ -149,9 +175,137 @@ public class FabricDimensionHelper {
     }
 
     public void createDimensionRuntime(MinecraftServer server, String name, String presetName, long seed) throws Exception {
-        // Runtime dimension creation in Minecraft is complex and typically requires server restart.
-        // The datapack files are created by DimensionDatapack, and the dimension will be loaded on next restart.
-        OTGLog.info("Dimension %s created via datapack. Server restart required for full activation.", name);
+        Preset preset = OTG.getEngine().getPresetLoader().getPresetByFolderName(presetName);
+        if (preset == null) {
+            throw new IllegalArgumentException("Preset not found: " + presetName);
+        }
+
+        DimensionSettings dimSettings = preset.getPresetConfig().getDimensionSettings();
+        MinecraftServerAccessor serverAccessor = (MinecraftServerAccessor) server;
+
+        // Create ResourceKeys
+        ResourceLocation dimLocation = new ResourceLocation(Constants.MOD_ID_SHORT, name);
+        ResourceKey<Level> levelKey = ResourceKey.create(Registries.DIMENSION, dimLocation);
+        ResourceKey<DimensionType> dimTypeKey = ResourceKey.create(Registries.DIMENSION_TYPE, dimLocation);
+
+        // Check if already loaded
+        if (server.getLevel(levelKey) != null) {
+            OTGLog.warn("Dimension %s already loaded", name);
+            return;
+        }
+
+        // Get dimension type registry and unfreeze
+        Registry<DimensionType> dimTypeRegistry = server.registryAccess().registryOrThrow(Registries.DIMENSION_TYPE);
+        boolean wasFrozen = false;
+        if (dimTypeRegistry instanceof MappedRegistry<DimensionType> mappedRegistry) {
+            wasFrozen = ((MappedRegistryAccessor) mappedRegistry).isFrozen();
+            if (wasFrozen) {
+                ((MappedRegistryAccessor) mappedRegistry).setFrozen(false);
+            }
+        }
+
+        try {
+            // Check if dimension type already exists (e.g., from datapack)
+            Holder<DimensionType> dimTypeHolder;
+            if (dimTypeRegistry.containsKey(dimTypeKey)) {
+                // Use existing dimension type from datapack
+                dimTypeHolder = dimTypeRegistry.getHolderOrThrow(dimTypeKey);
+                OTGLog.info("Using existing dimension type: %s", dimTypeKey.location());
+            } else {
+                // Create and register new DimensionType
+                DimensionType dimensionType = createDimensionType(dimSettings);
+                if (dimTypeRegistry instanceof MappedRegistry<DimensionType> mappedRegistry) {
+                    mappedRegistry.register(dimTypeKey, dimensionType, Lifecycle.stable());
+                    OTGLog.info("Registered new dimension type: %s", dimTypeKey.location());
+                }
+                dimTypeHolder = dimTypeRegistry.getHolderOrThrow(dimTypeKey);
+            }
+
+            // Create ChunkGenerator
+            Registry<Biome> biomeRegistry = server.registryAccess().registryOrThrow(Registries.BIOME);
+            Registry<NoiseGeneratorSettings> noiseRegistry = server.registryAccess().registryOrThrow(Registries.NOISE_SETTINGS);
+            Holder<NoiseGeneratorSettings> noiseHolder = noiseRegistry.getHolderOrThrow(NoiseGeneratorSettings.OVERWORLD);
+
+            OTGFabricChunkGenerator chunkGenerator = new OTGFabricChunkGenerator(
+                    new OTGFabricBiomeProvider(presetName, seed),
+                    noiseHolder,
+                    biomeRegistry
+            );
+
+            // Create LevelStem
+            LevelStem levelStem = new LevelStem(dimTypeHolder, chunkGenerator);
+
+            // Create ServerLevelData
+            WorldData worldData = server.getWorldData();
+            DerivedLevelData derivedLevelData = new DerivedLevelData(worldData, worldData.overworldData());
+
+            // Create no-op progress listener
+            ChunkProgressListener progressListener = new ChunkProgressListener() {
+                @Override public void updateSpawnPos(ChunkPos pos) {}
+                @Override public void onStatusChange(ChunkPos pos, @Nullable ChunkStatus status) {}
+                @Override public void start() {}
+                @Override public void stop() {}
+            };
+
+            // Get executor and storage from server
+            Executor executor = serverAccessor.getExecutor();
+            LevelStorageSource.LevelStorageAccess storageSource = serverAccessor.getStorageSource();
+
+            // Create ServerLevel
+            ServerLevel serverLevel = new ServerLevel(
+                    server,
+                    executor,
+                    storageSource,
+                    derivedLevelData,
+                    levelKey,
+                    levelStem,
+                    progressListener,
+                    false,  // isDebug
+                    BiomeManager.obfuscateSeed(seed),
+                    ImmutableList.of(),  // custom spawners
+                    false,  // tickTime
+                    null    // randomSequences
+            );
+
+            // Add to server's level map
+            serverAccessor.getLevels().put(levelKey, serverLevel);
+
+            OTGLog.info("Created dimension %s at runtime - no restart required!", name);
+
+        } finally {
+            // Re-freeze registry if it was frozen before
+            if (wasFrozen && dimTypeRegistry instanceof MappedRegistry<DimensionType> mappedRegistry) {
+                ((MappedRegistryAccessor) mappedRegistry).setFrozen(true);
+            }
+        }
+    }
+
+    private DimensionType createDimensionType(DimensionSettings settings) {
+        return new DimensionType(
+                settings.getFixedTime(),
+                settings.isHasSkyLight(),
+                settings.isHasCeiling(),
+                settings.isUltraWarm(),
+                settings.isNatural(),
+                settings.getCoordinateScale(),
+                settings.isBedWorks(),
+                settings.isRespawnAnchorWorks(),
+                settings.getMinY(),
+                settings.getHeight(),
+                settings.getLogicalHeight(),
+                TagKey.create(Registries.BLOCK, new ResourceLocation(settings.getInfiniburn())),
+                new ResourceLocation(settings.getEffectsLocation().toLowerCase(Locale.ROOT)),
+                (float) settings.getAmbientLight(),
+                new DimensionType.MonsterSettings(
+                        settings.isPiglinSafe(),
+                        settings.isHasRaids(),
+                        UniformInt.of(
+                                settings.getMonsterSpawnLightVariationMin(),
+                                settings.getMonsterSpawnLightVariationMax()
+                        ),
+                        settings.getMonsterSpawnLightLimit()
+                )
+        );
     }
 
     public void deleteDimensionRuntime(MinecraftServer server, String name) throws Exception {

@@ -97,7 +97,7 @@ public class FabricDimensionCommands {
         if (result.success()) {
             ctx.getSource().sendSuccess(() -> Component.literal(
                     "Created dimension otg:" + result.info().getName() + " (seed: " + result.info().getSeed() + ")\n" +
-                    "Server restart required for full activation."
+                    "Use /otg tp " + result.info().getName() + " to teleport there."
             ), true);
             return 1;
         } else {
