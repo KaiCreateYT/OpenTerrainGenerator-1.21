@@ -61,6 +61,29 @@ OTG supports nether-style portals with configurable colors and frame blocks. Cur
 
 4. **Portal search radius** - The algorithm searches within 128 blocks. If the original portal is farther away, it creates a new one instead of linking to the existing one.
 
+## Development
+
+### Terrain Snapshot Testing
+
+OTG includes a headless terrain generation testing system that allows verifying terrain generation without running Minecraft. This is useful for regression testing after code changes.
+
+**Generate a baseline snapshot:**
+```bash
+./gradlew :common:common-test:run --args="generate --seed 12345 --output baseline.json --preset DefaultPreset --otg-root /path/to/otg/resources"
+```
+
+**Verify generation hasn't changed:**
+```bash
+./gradlew :common:common-test:run --args="verify --seed 12345 --baseline baseline.json --preset DefaultPreset --otg-root /path/to/otg/resources"
+```
+
+**Compare two snapshots:**
+```bash
+./gradlew :common:common-test:run --args="compare --baseline old.json --current new.json"
+```
+
+The snapshot captures height values at regular intervals across multiple chunks, allowing detection of any changes to terrain generation algorithms.
+
 ## Links
 * [CurseForge](https://minecraft.curseforge.com/projects/open-terrain-generator)
 * [Wiki](http://openterraingen.wikia.com/wiki/Open_Terrain_Generator_Wiki)

@@ -15,6 +15,7 @@ include(
         "common:common-customobject",
         "common:common-generator",
         "common:common-core",
+        "common:common-test",
         //"platforms:forge",
         "platforms:shared",
         "platforms:fabric",
