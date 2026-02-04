@@ -87,7 +87,7 @@ public abstract class Carver {
         double scaledZ;
         double scaledY;
         BiomeSettings biomeConfig;
-        MutableBoolean foundSurface;
+        MutableBoolean foundSurface = new MutableBoolean(false);
         if (this.isRegionUncarvable(
                 chunkBuffer,
                 chunkX,
@@ -112,7 +112,7 @@ public abstract class Carver {
                 if (!(scaledX * scaledX + scaledZ * scaledZ >= 1.0D))
                 //if (f * f + g * g < 1.0D)
                 {
-                    foundSurface = new MutableBoolean(false);
+                    foundSurface.setValue(false);
                     for (int currentY = maxY; currentY > minY; --currentY) {
                         scaledY = ((double) currentY - 0.5D - localY) / pitch;
                         if (!this.isPositionExcluded(
