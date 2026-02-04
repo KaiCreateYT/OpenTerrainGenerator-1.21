@@ -95,9 +95,18 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
     // TODO: Use new noise?
     private final ThreadLocal<double[]> biomeBlocksNoise =
             ThreadLocal.withInitial(() -> new double[Constants.CHUNK_SIZE * Constants.CHUNK_SIZE]);
-    private final ThreadLocal<Integer> lastX = ThreadLocal.withInitial(() -> Integer.MAX_VALUE);
-    private final ThreadLocal<Integer> lastZ = ThreadLocal.withInitial(() -> Integer.MAX_VALUE);
-    private final ThreadLocal<Double> lastNoise = ThreadLocal.withInitial(() -> 0d);
+    private final ThreadLocal<BiomeBlocksNoiseCache> biomeBlocksNoiseCache =
+            ThreadLocal.withInitial(BiomeBlocksNoiseCache::new);
+
+    /**
+     * Holder for primitive values to avoid ThreadLocal boxing overhead.
+     */
+    private static class BiomeBlocksNoiseCache {
+        int lastX = Integer.MAX_VALUE;
+        int lastZ = Integer.MAX_VALUE;
+        double lastNoise = 0.0;
+        final double[] buffer = new double[1];
+    }
 
     public OTGChunkGenerator(
             Preset preset,
@@ -831,11 +840,11 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
 
     // Used by sagc for generating surface/ground block patterns
     public double getBiomeBlocksNoiseValue(int blockX, int blockZ) {
-        double noise = this.lastNoise.get();
-        if (this.lastX.get() != blockX || this.lastZ.get() != blockZ) {
+        BiomeBlocksNoiseCache cache = this.biomeBlocksNoiseCache.get();
+        if (cache.lastX != blockX || cache.lastZ != blockZ) {
             double d1 = 0.03125D;
-            noise = this.biomeBlocksNoiseGen.getRegion(
-                    new double[1],
+            cache.lastNoise = this.biomeBlocksNoiseGen.getRegion(
+                    cache.buffer,
                     blockX,
                     blockZ,
                     1,
@@ -844,11 +853,10 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                     d1 * 2.0D,
                     1.0D
             )[0];
-            this.lastX.set(blockX);
-            this.lastZ.set(blockZ);
-            this.lastNoise.set(noise);
+            cache.lastX = blockX;
+            cache.lastZ = blockZ;
         }
-        return noise;
+        return cache.lastNoise;
     }
 
     private class NoiseCache {
