@@ -84,6 +84,26 @@ OTG includes a headless terrain generation testing system that allows verifying 
 
 The snapshot captures height values at regular intervals across multiple chunks, allowing detection of any changes to terrain generation algorithms.
 
+### Performance Benchmark
+
+Measure terrain generation performance:
+```bash
+./gradlew :common:common-test:run --args="benchmark --preset DefaultPreset --otg-root /path/to/otg/resources"
+```
+
+Options:
+- `--chunks <n>` - Chunks per iteration (default: 100)
+- `--warmup <n>` - Warmup iterations (default: 3)
+- `--iterations <n>` - Measurement iterations (default: 5)
+
+Example output:
+```
+=== RESULTS ===
+Average: 243.56 ms for 100 chunks
+Throughput: 410.6 chunks/sec
+Per chunk: 2.436 ms
+```
+
 ## Links
 * [CurseForge](https://minecraft.curseforge.com/projects/open-terrain-generator)
 * [Wiki](http://openterraingen.wikia.com/wiki/Open_Terrain_Generator_Wiki)
