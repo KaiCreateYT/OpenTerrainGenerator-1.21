@@ -95,8 +95,8 @@ public class ChunkCoordinate
 	public ChunkCoordinate toRegionCoord()
 	{
 		return ChunkCoordinate.fromChunkCoords(
-			MathHelper.floor((double)getChunkX() / (double)Constants.REGION_SIZE), 
-			MathHelper.floor((double)getChunkZ() / (double)Constants.REGION_SIZE)
+			Math.floorDiv(chunkX, Constants.REGION_SIZE),
+			Math.floorDiv(chunkZ, Constants.REGION_SIZE)
 		);
 	}
 
@@ -123,7 +123,7 @@ public class ChunkCoordinate
 	 */
 	public int getBlockX()
 	{
-		return chunkX * Constants.CHUNK_SIZE;
+		return chunkX << 4;
 	}
 
 	/**
@@ -133,7 +133,7 @@ public class ChunkCoordinate
 	 */
 	public int getBlockZ()
 	{
-		return chunkZ * Constants.CHUNK_SIZE;
+		return chunkZ << 4;
 	}
 
 	/**
