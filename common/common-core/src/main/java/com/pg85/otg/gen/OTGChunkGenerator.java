@@ -2,6 +2,7 @@ package com.pg85.otg.gen;
 
 import com.pg85.otg.OTG;
 import com.pg85.otg.config.settings.biome.BiomeSettings;
+import com.pg85.otg.config.settings.biome.SurfaceSettings;
 import com.pg85.otg.config.settings.biome.BiomeTerrainSettings;
 import com.pg85.otg.config.settings.preset.TerrainSettings;
 import com.pg85.otg.constants.Constants;
@@ -655,6 +656,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                                 density = MathHelper.clamp(rawNoise / 200.0D, -1.0D, 1.0D);
 
                                 biomeConfig = biomeConfigCache[localX * 16 + localZ];
+                                SurfaceSettings surfaceSettings = biomeConfig.getSurfaceSettings();
 
                                 // TODO: make this bigger and look better
                                 // Iterate through structures to add density
@@ -674,17 +676,17 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                                             localX,
                                             realY,
                                             localZ,
-                                            biomeConfig.getSurfaceSettings().getStoneBlockReplaced(realY)
+                                            surfaceSettings.getStoneBlockReplaced(realY)
                                     );
                                     buffer.setHighestBlockForColumn(pieceX + noiseX * 4, noiseZ * 4 + pieceZ, realY);
                                     debugBlockCount[0]++;
                                 } else if (realY < waterLevel[localX * 16 + localZ]
-                                           && realY > biomeConfig.getSurfaceSettings().getWaterLevelMin()) {
+                                           && realY > surfaceSettings.getWaterLevelMin()) {
                                     buffer.setBlock(
                                             localX,
                                             realY,
                                             localZ,
-                                            biomeConfig.getSurfaceSettings().getWaterBlockReplaced(realY)
+                                            surfaceSettings.getWaterBlockReplaced(realY)
                                     );
                                     buffer.setHighestBlockForColumn(pieceX + noiseX * 4, noiseZ * 4 + pieceZ, realY);
                                     debugWaterCount[0]++;
