@@ -85,6 +85,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
     private static final int NOISE_SIZE_Z = 4;
 
     private final ThreadLocal<NoiseCache> noiseCache;
+    private final ThreadLocal<double[][][]> noiseDataBuffer;
     private NoiseGeneratorPerlinMesaBlocks biomeBlocksNoiseGen;
     // Carvers
     private final Carver caves;
@@ -109,6 +110,15 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
 
         this.noiseSizeY = otgWorldInfo.getHeight() / Constants.PIECE_Y_SIZE;
         this.noiseCache = ThreadLocal.withInitial(() -> new NoiseCache(128, this.noiseSizeY + 1));
+        // Pre-allocate noise data buffer to avoid allocation per chunk (was ~4KB per chunk)
+        this.noiseDataBuffer = ThreadLocal.withInitial(() -> {
+            double[][][] buffer = new double[2][NOISE_SIZE_Z + 1][];
+            for (int z = 0; z < NOISE_SIZE_Z + 1; z++) {
+                buffer[0][z] = new double[this.noiseSizeY + 1];
+                buffer[1][z] = new double[this.noiseSizeY + 1];
+            }
+            return buffer;
+        });
 
         this.caves = new CaveCarver(preset.getPresetConfig());
         this.ravines = new RavineCarver(preset.getPresetConfig());
@@ -542,19 +552,17 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
             }
         }
 
-        // TODO: this double[][][] is probably really bad for performance
-        double[][][] noiseData = new double[2][NOISE_SIZE_Z + 1][this.noiseSizeY + 1];
+        // Reuse pre-allocated noise data buffer from ThreadLocal (avoids ~4KB allocation per chunk)
+        double[][][] noiseData = this.noiseDataBuffer.get();
         // Max smoothing radius is 32, so area covered is 32+5+32=69 (noise/biome coords, so *4)
 
         // Initialize noise data on the x0 column.
         for (int noiseZ = 0; noiseZ < NOISE_SIZE_Z + 1; ++noiseZ) {
-            noiseData[0][noiseZ] = new double[this.noiseSizeY + 1];
             this.getNoiseColumn(
                     noiseData[0][noiseZ],
                     chunkCoord.getChunkX() * NOISE_SIZE_X,
                     chunkCoord.getChunkZ() * NOISE_SIZE_Z + noiseZ
             );
-            noiseData[1][noiseZ] = new double[this.noiseSizeY + 1];
         }
 
         BiomeSettings biomeConfig;
