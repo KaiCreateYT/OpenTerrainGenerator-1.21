@@ -530,11 +530,15 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
         int blockZ = chunkCoord.getBlockZ();
 
         IBiome[] biomes = this.cachedBiomeProvider.getBiomesForChunk(chunkCoord);
+        // Cache biome settings to avoid 98k getBiomeSettings() calls per chunk (was called per-block, now per-column)
+        BiomeSettings[] biomeConfigCache = new BiomeSettings[Constants.OTHER_256];
         for (int x = 0; x < Constants.CHUNK_SIZE; x++) {
             for (int z = 0; z < Constants.CHUNK_SIZE; z++) {
+                int idx = x * Constants.CHUNK_SIZE + z;
+                BiomeSettings settings = biomes[idx].getBiomeSettings();
+                biomeConfigCache[idx] = settings;
                 // TODO: water levels used to be interpolated via bilinear interpolation. Do we still need to do that?
-                waterLevel[x * Constants.CHUNK_SIZE + z] =
-                        biomes[x * Constants.CHUNK_SIZE + z].getBiomeSettings().getSurfaceSettings().getWaterLevelMax();
+                waterLevel[idx] = settings.getSurfaceSettings().getWaterLevelMax();
             }
         }
 
@@ -642,7 +646,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                                 // Normalize the noise from (-256, 256) to [-1, 1]
                                 density = MathHelper.clamp(rawNoise / 200.0D, -1.0D, 1.0D);
 
-                                biomeConfig = biomes[localX * 16 + localZ].getBiomeSettings();
+                                biomeConfig = biomeConfigCache[localX * 16 + localZ];
 
                                 // TODO: make this bigger and look better
                                 // Iterate through structures to add density
