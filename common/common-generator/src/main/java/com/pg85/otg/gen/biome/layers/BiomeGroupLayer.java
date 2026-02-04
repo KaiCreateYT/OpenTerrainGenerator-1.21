@@ -69,16 +69,8 @@ class BiomeGroupLayer implements ParentedLayer
 		// Get a random rarity number from our max rarity
 		int chosenRarity = random.nextInt(maxRarity);
 
-		// Iterate through the rarity map and see if the chosen rarity is less than the rarity for each group, if it is then return.
-		for (Map.Entry<Integer, BiomeGroup> entry : rarityMap.entrySet())
-		{
-			if (chosenRarity < entry.getKey())
-			{
-				return entry.getValue();
-			}
-		}
-
-		// Don't place a biome group at this depth
-		return null;
+		// Use TreeMap.higherEntry for O(log n) lookup instead of O(n) iteration
+		Map.Entry<Integer, BiomeGroup> entry = rarityMap.higherEntry(chosenRarity);
+		return entry != null ? entry.getValue() : null;
 	}
 }
