@@ -7,8 +7,14 @@ import com.pg85.otg.util.helpers.MathHelper;
 // Derived from net.minecraft.world.gen.SimplexNoiseGenerator
 class SimplexNoiseSampler
 {
-	// TODO: flatten this array
-	protected static final int[][] GRAD = new int[][] {{1, 1, 0}, {-1, 1, 0}, {1, -1, 0}, {-1, -1, 0}, {1, 0, 1}, {-1, 0, 1}, {1, 0, -1}, {-1, 0, -1}, {0, 1, 1}, {0, -1, 1}, {0, 1, -1}, {0, -1, -1}, {1, 1, 0}, {0, -1, 1}, {-1, 1, 0}, {0, -1, -1}};
+	// Flattened gradient array for better cache locality (was int[][])
+	// Access: GRAD[index*3 + 0/1/2] for x/y/z components
+	protected static final int[] GRAD = {
+		1, 1, 0,   -1, 1, 0,   1, -1, 0,   -1, -1, 0,
+		1, 0, 1,   -1, 0, 1,   1, 0, -1,   -1, 0, -1,
+		0, 1, 1,   0, -1, 1,   0, 1, -1,   0, -1, -1,
+		1, 1, 0,   0, -1, 1,   -1, 1, 0,   0, -1, -1
+	};
 	private static final double SQRT_3 = Math.sqrt(3.0D);
 	private static final double F2 = 0.5D * (SQRT_3 - 1.0D);
 	private static final double G2 = (3.0D - SQRT_3) / 6.0D;
@@ -36,9 +42,10 @@ class SimplexNoiseSampler
 		}
 	}
 
-	protected static double dot(int[] gradElement, double xFactor, double yFactor, double zFactor)
+	protected static double dot(int gradIndex, double xFactor, double yFactor, double zFactor)
 	{
-		return (double) gradElement[0] * xFactor + (double) gradElement[1] * yFactor + (double) gradElement[2] * zFactor;
+		int base = gradIndex * 3;
+		return (double) GRAD[base] * xFactor + (double) GRAD[base + 1] * yFactor + (double) GRAD[base + 2] * zFactor;
 	}
 
 	private int getPermutValue(int permutIndex)
@@ -55,7 +62,7 @@ class SimplexNoiseSampler
 			d0 = 0.0D;
 		} else {
 			d1 = d1 * d1;
-			d0 = d1 * d1 * dot(GRAD[gradIndex], x, y, z);
+			d0 = d1 * d1 * dot(gradIndex, x, y, z);
 		}
 
 		return d0;

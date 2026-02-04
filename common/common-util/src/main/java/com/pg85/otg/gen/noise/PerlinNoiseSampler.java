@@ -36,8 +36,9 @@ public class PerlinNoiseSampler
 
 	private static double grad(int gradIndex, double xFactor, double yFactor, double zFactor)
 	{
+		// gradIndex & 15 gives index 0-15, directly use as index into flattened GRAD array
 		int i = gradIndex & 15;
-		return SimplexNoiseSampler.dot(SimplexNoiseSampler.GRAD[i], xFactor, yFactor, zFactor);
+		return SimplexNoiseSampler.dot(i, xFactor, yFactor, zFactor);
 	}
 
 	// TODO: yScale and yOffset params are probably wrong. More research needs to be done to figure out what these are.
