@@ -157,8 +157,12 @@ public final class BiomeGroupManager
 
 	public static int getMaxRarityFromPossibles(Map<Integer, ?> map)
 	{
-		Integer[] totalRarity = map.keySet().toArray(new Integer[map.size()]);
-		return totalRarity[totalRarity.length - 1];
+		if (map instanceof TreeMap<Integer, ?> treeMap)
+		{
+			return treeMap.lastKey();
+		}
+		// Fallback for non-TreeMap (shouldn't happen in practice)
+		return map.keySet().stream().max(Integer::compareTo).orElse(0);
 	}
 
 	public void clampGenerationDepth(int maxDepth)
