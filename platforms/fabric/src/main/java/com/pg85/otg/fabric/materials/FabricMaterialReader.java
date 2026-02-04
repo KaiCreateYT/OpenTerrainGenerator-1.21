@@ -5,7 +5,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.pg85.otg.OTG;
 import com.pg85.otg.exceptions.InvalidConfigException;
 import com.pg85.otg.interfaces.IMaterialReader;
-import com.pg85.otg.util.FifoMap;
+import com.pg85.otg.util.LRUCache;
 import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.materials.LocalMaterialData;
@@ -27,8 +27,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.Optional;
 
 public class FabricMaterialReader implements IMaterialReader {
-    private final FifoMap<String, LocalMaterialData> cachedMaterials = new FifoMap<>(4096);
-    private final FifoMap<String, LocalMaterialTag> cachedTags = new FifoMap<>(4096);
+    private final LRUCache<String, LocalMaterialData> cachedMaterials = new LRUCache<>(4096);
+    private final LRUCache<String, LocalMaterialTag> cachedTags = new LRUCache<>(4096);
     private static final HolderLookup.Provider vanillaRegistries = VanillaRegistries.createLookup();
 
     @Override

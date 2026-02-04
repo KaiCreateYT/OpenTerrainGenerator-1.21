@@ -2,7 +2,7 @@ package com.pg85.otg.test.materials;
 
 import com.pg85.otg.exceptions.InvalidConfigException;
 import com.pg85.otg.interfaces.IMaterialReader;
-import com.pg85.otg.util.FifoMap;
+import com.pg85.otg.util.LRUCache;
 import com.pg85.otg.util.materials.LocalMaterialData;
 import com.pg85.otg.util.materials.LocalMaterialTag;
 import com.pg85.otg.util.materials.LocalMaterials;
@@ -26,8 +26,8 @@ import java.util.Map;
  */
 public class TestMaterialReader implements IMaterialReader {
 
-    private final FifoMap<String, LocalMaterialData> cachedMaterials = new FifoMap<>(4096);
-    private final FifoMap<String, LocalMaterialTag> cachedTags = new FifoMap<>(4096);
+    private final LRUCache<String, LocalMaterialData> cachedMaterials = new LRUCache<>(4096);
+    private final LRUCache<String, LocalMaterialTag> cachedTags = new LRUCache<>(4096);
 
     // Legacy uppercase block name mapping
     private static final Map<String, String> LEGACY_NAMES = new HashMap<>();
