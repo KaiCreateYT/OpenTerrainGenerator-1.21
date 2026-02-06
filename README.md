@@ -53,13 +53,7 @@ Supported dimension names for `/otg tp`:
 
 OTG supports nether-style portals with configurable colors and frame blocks. Current known issues:
 
-1. **Logout in OTG dimension** - After logging out while in an OTG dimension and logging back in, the player is teleported to the overworld instead of staying in the OTG dimension. The dimension is not loaded at server startup.
-
-2. **Frame block on return to overworld** - Auto-created portals in overworld use the destination preset's frame block, not the source. If overworld is not an OTG dimension, it falls back to quartz instead of the configured block.
-
-3. **Void-type presets (single island)** - Coordinate scaling 1:1 causes the portal in Void to be created in empty space instead of on the island, if the original overworld portal is far from (0,0).
-
-4. **Portal search radius** - The algorithm searches within 128 blocks. If the original portal is farther away, it creates a new one instead of linking to the existing one.
+1. **Frame block on return to overworld** - Auto-created portals in overworld use the destination preset's frame block, not the source. If overworld is not an OTG dimension, it falls back to quartz instead of the configured block.
 
 ## Chunk Generation & Multithreading
 
@@ -139,6 +133,20 @@ Average: 243.56 ms for 100 chunks
 Throughput: 410.6 chunks/sec
 Per chunk: 2.436 ms
 ```
+
+## Recommended Mods (Fabric 1.20.1)
+
+| Mod | Description | Required |
+|-----|-------------|----------|
+| [Fabric API](https://modrinth.com/mod/fabric-api) | Core Fabric modding library | Yes |
+| [C2ME](https://modrinth.com/mod/c2me-fabric) | Chunk generation multithreading and scheduling. Priority-based chunk loading, async I/O. Highly recommended for multiplayer servers. | No |
+| [Lithium](https://modrinth.com/mod/lithium) | General server-side optimization (game logic, mob AI, block ticking). No config needed. | No |
+| [Starlight](https://modrinth.com/mod/starlight) | Rewrites the lighting engine. Faster chunk loading, especially during initial world gen. | No |
+| [Sodium](https://modrinth.com/mod/sodium) | Client-side rendering optimization. Huge FPS improvement. | No (client only) |
+| [Iris](https://modrinth.com/mod/iris) | Shader support compatible with Sodium. OptiFine shaders on Fabric. | No (client only) |
+| [Cardinal Components API](https://modrinth.com/mod/cardinal-components-api) | Data attachment API. Used by OTG for custom dimension management. | Yes |
+
+**Note:** All mods listed above have been tested with OTG on Fabric 1.20.1. C2ME in particular complements OTG well — see [Chunk Generation & Multithreading](#chunk-generation--multithreading) for details.
 
 ## Links
 * [CurseForge](https://minecraft.curseforge.com/projects/open-terrain-generator)
