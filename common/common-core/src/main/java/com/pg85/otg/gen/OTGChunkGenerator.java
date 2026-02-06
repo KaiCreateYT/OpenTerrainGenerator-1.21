@@ -27,6 +27,8 @@ import lombok.Getter;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
@@ -70,6 +72,8 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
     // ThreadLocal may have some overhead for the gets/sets, even when used on a single thread.
     // Some of these classes may not be thread-safe (tho testing seems ok), need to check all the internal state.
 
+    // Set once in setSeed() before worker threads start.
+    // Thread-safety: happens-before established by worker thread creation in queueChunksForWorkerThreads().
     private OctavePerlinNoiseSampler interpolationNoise;     // Volatility noise
     private OctavePerlinNoiseSampler lowerInterpolatedNoise; // Volatility1 noise
     private OctavePerlinNoiseSampler upperInterpolatedNoise; // Volatility2 noise
@@ -97,6 +101,15 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
             ThreadLocal.withInitial(() -> new double[Constants.CHUNK_SIZE * Constants.CHUNK_SIZE]);
     private final ThreadLocal<BiomeBlocksNoiseCache> biomeBlocksNoiseCache =
             ThreadLocal.withInitial(BiomeBlocksNoiseCache::new);
+
+    // Performance tracking
+    private static final int PERF_LOG_INTERVAL = 100;
+    private final AtomicInteger chunksGenerated = new AtomicInteger(0);
+    private final AtomicLong totalBiomeTimeMs = new AtomicLong(0);
+    private final AtomicLong totalNoiseTimeMs = new AtomicLong(0);
+    private final AtomicLong totalBlockPlaceTimeMs = new AtomicLong(0);
+    private final AtomicLong totalSurfaceTimeMs = new AtomicLong(0);
+    private final AtomicLong totalCarveTimeMs = new AtomicLong(0);
 
     /**
      * Holder for primitive values to avoid ThreadLocal boxing overhead.
@@ -535,10 +548,6 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
     ) {
         ILogger logger = OTG.getEngine().getLogger();
 
-        // DEBUG: Track block placement
-        int[] debugBlockCount = {0}; // Using array to allow modification in lambda-like context
-        int[] debugWaterCount = {0};
-
         ObjectListIterator<JigsawStructureData> structureIterator = structures.iterator();
 
         long startTime = System.currentTimeMillis();
@@ -550,6 +559,8 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
         int blockX = chunkCoord.getBlockX();
         int blockZ = chunkCoord.getBlockZ();
 
+        // --- Phase 1: Biome lookup ---
+        long biomeStart = System.currentTimeMillis();
         IBiome[] biomes = this.cachedBiomeProvider.getBiomesForChunk(chunkCoord);
         // Cache biome settings to avoid 98k getBiomeSettings() calls per chunk (was called per-block, now per-column)
         BiomeSettings[] biomeConfigCache = new BiomeSettings[Constants.OTHER_256];
@@ -562,11 +573,12 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                 waterLevel[idx] = settings.getSurfaceSettings().getWaterLevelMax();
             }
         }
+        long biomeTime = System.currentTimeMillis() - biomeStart;
 
+        // --- Phase 2: Noise column init ---
         // Reuse pre-allocated noise data buffer from ThreadLocal (avoids ~4KB allocation per chunk)
         double[][][] noiseData = this.noiseDataBuffer.get();
-        // Max smoothing radius is 32, so area covered is 32+5+32=69 (noise/biome coords, so *4)
-
+        long noiseStart = System.currentTimeMillis();
         // Initialize noise data on the x0 column.
         for (int noiseZ = 0; noiseZ < NOISE_SIZE_Z + 1; ++noiseZ) {
             this.getNoiseColumn(
@@ -575,6 +587,8 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                     chunkCoord.getChunkZ() * NOISE_SIZE_Z + noiseZ
             );
         }
+        long noiseTime = System.currentTimeMillis() - noiseStart;
+        long blockPlaceStart = System.currentTimeMillis();
 
         BiomeSettings biomeConfig;
         // [0, 4] -> x noise chunks
@@ -689,7 +703,6 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                                             surfaceSettings.getStoneBlockReplaced(realY)
                                     );
                                     buffer.setHighestBlockForColumn(pieceX + noiseX * 4, noiseZ * 4 + pieceZ, realY);
-                                    debugBlockCount[0]++;
                                 } else if (realY < waterLevel[localX * 16 + localZ]
                                            && realY > surfaceSettings.getWaterLevelMin()) {
                                     buffer.setBlock(
@@ -699,7 +712,6 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                                             surfaceSettings.getWaterBlockReplaced(realY)
                                     );
                                     buffer.setHighestBlockForColumn(pieceX + noiseX * 4, noiseZ * 4 + pieceZ, realY);
-                                    debugWaterCount[0]++;
                                 }
                             }
                         }
@@ -713,30 +725,50 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
             noiseData[1] = xColumn;
         }
 
-        doSurfaceAndGroundControl(biomes, random, worldHeight, this.seed, buffer, waterLevel);
+        long blockPlaceTime = System.currentTimeMillis() - blockPlaceStart;
 
-        // DEBUG: Log chunk info if it has very few blocks (potential empty chunk)
-        if (debugBlockCount[0] < 1000) { // Normal chunk should have many more stone blocks
-            logger.log(
-                    com.pg85.otg.util.logging.LogLevel.WARN,
-                    LogCategory.MAIN,
-                    String.format("DEBUG CHUNK [%d, %d]: stone=%d, water=%d, noiseSizeY=%d, worldHeightCap=%d",
-                        chunkCoord.getChunkX(),
-                        chunkCoord.getChunkZ(),
-                        debugBlockCount[0],
-                        debugWaterCount[0],
-                        this.noiseSizeY,
-                        this.otgWorldInfo.getHeight())
-            );
+        // --- Phase 4: Surface & ground control ---
+        long surfaceStart = System.currentTimeMillis();
+        doSurfaceAndGroundControl(biomes, random, worldHeight, this.seed, buffer, waterLevel);
+        long surfaceTime = System.currentTimeMillis() - surfaceStart;
+
+        // Track performance stats
+        totalBiomeTimeMs.addAndGet(biomeTime);
+        totalNoiseTimeMs.addAndGet(noiseTime);
+        totalBlockPlaceTimeMs.addAndGet(blockPlaceTime);
+        totalSurfaceTimeMs.addAndGet(surfaceTime);
+
+        int count = chunksGenerated.incrementAndGet();
+        if (count % PERF_LOG_INTERVAL == 0) {
+            long tBiome = totalBiomeTimeMs.get();
+            long tNoise = totalNoiseTimeMs.get();
+            long tBlock = totalBlockPlaceTimeMs.get();
+            long tSurface = totalSurfaceTimeMs.get();
+            long tCarve = totalCarveTimeMs.get();
+            long total = tBiome + tNoise + tBlock + tSurface + tCarve;
+            if (total > 0) {
+                logger.log(
+                        com.pg85.otg.util.logging.LogLevel.INFO,
+                        LogCategory.PERFORMANCE,
+                        String.format("TerrainGen stats (%d chunks): Biome=%.1f%% (%dms), Noise=%.1f%% (%dms), BlockPlace=%.1f%% (%dms), Surface=%.1f%% (%dms), Carve=%.1f%% (%dms), Avg=%.2fms/chunk",
+                                count,
+                                100.0 * tBiome / total, tBiome,
+                                100.0 * tNoise / total, tNoise,
+                                100.0 * tBlock / total, tBlock,
+                                100.0 * tSurface / total, tSurface,
+                                100.0 * tCarve / total, tCarve,
+                                (double) total / count)
+                );
+            }
         }
 
-        if (logger.getLogCategoryEnabled(LogCategory.PERFORMANCE) && (System.currentTimeMillis() - startTime) > 50) {
+        long totalTime = System.currentTimeMillis() - startTime;
+        if (logger.getLogCategoryEnabled(LogCategory.PERFORMANCE) && totalTime > 50) {
             logger.warn(
                     LogCategory.PERFORMANCE,
-                    "Warning: Terrain generation for chunk at %s ~ %s took %s ms.",
-                    chunkCoord.getBlockX() + DecorationArea.DECORATION_OFFSET,
-                    chunkCoord.getBlockZ() + DecorationArea.DECORATION_OFFSET,
-                    System.currentTimeMillis() - startTime
+                    "Slow chunk %s: %dms (biome=%d, noise=%d, blocks=%d, surface=%d)",
+                    chunkCoord, totalTime,
+                    biomeTime, noiseTime, blockPlaceTime, surfaceTime
             );
         }
     }
@@ -744,6 +776,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
     public void carve(ChunkBuffer chunk, long seed, BitSet carvingMask, boolean cavesEnabled, boolean ravinesEnabled) {
         // TODO: it should be possible to cache these carver graphs to make larger carvers more efficient and easier to use
         if (cavesEnabled || ravinesEnabled) {
+            long carveStart = System.currentTimeMillis();
             Random random = new Random();
             ChunkCoordinate chunkCoordinate = chunk.getChunkCoordinate();
             int chunkX = chunkCoordinate.getChunkX();
@@ -785,6 +818,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                     }
                 }
             }
+            totalCarveTimeMs.addAndGet(System.currentTimeMillis() - carveStart);
         }
     }
 

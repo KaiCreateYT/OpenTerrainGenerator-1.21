@@ -19,5 +19,7 @@ public class PluginConfigStandardValues extends Settings
 	public static final Setting<String> LOG_PRESETS = Settings.stringSetting("LogPresets", "all");
 	public static final Setting<Boolean> LOG_PERFORMANCE = Settings.booleanSetting("LogPerformance", false);
 	public static final Setting<Boolean> DEVELOPER_MODE = Settings.booleanSetting("DeveloperMode", false);
-	public static final Setting<Integer> WORKER_THREADS = Settings.intSetting("WorkerThreads", 0, 0, 10);
+	// Cap at 8 threads - diminishing returns beyond that due to cache contention
+	private static final int MAX_WORKER_THREADS = Math.min(8, Math.max(1, Runtime.getRuntime().availableProcessors() - 1));
+	public static final Setting<Integer> WORKER_THREADS = Settings.intSetting("WorkerThreads", Math.min(4, MAX_WORKER_THREADS), 0, MAX_WORKER_THREADS);
 }

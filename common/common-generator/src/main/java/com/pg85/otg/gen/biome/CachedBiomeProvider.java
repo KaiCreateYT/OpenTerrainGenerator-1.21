@@ -11,7 +11,7 @@ import com.pg85.otg.interfaces.IBiome;
 import com.pg85.otg.interfaces.ICachedBiomeProvider;
 import com.pg85.otg.interfaces.ILayerSource;
 import com.pg85.otg.util.ChunkCoordinate;
-import com.pg85.otg.util.FifoMap;
+import com.pg85.otg.util.ThreadSafeLRUCache;
 import com.pg85.otg.util.helpers.MathHelper;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,7 +19,9 @@ import lombok.Setter;
 /**
  * A cache used throughout an entire session, so that base
  * terrain generation, carvers and decoration can fetch biomes
- * more efficiently. 
+ * more efficiently.
+ *
+ * Thread-safe: Uses ThreadSafeLRUCache for all cache storage.
  */
 public class CachedBiomeProvider implements ICachedBiomeProvider
 {
@@ -31,15 +33,10 @@ public class CachedBiomeProvider implements ICachedBiomeProvider
     private long seed;
 	private final ILayerSource biomeProvider;
 	private final IBiome[] biomesById;
-	
-	private final Object lock = new Object();
-	private boolean locked = false;
-	private boolean locked2 = false;
-	private final FifoMap<ChunkCoordinate, IBiome[]> biomesCache = new FifoMap<>(256);
-	private final FifoMap<ChunkCoordinate, BiomeSettings[]> biomeConfigsCache = new FifoMap<>(256);
-	
-	private final Object noiseLock = new Object();
-	private final FifoMap<ChunkCoordinate, BiomeSettings[]> noiseBiomeConfigsCache = new FifoMap<>(1024);
+
+	private final ThreadSafeLRUCache<ChunkCoordinate, IBiome[]> biomesCache = new ThreadSafeLRUCache<>(256);
+	private final ThreadSafeLRUCache<ChunkCoordinate, BiomeSettings[]> biomeConfigsCache = new ThreadSafeLRUCache<>(256);
+	private final ThreadSafeLRUCache<ChunkCoordinate, BiomeSettings[]> noiseBiomeConfigsCache = new ThreadSafeLRUCache<>(1024);
 
 	public CachedBiomeProvider(ILayerSource biomeProvider, IBiome[] biomesById)
 	{
@@ -48,110 +45,93 @@ public class CachedBiomeProvider implements ICachedBiomeProvider
 	}
 
 	// Used by any method that can preemptively request a chunk of biomeconfigs,
-	// rather than making separate requests for each column. 
+	// rather than making separate requests for each column.
 	// TODO: Allow regions rather than chunks.
 	@Override
 	public BiomeSettings[] getBiomeConfigsForChunk(ChunkCoordinate chunkCoord)
 	{
-		BiomeSettings[] biomeConfigs;
-		synchronized(this.lock)
-		{
-			this.locked = true;
-			biomeConfigs = this.biomeConfigsCache.get(chunkCoord);
-			if(biomeConfigs == null)
+		// Cross-cache put moved OUTSIDE computeIfAbsent to prevent AB-BA deadlock
+		// between biomesCache and biomeConfigsCache bin locks.
+		IBiome[][] biomesHolder = new IBiome[1][];
+		BiomeSettings[] result = this.biomeConfigsCache.computeIfAbsent(chunkCoord, coord -> {
+			IBiome[] biomes = new IBiome[Constants.CHUNK_SIZE * Constants.CHUNK_SIZE];
+			BiomeSettings[] biomeConfigs = new BiomeSettings[Constants.CHUNK_SIZE * Constants.CHUNK_SIZE];
+			int biomeId;
+			IBiome biome;
+			for (int x = 0; x < Constants.CHUNK_SIZE; x++)
 			{
-				IBiome[] biomes = new IBiome[Constants.CHUNK_SIZE * Constants.CHUNK_SIZE];
-				biomeConfigs = new BiomeSettings[Constants.CHUNK_SIZE * Constants.CHUNK_SIZE];
-				int biomeId;
-				IBiome biome;
-				for (int x = 0; x < Constants.CHUNK_SIZE; x++)
+				for (int z = 0; z < Constants.CHUNK_SIZE; z++)
 				{
-					for (int z = 0; z < Constants.CHUNK_SIZE; z++)
-					{
-						// TODO: Technically, we should be providing the hashed seed here. Perhaps this may work for the time being?
-						biomeId = BiomeInterpolator.getId(this.seed, x + chunkCoord.getBlockX(), 0, z + chunkCoord.getBlockZ(), this.biomeProvider);
-						biome = this.biomesById[biomeId];
-						biomes[x * Constants.CHUNK_SIZE + z] = biome;
-						biomeConfigs[x * Constants.CHUNK_SIZE + z] = biome.getBiomeSettings();
-					}
+					biomeId = BiomeInterpolator.getId(this.seed, x + coord.getBlockX(), 0, z + coord.getBlockZ(), this.biomeProvider);
+					biome = this.biomesById[biomeId];
+					biomes[x * Constants.CHUNK_SIZE + z] = biome;
+					biomeConfigs[x * Constants.CHUNK_SIZE + z] = biome.getBiomeSettings();
 				}
-				this.biomesCache.put(chunkCoord, biomes);
-				this.biomeConfigsCache.put(chunkCoord, biomeConfigs);
-			} else {
-				cacheHits++;
-				//logger.log(LogLevel.INFO, LogCategory.MAIN, "Cache hit " + cacheHits);
 			}
+			biomesHolder[0] = biomes;
+			return biomeConfigs;
+		});
+		if (biomesHolder[0] != null) {
+			this.biomesCache.put(chunkCoord, biomesHolder[0]);
 		}
-		this.locked = false;
-		return biomeConfigs;		
+		return result;
 	}
-	
+
 	// Used by any method that can preemptively request a chunk of biomeconfigs,
 	// rather than making separate requests for each column.
 	@Override
 	public IBiome[] getBiomesForChunk(ChunkCoordinate chunkCoord)
 	{
-		IBiome[] biomes;
-		synchronized(this.lock)
-		{
-			this.locked = true;
-			biomes = this.biomesCache.get(chunkCoord);
-			if(biomes == null)
+		// Cross-cache put moved OUTSIDE computeIfAbsent to prevent AB-BA deadlock
+		// between biomesCache and biomeConfigsCache bin locks.
+		BiomeSettings[][] configsHolder = new BiomeSettings[1][];
+		IBiome[] result = this.biomesCache.computeIfAbsent(chunkCoord, coord -> {
+			IBiome[] biomes = new IBiome[Constants.CHUNK_SIZE * Constants.CHUNK_SIZE];
+			BiomeSettings[] biomeConfigs = new BiomeSettings[Constants.CHUNK_SIZE * Constants.CHUNK_SIZE];
+			int biomeId;
+			IBiome biome;
+			for (int x = 0; x < Constants.CHUNK_SIZE; x++)
 			{
-				biomes = new IBiome[Constants.CHUNK_SIZE * Constants.CHUNK_SIZE];
-				BiomeSettings[]  biomeConfigs = new BiomeSettings[Constants.CHUNK_SIZE * Constants.CHUNK_SIZE];
-				int biomeId;
-				IBiome biome;
-				for (int x = 0; x < Constants.CHUNK_SIZE; x++)
+				for (int z = 0; z < Constants.CHUNK_SIZE; z++)
 				{
-					for (int z = 0; z < Constants.CHUNK_SIZE; z++)
-					{
-						// TODO: Technically, we should be providing the hashed seed here. Perhaps this may work for the time being?
-						biomeId = BiomeInterpolator.getId(this.seed,  x + chunkCoord.getBlockX(), 0, z + chunkCoord.getBlockZ(), this.biomeProvider);
-						biome = this.biomesById[biomeId];
-						biomes[x * Constants.CHUNK_SIZE + z] = biome;
-						biomeConfigs[x * Constants.CHUNK_SIZE + z] = biome.getBiomeSettings();
-					}
+					biomeId = BiomeInterpolator.getId(this.seed, x + coord.getBlockX(), 0, z + coord.getBlockZ(), this.biomeProvider);
+					biome = this.biomesById[biomeId];
+					biomes[x * Constants.CHUNK_SIZE + z] = biome;
+					biomeConfigs[x * Constants.CHUNK_SIZE + z] = biome.getBiomeSettings();
 				}
-				this.biomesCache.put(chunkCoord, biomes);
-				this.biomeConfigsCache.put(chunkCoord, biomeConfigs);
-			} else {
-				cacheHits++;
-				//logger.log(LogLevel.INFO, LogCategory.MAIN, "Cache hit " + cacheHits);
 			}
+			configsHolder[0] = biomeConfigs;
+			return biomes;
+		});
+		if (configsHolder[0] != null) {
+			this.biomeConfigsCache.put(chunkCoord, configsHolder[0]);
 		}
-		this.locked = false;
-		return biomes;
+		return result;
 	}
-	
+
 	@Override
 	public IBiome[] getBiomesForChunks(ChunkCoordinate chunkCoord, int widthHeightInBlocks)
 	{
 		IBiome[] biomes = new IBiome[widthHeightInBlocks * widthHeightInBlocks];
 		IBiome[] chunkBiomes;
 		int widthHeightInChunks = (int)Math.ceil(widthHeightInBlocks / 16f);
-		synchronized(this.lock)
+		for(int chunkX = 0; chunkX < widthHeightInChunks; chunkX++)
 		{
-			this.locked2 = true;
-			for(int chunkX = 0; chunkX < widthHeightInChunks; chunkX++)
+			for(int chunkZ = 0; chunkZ < widthHeightInChunks; chunkZ++)
 			{
-				for(int chunkZ = 0; chunkZ < widthHeightInChunks; chunkZ++)
+				chunkBiomes = getBiomesForChunk(ChunkCoordinate.fromChunkCoords(chunkCoord.getChunkX() + chunkX, chunkCoord.getChunkZ() + chunkZ));
+				for(int x = 0; x < Constants.CHUNK_SIZE; x++)
 				{
-					chunkBiomes = getBiomesForChunk(ChunkCoordinate.fromChunkCoords(chunkCoord.getChunkX() + chunkX, chunkCoord.getChunkZ() + chunkZ));
-					for(int x = 0; x < Constants.CHUNK_SIZE; x++)
+					for(int z = 0; z < Constants.CHUNK_SIZE; z++)
 					{
-						for(int z = 0; z < Constants.CHUNK_SIZE; z++)
-						{
-							biomes[(chunkX * Constants.CHUNK_SIZE + x) * widthHeightInBlocks + (chunkZ * Constants.CHUNK_SIZE + z)] = chunkBiomes[x * Constants.CHUNK_SIZE + z];
-						}
+						biomes[(chunkX * Constants.CHUNK_SIZE + x) * widthHeightInBlocks + (chunkZ * Constants.CHUNK_SIZE + z)] = chunkBiomes[x * Constants.CHUNK_SIZE + z];
 					}
 				}
 			}
 		}
-		this.locked2 = false;
 		return biomes;
 	}
-	
+
 	// Used by any method that will request a region of biomeconfigs,
 	// but cannot avoid making a request for each column.
 	// TODO: Any method calling this will have cacheChunk=true,
@@ -161,22 +141,17 @@ public class CachedBiomeProvider implements ICachedBiomeProvider
 	public BiomeSettings getBiomeConfig(int x, int z, boolean cacheChunk)
 	{
 		ChunkCoordinate chunkCoord = ChunkCoordinate.fromBlockCoords(x, z);
-		// TODO: Do we want/need a lock here? Overhead of the lock would be big.
-		BiomeSettings[] biomeConfigs = null;
-		if(!this.locked && !this.locked2)
-		{
-			biomeConfigs = this.biomeConfigsCache.get(chunkCoord);
-		}
+		BiomeSettings[] biomeConfigs = this.biomeConfigsCache.get(chunkCoord);
 		int internalX = x - chunkCoord.getBlockX();
 		int internalZ = z - chunkCoord.getBlockZ();
 		if(biomeConfigs == null)
 		{
-			if(cacheChunk && !this.locked && !this.locked2)
+			if(cacheChunk)
 			{
 				return getBiomeConfigsForChunk(chunkCoord)[internalX * Constants.CHUNK_SIZE + internalZ];
 			}
 			// TODO: Technically, we should be providing the hashed seed here. Perhaps this may work for the time being?
-			int biomeId = BiomeInterpolator.getId(this.seed,  x, 0, z, this.biomeProvider);
+			int biomeId = BiomeInterpolator.getId(this.seed, x, 0, z, this.biomeProvider);
 			return this.biomesById[biomeId].getBiomeSettings();
 		} else {
 			smallCacheHits++;
@@ -187,24 +162,24 @@ public class CachedBiomeProvider implements ICachedBiomeProvider
 
 	// These methods don't use the cache because the overhead
 	// of locking likely wouldn't be worth the cache hits.
-	
+
 	@Override
 	public BiomeSettings getBiomeConfig(int x, int z)
 	{
 		return getBiome(x, z).getBiomeSettings();
-	}	
-	
+	}
+
 	@Override
 	public IBiome getBiome(int x, int z)
-	{	
+	{
 		// TODO: Technically, we should be providing the hashed seed here. Perhaps this may work for the time being?
-		return this.biomesById[BiomeInterpolator.getId(this.seed,  x, 0, z, this.biomeProvider)];
+		return this.biomesById[BiomeInterpolator.getId(this.seed, x, 0, z, this.biomeProvider)];
 	}
 
 	// Noise biome/biomeconfig, for unzoomed (1/4, low resolution) lookups.
 
-	// Used by any method that can preemptively request a region of biomeconfigs, rather than 
-	// making separate requests for each column. Regions are requested and cached per 8x8, 
+	// Used by any method that can preemptively request a region of biomeconfigs, rather than
+	// making separate requests for each column. Regions are requested and cached per 8x8,
 	// each cell equal to 4x4 blocks in the world.
 	@Override
 	public BiomeSettings[] getNoiseBiomeConfigsForRegion(int noiseStartX, int noiseStartZ, int widthHeight)
@@ -224,45 +199,44 @@ public class CachedBiomeProvider implements ICachedBiomeProvider
 		List<ChunkCoordinate> regionsToHandle = new ArrayList<ChunkCoordinate>();
 		int cacheX;
 		int cacheZ;
-		synchronized(this.noiseLock)
+
+		for(int regionX = regionStartX; regionX <= regionStartX + regionWidth; regionX++)
 		{
-			for(int regionX = regionStartX; regionX <= regionStartX + regionWidth; regionX++)
+			for(int regionZ = regionStartZ; regionZ <= regionStartZ + regionHeight; regionZ++)
 			{
-				for(int regionZ = regionStartZ; regionZ <= regionStartZ + regionHeight; regionZ++)
+				regionCoord = ChunkCoordinate.fromChunkCoords(regionX, regionZ);
+				region = this.noiseBiomeConfigsCache.get(regionCoord);
+				if(region != null)
 				{
-					regionCoord = ChunkCoordinate.fromChunkCoords(regionX, regionZ);
-					region = this.noiseBiomeConfigsCache.get(regionCoord);
-					if(region != null)
+					for(int x = 0; x < regionSize; x++)
 					{
-						for(int x = 0; x < regionSize; x++)
+						for(int z = 0; z < regionSize; z++)
 						{
-							for(int z = 0; z < regionSize; z++)
+							cacheX = ((regionX - regionStartX) << 3) + x - cacheOffsetX;
+							cacheZ = ((regionZ - regionStartZ) << 3) + z - cacheOffsetZ;
+							if(
+								cacheX < widthHeight && cacheX >= 0 &&
+								cacheZ < widthHeight && cacheZ >= 0
+							)
 							{
-								cacheX = ((regionX - regionStartX) << 3) + x - cacheOffsetX;								
-								cacheZ = ((regionZ - regionStartZ) << 3) + z - cacheOffsetZ;
+								biomeConfigs[cacheX * widthHeight + cacheZ] = region[(x << 3) + z];
 								if(
-									cacheX < widthHeight && cacheX >= 0 &&
-									cacheZ < widthHeight && cacheZ >= 0
+									cacheX == widthHeight - 1 &&
+									cacheZ == widthHeight - 1 &&
+									regionsToHandle.size() == 0
 								)
 								{
-									biomeConfigs[cacheX * widthHeight + cacheZ] = region[(x << 3) + z];
-									if(
-										cacheX == widthHeight - 1 &&
-										cacheZ == widthHeight - 1 &&
-										regionsToHandle.size() == 0 
-									)
-									{
-										return biomeConfigs;
-									}
+									return biomeConfigs;
 								}
 							}
 						}
-					} else {
-						regionsToHandle.add(regionCoord);
 					}
+				} else {
+					regionsToHandle.add(regionCoord);
 				}
 			}
 		}
+
 		Map<ChunkCoordinate, BiomeSettings[]> regionsHandled = new HashMap<ChunkCoordinate, BiomeSettings[]>();
 		for(ChunkCoordinate regionTohandle : regionsToHandle)
 		{
@@ -274,7 +248,7 @@ public class CachedBiomeProvider implements ICachedBiomeProvider
 					// TODO: Technically, we should be providing the hashed seed here. Perhaps this may work for the time being?
 					biome = this.biomesById[this.biomeProvider.getSampler().sample((regionTohandle.getChunkX() << 3) + x, (regionTohandle.getChunkZ() << 3) + z)];
 					region[(x << 3) + z] = biome.getBiomeSettings();
-					
+
 					// TODO: Abort and don't cache region if requested area is smaller than 8x8?
 					cacheX = ((regionTohandle.getChunkX() - regionStartX) << 3) + x - cacheOffsetX;
 					cacheZ = ((regionTohandle.getChunkZ() - regionStartZ) << 3) + z - cacheOffsetZ;
@@ -289,10 +263,7 @@ public class CachedBiomeProvider implements ICachedBiomeProvider
 			}
 			regionsHandled.put(regionTohandle, region);
 		}
-		synchronized(this.noiseLock)
-		{
-			this.noiseBiomeConfigsCache.putAll(regionsHandled);
-		}
+		this.noiseBiomeConfigsCache.putAll(regionsHandled);
 		return biomeConfigs;
 	}
 
@@ -318,7 +289,7 @@ public class CachedBiomeProvider implements ICachedBiomeProvider
 	 * This is required as a vanilla change in 1.15 changed biomes from being stored in real resolution, changing them to be
 	 * stored in a 4x4x4 cubes instead, allowing for 3d biomes at the cost of resolution. This class interpolates and provides
 	 * a rough estimation of the correct biome at the given world coords.
-	*/	
+	*/
 	private static class BiomeInterpolator
 	{
 		public static int getId(long seed, int x, int y, int z, ILayerSource biomeProvider)
@@ -327,54 +298,54 @@ public class CachedBiomeProvider implements ICachedBiomeProvider
 			int biomeId = biomeProvider.getSampler().sample(MathHelper.getXFromLong(pos), MathHelper.getZFromLong(pos));
 			return biomeId;
 		}
-		
+
 		private static long sample(long seed, int x, int y, int z)
 		{
 			int startX = x - 2;
 			int startY = y - 2;
 			int startZ = z - 2;
-			
+
 			int chunkX = startX >> 2;
 			int chunkY = startY >> 2;
 			int chunkZ = startZ >> 2;
-			
+
 			double localX = (double) (startX & 3) / 4.0D;
 			double localY = (double) (startY & 3) / 4.0D;
 			double localZ = (double) (startZ & 3) / 4.0D;
-			
+
 			double maxDistance = Double.MAX_VALUE;
 			int idx = Integer.MIN_VALUE;
-			
+
 			for (int i = 0; i < 8; ++i)
 			{
 				boolean isX = (i & 4) == 0;
 				boolean isY = (i & 2) == 0;
 				boolean isZ = (i & 1) == 0;
-				
+
 				int lerpX = isX ? chunkX : chunkX + 1;
 				int lerpY = isY ? chunkY : chunkY + 1;
 				int lerpZ = isZ ? chunkZ : chunkZ + 1;
-				
+
 				double xFraction = isX ? localX : localX - 1.0D;
 				double yFraction = isY ? localY : localY - 1.0D;
 				double zFraction = isZ ? localZ : localZ - 1.0D;
-				
+
 				double distance = calcSquaredDistance(seed, lerpX, lerpY, lerpZ, xFraction, yFraction, zFraction);
-				
+
 				if (maxDistance > distance)
 				{
 					maxDistance = distance;
 					idx = i;
 				}
 			}
-			
+
 			int finalX = (idx & 4) == 0 ? chunkX : chunkX + 1;
 			// int finalY = (idx & 2) == 0 ? chunkY : chunkY + 1; // y coord is not used currently
 			int finalZ = (idx & 1) == 0 ? chunkZ : chunkZ + 1;
-			
+
 			return MathHelper.toLong(finalX, finalZ);
 		}
-	
+
 		private static double calcSquaredDistance(long seed, int x, int y, int z, double xFraction, double yFraction, double zFraction)
 		{
 			long mixedSeed = MathHelper.mixSeed(seed, x);
@@ -390,13 +361,13 @@ public class CachedBiomeProvider implements ICachedBiomeProvider
 			double zOffset = distribute(mixedSeed);
 			return square(zFraction + zOffset) + square(yFraction + yOffset) + square(xFraction + xOffset);
 		}
-	
+
 		private static double distribute(long seed)
 		{
 			double d = (double) ((int) (seed >> 24) & 1023) / 1024.0D;
 			return (d - 0.5D) * 0.9D;
 		}
-	
+
 		private static double square(double d)
 		{
 			return d * d;

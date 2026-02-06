@@ -71,9 +71,10 @@ public final class PluginConfig extends PluginConfigBase
 		);
 
 		writer.putSetting(PluginConfigStandardValues.WORKER_THREADS, this.workerThreads,
-			"Forge only, experimental: The amount of OTG worker threads used to speed up ",
-			"base terrain and BO4 generation. Higher values may not result in better ",
-			"performance, experiment to see what works best for your cpu."
+			"Number of worker threads for parallel chunk generation.",
+			"Higher values may improve performance on multi-core CPUs.",
+			"Set to 0 to disable (single-threaded).",
+			"Default: min(4, CPU cores - 1). Max: CPU cores - 1."
 		);
 		
 		writer.header2("Logging");

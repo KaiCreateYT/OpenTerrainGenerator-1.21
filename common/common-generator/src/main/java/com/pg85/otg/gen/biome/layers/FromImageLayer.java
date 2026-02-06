@@ -17,7 +17,7 @@ import com.pg85.otg.util.logging.LogLevel;
 
 public class FromImageLayer implements ParentedLayer
 {
-	private static final HashMap<File, BufferedImage> fromFile = new HashMap<>();
+	private static final java.util.concurrent.ConcurrentHashMap<File, BufferedImage> fromFile = new java.util.concurrent.ConcurrentHashMap<>();
 	private final BiomeLayerData data;
 	private final ImageSettings imageSettings;
 	private final int[] biomeMap;

@@ -60,8 +60,8 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
     public static HolderGetter<ConfiguredWorldCarver<?>> CONFIGURED_CARVER_HOLDER;
     public static boolean BIOME_DATA_INITIALIZED = false;
     private Map<String, List<ResourceKey<Biome>>> biomesByPresetFolderName = new LinkedHashMap<>();
-    private HashMap<String, IBiome[]> globalIdMapping = new HashMap<>();
-    private Map<String, BiomeLayerData> presetGenerationData = new HashMap<>();
+    private Map<String, IBiome[]> globalIdMapping = new java.util.concurrent.ConcurrentHashMap<>();
+    private Map<String, BiomeLayerData> presetGenerationData = new java.util.concurrent.ConcurrentHashMap<>();
     
     public LegacyFabricBiomeLoader(Path otgRootFolder)
     {
@@ -82,7 +82,8 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
     @Override
     public Map<String, BiomeLayerData> getPresetGenerationData()
     {
-        return new HashMap<>(this.presetGenerationData);
+        // Return directly - ConcurrentHashMap is thread-safe
+        return this.presetGenerationData;
     }
 
     // Note: BiomeGen and ChunkGen cache some settings during a session, so they'll only update on world exit/rejoin.
@@ -114,8 +115,8 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
 
     protected void clearCaches()
     {
-        this.globalIdMapping = new HashMap<>();
-        this.presetGenerationData = new HashMap<>();
+        this.globalIdMapping = new java.util.concurrent.ConcurrentHashMap<>();
+        this.presetGenerationData = new java.util.concurrent.ConcurrentHashMap<>();
         this.biomesByPresetFolderName = new LinkedHashMap<>();
     }
 

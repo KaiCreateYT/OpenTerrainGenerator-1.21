@@ -10,7 +10,9 @@ public class CachingLayerContext implements LayerSampleContext<CachingLayerSampl
 	private final int cacheCapacity;
 	private final PerlinNoiseSampler noiseSampler;
 	private final long worldSeed;
-	private long localSeed;
+	// CRITICAL: localSeed must be ThreadLocal to prevent race conditions
+	// when multiple worker threads call initSeed/nextInt concurrently!
+	private final ThreadLocal<Long> localSeed = ThreadLocal.withInitial(() -> 0L);
 
 	public CachingLayerContext(int cacheCapacity, long seed, long salt)
 	{
@@ -41,13 +43,14 @@ public class CachingLayerContext implements LayerSampleContext<CachingLayerSampl
 	  l = MathHelper.mixSeed(l, y);
 	  l = MathHelper.mixSeed(l, x);
 	  l = MathHelper.mixSeed(l, y);
-	  this.localSeed = l;
+	  this.localSeed.set(l);
 	}
 
 	public int nextInt(int bound)
 	{
-	  int i = (int)Math.floorMod(this.localSeed >> 24, (long)bound);
-	  this.localSeed = MathHelper.mixSeed(this.localSeed, this.worldSeed);
+	  long seed = this.localSeed.get();
+	  int i = (int)Math.floorMod(seed >> 24, (long)bound);
+	  this.localSeed.set(MathHelper.mixSeed(seed, this.worldSeed));
 	  return i;
 	}
 

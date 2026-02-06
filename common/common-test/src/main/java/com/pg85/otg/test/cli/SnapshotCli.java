@@ -23,6 +23,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.pg85.otg.gen.OTGChunkGenerator;
 import com.pg85.otg.util.ChunkCoordinate;
@@ -95,6 +98,12 @@ public class SnapshotCli {
             case "benchmark":
                 exitCode = cli.runBenchmark(args);
                 break;
+            case "stress-test":
+                exitCode = cli.runStressTest(args);
+                break;
+            case "shadow-stress-test":
+                exitCode = cli.runShadowStressTest(args);
+                break;
             case "--help":
             case "-h":
                 printUsage();
@@ -126,15 +135,19 @@ public class SnapshotCli {
         System.out.println("  benchmark [--preset <name>] [--otg-root <path>] [--chunks <n>] [--warmup <n>] [--iterations <n>]");
         System.out.println("      Benchmark terrain generation performance");
         System.out.println();
+        System.out.println("  stress-test [--preset <name>] [--otg-root <path>] [--threads <n>] [--chunks <n>]");
+        System.out.println("      Test thread-safety of parallel chunk generation");
+        System.out.println();
         System.out.println("Options:");
         System.out.println("  --seed <n>            World seed (default: 12345)");
         System.out.println("  --preset <name>       Preset name (default: DefaultPreset)");
         System.out.println("  --otg-root <path>     OTG config directory (default: config/OpenTerrainGenerator)");
         System.out.println("  --verbose             Show all differences (default: max 10 per section)");
         System.out.println("  --fail-threshold <n>  Fail only if difference exceeds n% (default: 0)");
-        System.out.println("  --chunks <n>          Chunks per iteration for benchmark (default: 100)");
+        System.out.println("  --chunks <n>          Chunks per iteration for benchmark/stress-test (default: 100)");
         System.out.println("  --warmup <n>          Warmup iterations (default: 3)");
         System.out.println("  --iterations <n>      Measurement iterations (default: 5)");
+        System.out.println("  --threads <n>         Number of threads for stress-test (default: 4)");
     }
 
     /**
@@ -712,5 +725,483 @@ public class SnapshotCli {
                 generated++;
             }
         }
+    }
+
+    /**
+     * Runs the stress-test command - tests thread-safety of parallel chunk generation.
+     */
+    public int runStressTest(String[] args) {
+        long seed = 12345;
+        String presetName = DEFAULT_PRESET;
+        String otgRoot = DEFAULT_OTG_ROOT;
+        int threads = 4;
+        int chunksPerThread = 100;
+
+        // Parse arguments
+        for (int i = 1; i < args.length; i++) {
+            switch (args[i]) {
+                case "--seed":
+                    if (i + 1 < args.length) {
+                        try {
+                            seed = Long.parseLong(args[++i]);
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid seed value: " + args[i]);
+                            return EXIT_ERROR;
+                        }
+                    }
+                    break;
+                case "--preset":
+                    if (i + 1 < args.length) {
+                        presetName = args[++i];
+                    }
+                    break;
+                case "--otg-root":
+                    if (i + 1 < args.length) {
+                        otgRoot = args[++i];
+                    }
+                    break;
+                case "--threads":
+                    if (i + 1 < args.length) {
+                        try {
+                            threads = Integer.parseInt(args[++i]);
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid threads value: " + args[i]);
+                            return EXIT_ERROR;
+                        }
+                    }
+                    break;
+                case "--chunks":
+                    if (i + 1 < args.length) {
+                        try {
+                            chunksPerThread = Integer.parseInt(args[++i]);
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid chunks value: " + args[i]);
+                            return EXIT_ERROR;
+                        }
+                    }
+                    break;
+            }
+        }
+
+        System.out.println("Stress Test Configuration:");
+        System.out.println("  Preset: " + presetName);
+        System.out.println("  Seed: " + seed);
+        System.out.println("  Threads: " + threads);
+        System.out.println("  Chunks per thread: " + chunksPerThread);
+        System.out.println();
+
+        try {
+            return executeStressTest(seed, presetName, otgRoot, threads, chunksPerThread);
+        } catch (Exception e) {
+            System.err.println("Stress test failed: " + e.getMessage());
+            e.printStackTrace();
+            return EXIT_ERROR;
+        }
+    }
+
+    private int executeStressTest(long seed, String presetName, String otgRoot,
+                                   int threadCount, int chunksPerThread) throws Exception {
+        Path otgRootPath = Paths.get(otgRoot);
+
+        // Initialize headless mode
+        TestPresetLoader.initHeadless(otgRootPath);
+
+        // Load preset
+        Preset preset = TestPresetLoader.loadPreset(otgRootPath, presetName);
+        if (preset == null) {
+            throw new IllegalArgumentException("Preset not found: " + presetName);
+        }
+
+        OTGWorldInfo worldInfo = preset.getPresetConfig().getWorldInfo();
+
+        // Build IBiome array
+        List<BiomeConfig> biomeConfigs = preset.getBiomeConfigList();
+        int currentId = 1;
+        for (BiomeConfig bc : biomeConfigs) {
+            bc.setOTGBiomeId(currentId++);
+        }
+        int maxBiomeId = currentId - 1;
+
+        IBiome[] biomes = new IBiome[maxBiomeId + 1];
+        int[] availableBiomeIds = new int[biomeConfigs.size()];
+        int idx = 0;
+        for (BiomeConfig bc : biomeConfigs) {
+            int id = bc.getOTGBiomeID().id();
+            float temperature = bc.getVisualSettings().getBiomeTemperature();
+            biomes[id] = new TestBiome(bc, temperature);
+            availableBiomeIds[idx++] = id;
+        }
+
+        TestBiomeProvider biomeProvider = new TestBiomeProvider(seed, availableBiomeIds);
+
+        // Create SHARED generator - this is the key: multiple threads hit the same instance
+        OTGChunkGenerator generator = new OTGChunkGenerator(preset, biomeProvider, biomes, worldInfo);
+        generator.setSeed(seed);
+
+        System.out.println("Loaded preset: " + preset.getFolderName());
+        System.out.println("Testing thread-safety with shared generator instance...");
+        System.out.println();
+
+        AtomicInteger errors = new AtomicInteger(0);
+        AtomicInteger completed = new AtomicInteger(0);
+        AtomicInteger chunksGenerated = new AtomicInteger(0);
+
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        long startTime = System.nanoTime();
+
+        // Submit tasks for each thread
+        for (int t = 0; t < threadCount; t++) {
+            final int threadId = t;
+            final long threadSeed = seed ^ (threadId * 341873128712L);
+
+            executor.submit(() -> {
+                try {
+                    ObjectArrayList<JigsawStructureData> structures = new ObjectArrayList<>();
+                    Random random = new Random(threadSeed);
+
+                    // Each thread generates different chunks (offset by threadId)
+                    int gridSize = (int) Math.ceil(Math.sqrt(chunksPerThread));
+                    int chunkOffset = threadId * gridSize * 2; // Non-overlapping regions
+
+                    for (int i = 0; i < chunksPerThread; i++) {
+                        int cx = (i % gridSize) + chunkOffset;
+                        int cz = (i / gridSize) + chunkOffset;
+
+                        TestChunkBuffer buffer = new TestChunkBuffer(
+                                cx, cz,
+                                worldInfo.minY(), worldInfo.maxY()
+                        );
+
+                        ChunkCoordinate chunkCoord = ChunkCoordinate.fromChunkCoords(cx, cz);
+                        random.setSeed(threadSeed ^ ((long) cx * 341873128712L + (long) cz * 132897987541L));
+
+                        // This is where thread-safety issues would manifest
+                        generator.populateNoise(worldInfo, buffer, chunkCoord, structures, random);
+                        chunksGenerated.incrementAndGet();
+                    }
+                    completed.incrementAndGet();
+                } catch (Exception e) {
+                    errors.incrementAndGet();
+                    System.err.println("Thread " + threadId + " error: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            });
+        }
+
+        executor.shutdown();
+        boolean finished = executor.awaitTermination(5, TimeUnit.MINUTES);
+
+        long elapsed = System.nanoTime() - startTime;
+        double elapsedMs = elapsed / 1_000_000.0;
+        int totalChunks = chunksGenerated.get();
+        double chunksPerSec = totalChunks * 1_000_000_000.0 / elapsed;
+
+        System.out.println();
+        System.out.println("=== STRESS TEST RESULTS ===");
+        System.out.println("Threads completed: " + completed.get() + "/" + threadCount);
+        System.out.println("Errors: " + errors.get());
+        System.out.println("Chunks generated: " + totalChunks);
+        System.out.printf("Time: %.2f ms%n", elapsedMs);
+        System.out.printf("Throughput: %.1f chunks/sec%n", chunksPerSec);
+
+        if (!finished) {
+            System.err.println("WARNING: Executor did not finish within timeout - possible deadlock!");
+            return EXIT_ERROR;
+        }
+
+        if (errors.get() > 0) {
+            System.err.println("FAILED: " + errors.get() + " thread(s) encountered errors");
+            return EXIT_ERROR;
+        }
+
+        System.out.println();
+        System.out.println("SUCCESS: No concurrency errors detected");
+        return EXIT_SUCCESS;
+    }
+
+    /**
+     * Runs the shadow-stress-test command - simulates ShadowChunkGenerator architecture.
+     * Tests: BlockingQueue + worker threads + main thread waiting via CountDownLatch.
+     */
+    public int runShadowStressTest(String[] args) {
+        long seed = 12345;
+        String presetName = DEFAULT_PRESET;
+        String otgRoot = DEFAULT_OTG_ROOT;
+        int workers = 4;
+        int totalChunks = 400;
+
+        // Parse arguments
+        for (int i = 1; i < args.length; i++) {
+            switch (args[i]) {
+                case "--seed":
+                    if (i + 1 < args.length) {
+                        try {
+                            seed = Long.parseLong(args[++i]);
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid seed value: " + args[i]);
+                            return EXIT_ERROR;
+                        }
+                    }
+                    break;
+                case "--preset":
+                    if (i + 1 < args.length) {
+                        presetName = args[++i];
+                    }
+                    break;
+                case "--otg-root":
+                    if (i + 1 < args.length) {
+                        otgRoot = args[++i];
+                    }
+                    break;
+                case "--workers":
+                    if (i + 1 < args.length) {
+                        try {
+                            workers = Integer.parseInt(args[++i]);
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid workers value: " + args[i]);
+                            return EXIT_ERROR;
+                        }
+                    }
+                    break;
+                case "--chunks":
+                    if (i + 1 < args.length) {
+                        try {
+                            totalChunks = Integer.parseInt(args[++i]);
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid chunks value: " + args[i]);
+                            return EXIT_ERROR;
+                        }
+                    }
+                    break;
+            }
+        }
+
+        System.out.println("Shadow Stress Test Configuration:");
+        System.out.println("  Preset: " + presetName);
+        System.out.println("  Seed: " + seed);
+        System.out.println("  Workers: " + workers);
+        System.out.println("  Total chunks: " + totalChunks);
+        System.out.println();
+
+        try {
+            return executeShadowStressTest(seed, presetName, otgRoot, workers, totalChunks);
+        } catch (Exception e) {
+            System.err.println("Shadow stress test failed: " + e.getMessage());
+            e.printStackTrace();
+            return EXIT_ERROR;
+        }
+    }
+
+    private int executeShadowStressTest(long seed, String presetName, String otgRoot,
+                                         int workerCount, int totalChunks) throws Exception {
+        Path otgRootPath = Paths.get(otgRoot);
+
+        // Initialize headless mode
+        TestPresetLoader.initHeadless(otgRootPath);
+
+        // Load preset
+        Preset preset = TestPresetLoader.loadPreset(otgRootPath, presetName);
+        if (preset == null) {
+            throw new IllegalArgumentException("Preset not found: " + presetName);
+        }
+
+        OTGWorldInfo worldInfo = preset.getPresetConfig().getWorldInfo();
+
+        // Build IBiome array
+        List<BiomeConfig> biomeConfigs = preset.getBiomeConfigList();
+        int currentId = 1;
+        for (BiomeConfig bc : biomeConfigs) {
+            bc.setOTGBiomeId(currentId++);
+        }
+        int maxBiomeId = currentId - 1;
+
+        IBiome[] biomes = new IBiome[maxBiomeId + 1];
+        int[] availableBiomeIds = new int[biomeConfigs.size()];
+        int idx = 0;
+        for (BiomeConfig bc : biomeConfigs) {
+            int id = bc.getOTGBiomeID().id();
+            float temperature = bc.getVisualSettings().getBiomeTemperature();
+            biomes[id] = new TestBiome(bc, temperature);
+            availableBiomeIds[idx++] = id;
+        }
+
+        TestBiomeProvider biomeProvider = new TestBiomeProvider(seed, availableBiomeIds);
+
+        // Create SHARED generator
+        OTGChunkGenerator generator = new OTGChunkGenerator(preset, biomeProvider, biomes, worldInfo);
+        generator.setSeed(seed);
+
+        System.out.println("Loaded preset: " + preset.getFolderName());
+        System.out.println("Simulating ShadowChunkGenerator architecture...");
+        System.out.println();
+
+        // === ShadowChunkGenerator-like architecture ===
+        // Queue for chunks to generate (like ShadowChunkGenerator.chunksToLoad)
+        LinkedBlockingDeque<ChunkCoordinate> chunksToLoad = new LinkedBlockingDeque<>(512);
+        // Cache for generated chunks (like ShadowChunkGenerator.unloadedChunksCache)
+        ConcurrentHashMap<ChunkCoordinate, TestChunkBuffer> chunkCache = new ConcurrentHashMap<>();
+        // Track chunks being processed (like ShadowChunkGenerator.chunksBeingLoaded)
+        ConcurrentHashMap<ChunkCoordinate, Integer> chunksBeingLoaded = new ConcurrentHashMap<>();
+        // Latches for main thread to wait (like ShadowChunkGenerator.chunkLatches)
+        ConcurrentHashMap<ChunkCoordinate, CountDownLatch> chunkLatches = new ConcurrentHashMap<>();
+
+        AtomicInteger errors = new AtomicInteger(0);
+        AtomicInteger workerChunksGenerated = new AtomicInteger(0);
+        AtomicInteger mainThreadChunksGenerated = new AtomicInteger(0);
+        AtomicInteger cacheHits = new AtomicInteger(0);
+        AtomicBoolean stopWorkers = new AtomicBoolean(false);
+
+        // Start worker threads
+        Thread[] workers = new Thread[workerCount];
+        for (int w = 0; w < workerCount; w++) {
+            final int workerId = w;
+            workers[w] = new Thread(() -> {
+                ObjectArrayList<JigsawStructureData> structures = new ObjectArrayList<>();
+                while (!stopWorkers.get()) {
+                    ChunkCoordinate coord = null;
+                    try {
+                        coord = chunksToLoad.pollLast(50, TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException e) {
+                        if (stopWorkers.get()) return;
+                        continue;
+                    }
+
+                    if (coord != null) {
+                        // Mark as being processed
+                        chunksBeingLoaded.put(coord, workerId);
+                        CountDownLatch latch = chunkLatches.computeIfAbsent(coord, k -> new CountDownLatch(1));
+
+                        try {
+                            // Generate chunk
+                            TestChunkBuffer buffer = new TestChunkBuffer(
+                                    coord.getChunkX(), coord.getChunkZ(),
+                                    worldInfo.minY(), worldInfo.maxY()
+                            );
+                            Random random = new Random(seed ^ ((long) coord.getChunkX() * 341873128712L + (long) coord.getChunkZ() * 132897987541L));
+                            generator.populateNoise(worldInfo, buffer, coord, structures, random);
+
+                            // Store in cache
+                            chunkCache.put(coord, buffer);
+                            workerChunksGenerated.incrementAndGet();
+                        } catch (Exception e) {
+                            errors.incrementAndGet();
+                            System.err.println("Worker " + workerId + " error: " + e.getMessage());
+                        } finally {
+                            chunksBeingLoaded.remove(coord);
+                            chunkLatches.remove(coord);
+                            latch.countDown();
+                        }
+                    }
+                }
+            }, "OTG-TestWorker-" + w);
+            workers[w].setDaemon(true);
+            workers[w].start();
+        }
+
+        long startTime = System.nanoTime();
+
+        // Main thread: queue chunks and wait for results (simulates server thread)
+        int gridSize = (int) Math.ceil(Math.sqrt(totalChunks));
+        int chunksQueued = 0;
+        int chunksReceived = 0;
+
+        // Queue first batch
+        for (int i = 0; i < Math.min(totalChunks, 256); i++) {
+            int cx = i % gridSize;
+            int cz = i / gridSize;
+            ChunkCoordinate coord = ChunkCoordinate.fromChunkCoords(cx, cz);
+            chunksToLoad.offerFirst(coord);
+            chunksQueued++;
+        }
+
+        // Process chunks as they complete, queue more
+        ObjectArrayList<JigsawStructureData> mainStructures = new ObjectArrayList<>();
+        while (chunksReceived < totalChunks) {
+            int cx = chunksReceived % gridSize;
+            int cz = chunksReceived / gridSize;
+            ChunkCoordinate coord = ChunkCoordinate.fromChunkCoords(cx, cz);
+
+            // Try to get from cache first (like getChunkWithWait)
+            TestChunkBuffer cached = chunkCache.get(coord);
+            if (cached != null) {
+                cacheHits.incrementAndGet();
+                chunkCache.remove(coord);
+                chunksReceived++;
+            } else if (chunksBeingLoaded.containsKey(coord)) {
+                // Worker is generating - wait via latch
+                CountDownLatch latch = chunkLatches.computeIfAbsent(coord, k -> new CountDownLatch(1));
+                try {
+                    if (!latch.await(5000, TimeUnit.MILLISECONDS)) {
+                        // Timeout - generate ourselves
+                        TestChunkBuffer buffer = new TestChunkBuffer(cx, cz, worldInfo.minY(), worldInfo.maxY());
+                        Random random = new Random(seed ^ ((long) cx * 341873128712L + (long) cz * 132897987541L));
+                        generator.populateNoise(worldInfo, buffer, coord, mainStructures, random);
+                        mainThreadChunksGenerated.incrementAndGet();
+                        chunksReceived++;
+                    } else {
+                        // Worker finished - get from cache
+                        cached = chunkCache.remove(coord);
+                        if (cached != null) {
+                            cacheHits.incrementAndGet();
+                        }
+                        chunksReceived++;
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            } else {
+                // Not in queue, not being generated - generate on main thread
+                TestChunkBuffer buffer = new TestChunkBuffer(cx, cz, worldInfo.minY(), worldInfo.maxY());
+                Random random = new Random(seed ^ ((long) cx * 341873128712L + (long) cz * 132897987541L));
+                generator.populateNoise(worldInfo, buffer, coord, mainStructures, random);
+                mainThreadChunksGenerated.incrementAndGet();
+                chunksReceived++;
+            }
+
+            // Queue more chunks if needed
+            while (chunksQueued < totalChunks && chunksToLoad.size() < 256) {
+                int qx = chunksQueued % gridSize;
+                int qz = chunksQueued / gridSize;
+                ChunkCoordinate qcoord = ChunkCoordinate.fromChunkCoords(qx, qz);
+                if (!chunkCache.containsKey(qcoord) && !chunksBeingLoaded.containsKey(qcoord)) {
+                    chunksToLoad.offerFirst(qcoord);
+                }
+                chunksQueued++;
+            }
+        }
+
+        // Stop workers
+        stopWorkers.set(true);
+        for (Thread worker : workers) {
+            worker.interrupt();
+            worker.join(1000);
+        }
+
+        long elapsed = System.nanoTime() - startTime;
+        double elapsedMs = elapsed / 1_000_000.0;
+        double chunksPerSec = totalChunks * 1_000_000_000.0 / elapsed;
+
+        System.out.println();
+        System.out.println("=== SHADOW STRESS TEST RESULTS ===");
+        System.out.println("Total chunks: " + totalChunks);
+        System.out.println("Worker-generated: " + workerChunksGenerated.get());
+        System.out.println("Main thread-generated: " + mainThreadChunksGenerated.get());
+        System.out.println("Cache hits: " + cacheHits.get());
+        System.out.println("Errors: " + errors.get());
+        System.out.printf("Time: %.2f ms%n", elapsedMs);
+        System.out.printf("Throughput: %.1f chunks/sec%n", chunksPerSec);
+
+        double workerEfficiency = 100.0 * workerChunksGenerated.get() / totalChunks;
+        System.out.printf("Worker efficiency: %.1f%% (higher = workers doing more work)%n", workerEfficiency);
+
+        if (errors.get() > 0) {
+            System.err.println("FAILED: " + errors.get() + " error(s) occurred");
+            return EXIT_ERROR;
+        }
+
+        System.out.println();
+        System.out.println("SUCCESS: ShadowChunkGenerator simulation passed");
+        return EXIT_SUCCESS;
     }
 }

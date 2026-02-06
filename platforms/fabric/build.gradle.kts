@@ -34,6 +34,9 @@ dependencies {
     otg(project(":common:common-core"))
     otg(project(":platforms:shared"))
 
+    // High-performance cache - bundled in JAR
+    otg("com.github.ben-manes.caffeine:caffeine:3.1.8")
+
     compileOnly("org.projectlombok:lombok:1.18.32")
     annotationProcessor("org.projectlombok:lombok:1.18.32")
 
@@ -70,7 +73,10 @@ tasks {
             include(project(":common:common-generator"))
             include(project(":common:common-core"))
             include(project(":platforms:shared"))
+            include(dependency("com.github.ben-manes.caffeine:caffeine"))
         }
+        // Relocate Caffeine to avoid conflicts with other mods
+        relocate("com.github.benmanes.caffeine", "com.pg85.otg.dependency.caffeine")
         exclude("architectury.common.json")
         configurations = listOf(otg)
         archiveClassifier.set("deobf-all")
