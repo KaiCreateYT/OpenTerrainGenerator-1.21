@@ -88,8 +88,7 @@ public abstract class BiomeSettings implements ConfigFile {
     public double getCHCData(int controlLayer) {
         double[] chc = this.getTerrainSettings().getCustomHeightControl();
         if (controlLayer < 0 || controlLayer >= chc.length) {
-            // DEBUG: Log this and return 0 instead of crashing
-            System.err.println("DEBUG: CHC index out of bounds! controlLayer=" + controlLayer + ", chc.length=" + chc.length + ", biome=" + this.getConfigName());
+            com.pg85.otg.util.OTGLog.log(com.pg85.otg.util.logging.LogLevel.ERROR, com.pg85.otg.util.logging.LogCategory.MAIN, "CHC index out of bounds! controlLayer=" + controlLayer + ", chc.length=" + chc.length + ", biome=" + this.getConfigName());
             return 0.0;
         }
         return chc[controlLayer];

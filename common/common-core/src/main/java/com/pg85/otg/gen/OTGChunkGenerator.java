@@ -381,7 +381,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                     OTG.getEngine().getLogger().log(
                         com.pg85.otg.util.logging.LogLevel.ERROR,
                         LogCategory.MAIN,
-                        String.format("DEBUG: Invalid biome index %d (max=%d) at noiseX=%d, noiseZ=%d, x1=%d, z1=%d, areaSize=%d",
+                        String.format("Invalid biome index %d (max=%d) at noiseX=%d, noiseZ=%d, x1=%d, z1=%d, areaSize=%d",
                             biomeIndex, biomes.length, noiseX, noiseZ, x1, z1, areaSize)
                     );
                     continue;
@@ -391,7 +391,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                     OTG.getEngine().getLogger().log(
                         com.pg85.otg.util.logging.LogLevel.ERROR,
                         LogCategory.MAIN,
-                        String.format("DEBUG: Null biome at noiseX=%d, noiseZ=%d, index=%d",
+                        String.format("Null biome at noiseX=%d, noiseZ=%d, index=%d",
                             noiseX, noiseZ, biomeIndex)
                     );
                     continue;
@@ -467,13 +467,6 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
 
         // Factor in y sections (use reference from old 256-block world for consistent terrain height)
         height = REFERENCE_Y_SECTIONS * (2.0f + height + extraHeight) / 4.0f;
-
-        // DEBUG: Log noise details for edge chunks (first column only)
-//        boolean debugThisColumn = (Math.abs(noiseX) >= 68 || Math.abs(noiseZ) >= 68) && (noiseX % 4 == 0) && (noiseZ % 4 == 0);
-//        if (debugThisColumn) {
-//            System.err.println(String.format("DEBUG NOISE at [%d,%d]: height=%.2f, volatility=%.2f, weight=%.2f, biome=%s",
-//                noiseX, noiseZ, height, volatility, weight, center.getConfigName()));
-//        }
 
         double falloff;
         double horizontalScale;

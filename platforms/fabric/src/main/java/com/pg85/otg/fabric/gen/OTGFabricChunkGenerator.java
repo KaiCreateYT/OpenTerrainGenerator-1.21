@@ -1,7 +1,6 @@
 package com.pg85.otg.fabric.gen;
 
 import com.mojang.serialization.Codec;
-import com.mojang.serialization.Lifecycle;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.pg85.otg.OTG;
 import com.pg85.otg.constants.Constants;
@@ -9,7 +8,6 @@ import com.pg85.otg.constants.settings.structure.CustomStructureType;
 import com.pg85.otg.customobject.structures.CustomStructureCache;
 import com.pg85.otg.fabric.biome.FabricBiome;
 import com.pg85.otg.fabric.biome.OTGFabricBiomeProvider;
-import com.pg85.otg.fabric.mixin.StructureManagerAccessor;
 import com.pg85.otg.gen.OTGChunkDecorator;
 import com.pg85.otg.gen.OTGChunkGenerator;
 import com.pg85.otg.interfaces.IBiome;
@@ -50,7 +48,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Predicate;
-import net.minecraft.Util;
 
 @Getter
 public class OTGFabricChunkGenerator extends ChunkGenerator {

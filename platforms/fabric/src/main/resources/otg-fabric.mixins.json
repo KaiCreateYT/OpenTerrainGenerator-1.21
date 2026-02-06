@@ -10,7 +10,6 @@
     "ChunkAccessAccessor",
     "WorldPresetTagsMixin",
     "CocoaDecoratorMixin",
-    "StructureManagerAccessor",
     "WorldSaveMixin",
     "MinecraftServerAccessor",
     "MappedRegistryAccessor"
