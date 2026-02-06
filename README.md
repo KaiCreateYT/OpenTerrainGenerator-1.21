@@ -61,6 +61,42 @@ OTG supports nether-style portals with configurable colors and frame blocks. Cur
 
 4. **Portal search radius** - The algorithm searches within 128 blocks. If the original portal is farther away, it creates a new one instead of linking to the existing one.
 
+## Chunk Generation & Multithreading
+
+OTG's chunk generation is **thread-safe** and runs on vanilla's `ForkJoinPool` (`Util.backgroundExecutor()`). OTG does not manage its own worker threads — vanilla's chunk pipeline handles parallelism.
+
+### How it works
+
+Vanilla's chunk pipeline runs on a `ForkJoinPool` with `cores - 1` threads. Each worker thread processes one chunk at a time through status upgrades (EMPTY → STRUCTURE → NOISE → SURFACE → etc). When a worker calls `fillFromNoise()`, OTG runs `populateNoise()` **synchronously** on that worker thread and returns a `CompletableFuture.completedFuture()`. This gives natural per-chunk parallelism: on an 8-core CPU, up to 7 chunks generate in parallel with zero deadlock risk.
+
+This is the same approach [C2ME](https://github.com/RelativityMC/C2ME-fabric) uses (`Runnable::run` as executor).
+
+### Thread-safety guarantees
+
+| Component | Mechanism |
+|-----------|-----------|
+| Noise samplers | Immutable after `setSeed()` — safe to read from any thread |
+| Noise data buffer | `ThreadLocal<double[][][]>` — each worker has its own |
+| Biome cache | `ThreadSafeLRUCache` (Caffeine-backed) — concurrent reads/writes |
+| Block columns cache | `ThreadSafeLRUCache` — same |
+| Decoration | Per-chunk `Random` (deterministic from world seed + chunk coords) |
+| Chunk decorator | `AtomicInteger` counters, `volatile` flags, region-based locking |
+
+### Multiplayer scaling
+
+For servers with many players in different locations, install **C2ME** alongside OTG:
+
+- **C2ME** handles chunk pipeline scheduling (priority queue based on player distance, dedicated thread pool, async I/O)
+- **OTG** handles terrain generation (noise, surface, carvers, decoration)
+- No mixin conflicts — C2ME targets vanilla's `NoiseBasedChunkGenerator`, OTG uses its own `OTGFabricChunkGenerator`
+- Tested and confirmed compatible
+
+Without C2ME, vanilla's scheduler uses simple FIFO ordering with no player-distance priority. CPU-bound terrain generation (~13ms/chunk) is the bottleneck, not scheduling.
+
+### Shadow chunk generation
+
+`ShadowChunkGenerator` provides on-demand terrain generation for BO4 custom objects and `/otg mapterrain`. It generates base terrain for chunks **outside** vanilla's pipeline (no worker threads, no async). Used only when BO4 decoration needs height/material data from unloaded neighboring chunks.
+
 ## Development
 
 ### Terrain Snapshot Testing
