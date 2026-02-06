@@ -50,6 +50,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Predicate;
+import net.minecraft.Util;
 
 @Getter
 public class OTGFabricChunkGenerator extends ChunkGenerator {
@@ -110,7 +111,7 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
         this.biomeRegistry = biomeHolderGetter;
         this.horribleDelegateForCarvers = new NoiseBasedChunkGenerator(biomeSource, settings);
         this.chunkDecorator = new OTGChunkDecorator();
-        this.shadowChunkGenerator = new ShadowChunkGenerator(OTG.getEngine().getPluginConfig().getMaxWorkerThreads());
+        this.shadowChunkGenerator = new ShadowChunkGenerator();
         this.globalFluidPicker = createFluidPicker(settings.value());
     }
 
@@ -349,50 +350,34 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
             Executor executor, Blender blender, RandomState randomState, StructureManager structureManager,
             ChunkAccess chunkAccess
     ) {
-        ChunkCoordinate chunkCoord = ChunkCoordinate.fromChunkCoords(chunkAccess.getPos().x, chunkAccess.getPos().z);
+        ChunkCoordinate chunkCoord = ChunkCoordinate.fromChunkCoords(
+                chunkAccess.getPos().x, chunkAccess.getPos().z);
 
-        LevelAccessor levelAccessor = ((StructureManagerAccessor) structureManager).getLevel();
-
-        if (levelAccessor instanceof WorldGenRegion worldGenRegion) {
-            // Fetch any chunks that are cached in the WorldGenRegion, so we can
-            // pre-emptively generate and cache base terrain for them asynchronously.
-            this.shadowChunkGenerator.queueChunksForWorkerThreads(worldGenRegion, chunkAccess, this, otgWorldInfo);
-        }
-
-        // If we've already (shadow-)generated and cached this
-        // chunk while it was unloaded, use cached data.
-        ChunkBuffer buffer = new FabricChunkBuffer(chunkAccess);
-
-        ChunkAccess cachedChunk = this.shadowChunkGenerator.getChunkWithWait(chunkCoord);
-        if (cachedChunk != null) {
-            // Copy the cached chunk data to the new chunk.
-            this.shadowChunkGenerator.fillWorldGenChunkFromShadowChunk(chunkAccess, cachedChunk);
-        } else {
-            // Setup jigsaw data
-            ObjectList<JigsawStructureData> structures = new ObjectArrayList<>(10);
-            ChunkPos pos = chunkAccess.getPos();
-
-            // Iterate through all the jigsaw structures (villages, pillager outposts, nether fossils)
-            for (Map.Entry<Structure, StructureStart> n : chunkAccess.getAllStarts().entrySet()) {
-                Structure structure = n.getKey();
-                StructureStart start = n.getValue();
-                if (structure.terrainAdaptation() != TerrainAdjustment.NONE
-                        && structure.terrainAdaptation() != TerrainAdjustment.BURY
-                        && start.isValid()) {
-                    for (StructurePiece piece : start.getPieces()) {
-                        if (piece.isCloseToChunk(pos, 0)) {
-                            BoundingBox box = piece.getBoundingBox();
-                            structures.add(new JigsawStructureData(box.minX(), box.minY(), box.minZ(), box.maxX(), box.maxY(), box.maxZ(), true, 0, 0, 0));
-                        }
+        // Structure data is already available — STRUCTURE ChunkStatus completed before NOISE.
+        ObjectList<JigsawStructureData> structures = new ObjectArrayList<>(10);
+        ChunkPos pos = chunkAccess.getPos();
+        for (Map.Entry<Structure, StructureStart> n : chunkAccess.getAllStarts().entrySet()) {
+            Structure structure = n.getKey();
+            StructureStart start = n.getValue();
+            if (structure.terrainAdaptation() != TerrainAdjustment.NONE
+                    && structure.terrainAdaptation() != TerrainAdjustment.BURY
+                    && start.isValid()) {
+                for (StructurePiece piece : start.getPieces()) {
+                    if (piece.isCloseToChunk(pos, 0)) {
+                        BoundingBox box = piece.getBoundingBox();
+                        structures.add(new JigsawStructureData(
+                                box.minX(), box.minY(), box.minZ(),
+                                box.maxX(), box.maxY(), box.maxZ(),
+                                true, 0, 0, 0));
                     }
                 }
             }
-            // we have no more world random, so this is a bit of a stopgap for now. Seems to be mainly used for bedrock and surface
-            Random random = getRandomFromChunkCoord(chunkCoord);
-
-            this.internalGenerator.populateNoise(otgWorldInfo, buffer, buffer.getChunkCoordinate(), structures, random);
-            this.shadowChunkGenerator.setChunkGenerated(chunkCoord);
         }
+
+        ChunkBuffer buffer = new FabricChunkBuffer(chunkAccess);
+        Random random = getRandomFromChunkCoord(chunkCoord);
+        this.internalGenerator.populateNoise(otgWorldInfo, buffer,
+                buffer.getChunkCoordinate(), structures, random);
 
         return CompletableFuture.completedFuture(chunkAccess);
     }
@@ -523,11 +508,6 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
         } else {
             return Blocks.AIR.defaultBlockState();
         }
-    }
-
-    public void stopWorkerThreads()
-    {
-        this.shadowChunkGenerator.stopWorkerThreads();
     }
 
     public Boolean checkHasVanillaStructureWithoutLoading(ServerLevel level, ChunkCoordinate chunkCoord)

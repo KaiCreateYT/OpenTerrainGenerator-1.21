@@ -8,7 +8,6 @@
     "BuiltInRegistriesMixin",
     "RegistryLoaderMixin",
     "ChunkAccessAccessor",
-    "WorldGenRegionAccessor",
     "WorldPresetTagsMixin",
     "CocoaDecoratorMixin",
     "StructureManagerAccessor",

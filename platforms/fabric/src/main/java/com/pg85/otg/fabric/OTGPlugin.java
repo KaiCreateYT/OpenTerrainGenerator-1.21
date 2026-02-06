@@ -71,6 +71,10 @@ public class OTGPlugin implements ModInitializer {
 			FabricDimensionCommands.setManager(dimensionManager);
 			OTGLog.info("OTG Dimension Manager initialized");
 		});
+
+		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+			OTGLog.info("Server stopping");
+		});
 	}
 
 	void registerPortals() {
