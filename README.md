@@ -63,7 +63,7 @@ OTG supports nether-style portals with configurable colors and frame blocks. Cur
 
 | Mod | Status | Notes |
 |-----|--------|-------|
-| C2ME | **Incompatible** | C2ME is not compatible with OTG on 1.21.1. Do not use them together. |
+| C2ME | Compatible | Tested on 1.21.1. |
 | Lithium | Compatible | No known issues. |
 | Sodium | Compatible | Client-side only. |
 | Iris | Compatible | Client-side only. |
@@ -91,9 +91,12 @@ This is the same approach [C2ME](https://github.com/RelativityMC/C2ME-fabric) us
 
 ### Multiplayer scaling
 
-Without C2ME, vanilla's scheduler uses simple FIFO ordering with no player-distance priority. CPU-bound terrain generation (~13ms/chunk) is the bottleneck, not scheduling.
+For servers with many players in different locations, install **C2ME** alongside OTG:
 
-**Note:** C2ME is **not compatible** with OTG on MC 1.21.1. See [Known Issues](#known-issues-121) for details.
+- **C2ME** handles chunk pipeline scheduling (priority queue based on player distance, dedicated thread pool, async I/O)
+- **OTG** handles terrain generation (noise, surface, carvers, decoration)
+
+Without C2ME, vanilla's scheduler uses simple FIFO ordering with no player-distance priority. CPU-bound terrain generation (~13ms/chunk) is the bottleneck, not scheduling.
 
 ### Shadow chunk generation
 
@@ -147,12 +150,13 @@ Per chunk: 2.436 ms
 | Mod | Description | Required |
 |-----|-------------|----------|
 | [Fabric API](https://modrinth.com/mod/fabric-api) | Core Fabric modding library | Yes |
+| [C2ME](https://modrinth.com/mod/c2me-fabric) | Chunk generation multithreading and scheduling. Highly recommended for multiplayer servers. | No |
 | [Lithium](https://modrinth.com/mod/lithium) | General server-side optimization (game logic, mob AI, block ticking). No config needed. | No |
 | [Sodium](https://modrinth.com/mod/sodium) | Client-side rendering optimization. Huge FPS improvement. | No (client only) |
 | [Iris](https://modrinth.com/mod/iris) | Shader support compatible with Sodium. OptiFine shaders on Fabric. | No (client only) |
 | [Cardinal Components API](https://modrinth.com/mod/cardinal-components-api) | Data attachment API (v6). Used by OTG for custom dimension management. | Yes |
 
-**Note:** C2ME is **not compatible** with OTG on 1.21.1. Starlight is no longer needed — its lighting improvements were merged into vanilla MC 1.20+.
+**Note:** Starlight is no longer needed — its lighting improvements were merged into vanilla MC 1.20+.
 
 ## Links
 * [CurseForge](https://minecraft.curseforge.com/projects/open-terrain-generator)

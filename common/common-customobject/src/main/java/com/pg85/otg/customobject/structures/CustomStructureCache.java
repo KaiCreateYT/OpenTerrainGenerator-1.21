@@ -18,7 +18,7 @@ import com.pg85.otg.interfaces.IModLoadedChecker;
 import com.pg85.otg.interfaces.IStructuredCustomObject;
 import com.pg85.otg.interfaces.IWorldGenRegion;
 import com.pg85.otg.util.ChunkCoordinate;
-import com.pg85.otg.util.FifoMap;
+import com.pg85.otg.util.ThreadSafeLRUCache;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.helpers.RandomHelper;
 import com.pg85.otg.util.logging.LogCategory;
@@ -43,7 +43,7 @@ public class CustomStructureCache
 	private final long worldSeed;
 	
 	// BO3
-	private final FifoMap<ChunkCoordinate, BO3CustomStructure> bo3StructureCache;
+	private final ThreadSafeLRUCache<ChunkCoordinate, BO3CustomStructure> bo3StructureCache;
 	
 	// BO4
 	
@@ -64,7 +64,7 @@ public class CustomStructureCache
 	{
 		this.worldInfoChunks = new HashMap<>();
 		this.plotter = new CustomStructurePlotter();
-		this.bo3StructureCache = new FifoMap<>(400);
+		this.bo3StructureCache = new ThreadSafeLRUCache<>(400);
 		this.worldSaveDir = worldSaveDir;
 		this.isBO4Enabled = isBO4Enabled;
 		this.presetFolderName = presetFolderName;

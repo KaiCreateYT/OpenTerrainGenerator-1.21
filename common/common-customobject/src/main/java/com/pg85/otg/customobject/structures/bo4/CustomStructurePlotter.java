@@ -24,7 +24,7 @@ import com.pg85.otg.interfaces.IModLoadedChecker;
 import com.pg85.otg.interfaces.IStructuredCustomObject;
 import com.pg85.otg.interfaces.IWorldGenRegion;
 import com.pg85.otg.util.ChunkCoordinate;
-import com.pg85.otg.util.FifoMap;
+import com.pg85.otg.util.ThreadSafeLRUCache;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.bo3.Rotation;
 import com.pg85.otg.util.gen.DecorationArea;
@@ -58,14 +58,14 @@ public class CustomStructurePlotter
 	private boolean structurePlottedAtSpawn; // Used to make sure the structureatspawn is plotted first.
 	
 	// Non-persistent caches (optimisations)
-	private final FifoMap<ChunkCoordinate, ArrayList<String>> structureNamesPerChunk;
-	private final FifoMap<ChunkCoordinate, Object> plottedChunksFastCache; // TODO: Technically we don't need a map, we need a FIFO list with unique entries.
-	
+	private final ThreadSafeLRUCache<ChunkCoordinate, ArrayList<String>> structureNamesPerChunk;
+	private final ThreadSafeLRUCache<ChunkCoordinate, Boolean> plottedChunksFastCache;
+
 	public CustomStructurePlotter()
 	{
 		// Non-persistent caches
-		this.structureNamesPerChunk = new FifoMap<>(2048);
-		this.plottedChunksFastCache = new FifoMap<>(2048);
+		this.structureNamesPerChunk = new ThreadSafeLRUCache<>(2048);
+		this.plottedChunksFastCache = new ThreadSafeLRUCache<>(2048);
 		
 		// Persistent caches
 		this.spawnedStructuresByName = new HashMap<>();
@@ -142,7 +142,7 @@ public class CustomStructurePlotter
 		;
 		if(bFound)
 		{
-			this.plottedChunksFastCache.put(chunkCoordinate, null);
+			this.plottedChunksFastCache.put(chunkCoordinate, Boolean.TRUE);
 		}
 		return bFound;
 	}
@@ -204,7 +204,7 @@ public class CustomStructurePlotter
 		this.structureNamesPerChunk.put(chunkCoord, new ArrayList<>());
 		// Use separate cache for faster isChunkPopulated lookups, 
 		// no need to do containsKey + get == null, can just do containsKey
-		this.plottedChunksFastCache.put(chunkCoord, null);
+		this.plottedChunksFastCache.put(chunkCoord, Boolean.TRUE);
 	}
 	
 	private ChunkCoordinate plotStructures(BO4 targetStructure, ArrayList<String> targetBiomes, CustomStructureCache structureCache, IWorldGenRegion worldGenRegion, Random rand, ChunkCoordinate chunkCoord, boolean spawningStructureAtSpawn, Path otgRootFolder, CustomObjectManager customObjectManager, IMaterialReader materialReader, CustomObjectResourcesManager manager, IModLoadedChecker modLoadedChecker, boolean force)
