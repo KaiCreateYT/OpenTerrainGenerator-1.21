@@ -1,6 +1,7 @@
 package com.pg85.otg.fabric.gen;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.pg85.otg.OTG;
 import com.pg85.otg.constants.Constants;
@@ -59,10 +60,10 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
         return super.createState(structureSetLookup, randomState, seed);
     }
 
-    public static final Codec<OTGFabricChunkGenerator> CODEC =
-            RecordCodecBuilder.create(instance ->
+    public static final MapCodec<OTGFabricChunkGenerator> CODEC =
+            RecordCodecBuilder.mapCodec(instance ->
                     instance.group(
-                            OTGFabricBiomeProvider.CODEC.fieldOf("biome_source").forGetter(OTGFabricChunkGenerator::getBiomeSource),
+                            OTGFabricBiomeProvider.CODEC.forGetter(OTGFabricChunkGenerator::getBiomeSource),
                             NoiseGeneratorSettings.CODEC.fieldOf("settings").forGetter(OTGFabricChunkGenerator::getSettings)
                     ).apply(instance, instance.stable(OTGFabricChunkGenerator::createFromCodec)));
 
@@ -224,7 +225,7 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
     }
 
     @Override
-    protected Codec<? extends ChunkGenerator> codec() {
+    protected MapCodec<? extends ChunkGenerator> codec() {
         return CODEC;
     }
 
