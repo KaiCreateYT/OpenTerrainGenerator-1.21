@@ -60,10 +60,17 @@ public class RegistryLoaderMixin {
             RegistryAccess registryAccess,
             List<RegistryDataLoader.RegistryData<?>> list,
             CallbackInfoReturnable ci,
-            @Local List<RegistryDataLoader.Loader<?>> loaders
+            @Local(ordinal = 1) List<RegistryDataLoader.Loader<?>> loaders
     ) {
         if (getRegistry(loaders, Registries.DIMENSION) != null) {
             // vanilla auto-registers the level stems based on the world preset, so we can ignore this
+            return;
+        }
+
+        // In 1.21.1, load() is also called during client-side registry sync (SYNCHRONIZED_REGISTRIES).
+        // The synced set includes biomes and dimension types but NOT noise settings or world presets.
+        // We only want to run during server-side WORLDGEN_REGISTRIES loading.
+        if (getRegistry(loaders, Registries.NOISE_SETTINGS) == null) {
             return;
         }
 
