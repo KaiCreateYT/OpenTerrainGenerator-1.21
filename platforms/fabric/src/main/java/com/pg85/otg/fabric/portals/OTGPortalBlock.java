@@ -39,10 +39,10 @@ public class OTGPortalBlock extends NetherPortalBlock {
 
     @Override
     public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
-        if (!entity.isPassenger() && !entity.isVehicle() && entity.canChangeDimensions()) {
+        if (!entity.isPassenger() && !entity.isVehicle() && entity.canUsePortal(false)) {
             // Trigger visual effect on client side
             if (level.isClientSide) {
-                entity.handleInsidePortal(pos);
+                entity.setAsInsidePortal(this, pos);
                 return;
             }
 
@@ -54,7 +54,7 @@ public class OTGPortalBlock extends NetherPortalBlock {
                     component.setPortalState(true, this.portalColor);
 
                     int portalTime = component.getPortalTime();
-                    int waitTime = player.getPortalWaitTime();
+                    int waitTime = this.getPortalTransitionTime((ServerLevel) level, player);
 
                     if (portalTime >= waitTime) {
                         doTeleport(player, (ServerLevel) level);

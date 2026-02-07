@@ -1,5 +1,6 @@
 package com.pg85.otg.fabric.portals.components;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 
@@ -79,7 +80,7 @@ public class OTGPlayerComponentImpl implements OTGPlayerComponent {
     }
 
     @Override
-    public void readFromNbt(CompoundTag tag) {
+    public void readFromNbt(CompoundTag tag, HolderLookup.Provider provider) {
         this.inPortal = tag.getBoolean("inPortal");
         this.portalColor = tag.getString("portalColor");
         this.portalTime = tag.getInt("portalTime");
@@ -89,7 +90,7 @@ public class OTGPlayerComponentImpl implements OTGPlayerComponent {
     }
 
     @Override
-    public void writeToNbt(CompoundTag tag) {
+    public void writeToNbt(CompoundTag tag, HolderLookup.Provider provider) {
         tag.putBoolean("inPortal", inPortal);
         tag.putString("portalColor", portalColor);
         tag.putInt("portalTime", portalTime);

@@ -1,7 +1,7 @@
 package com.pg85.otg.fabric.dimensions;
 
 import com.google.common.collect.ImmutableList;
-import com.mojang.serialization.Lifecycle;
+import net.minecraft.core.RegistrationInfo;
 import com.pg85.otg.OTG;
 import com.pg85.otg.config.settings.preset.DimensionSettings;
 import com.pg85.otg.constants.Constants;
@@ -30,7 +30,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
-import net.minecraft.world.level.chunk.ChunkStatus;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
@@ -263,7 +263,7 @@ public class FabricDimensionHelper implements PlatformDimensionHelper<MinecraftS
                 // Create and register new DimensionType
                 DimensionType dimensionType = createDimensionType(dimSettings);
                 if (dimTypeRegistry instanceof MappedRegistry<DimensionType> mappedRegistry) {
-                    mappedRegistry.register(dimTypeKey, dimensionType, Lifecycle.stable());
+                    mappedRegistry.register(dimTypeKey, dimensionType, RegistrationInfo.BUILT_IN);
                     OTGLog.info("Registered new dimension type: %s", dimTypeKey.location());
                 }
                 dimTypeHolder = dimTypeRegistry.getHolderOrThrow(dimTypeKey);

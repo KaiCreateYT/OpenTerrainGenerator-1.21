@@ -108,7 +108,7 @@ public class FabricMaterials extends LocalMaterials
 		YELLOW_FLOWER = FabricMaterialData.ofBlockState(Blocks.DANDELION.defaultBlockState());
 		DEAD_BUSH = FabricMaterialData.ofBlockState(Blocks.DEAD_BUSH.defaultBlockState());
 		FERN = FabricMaterialData.ofBlockState(Blocks.FERN.defaultBlockState());
-		LONG_GRASS = FabricMaterialData.ofBlockState(Blocks.GRASS.defaultBlockState());
+		LONG_GRASS = FabricMaterialData.ofBlockState(Blocks.SHORT_GRASS.defaultBlockState());
 		
 		RED_MUSHROOM_BLOCK = FabricMaterialData.ofBlockState(Blocks.RED_MUSHROOM_BLOCK.defaultBlockState());
 		BROWN_MUSHROOM_BLOCK = FabricMaterialData.ofBlockState(Blocks.BROWN_MUSHROOM_BLOCK.defaultBlockState());		

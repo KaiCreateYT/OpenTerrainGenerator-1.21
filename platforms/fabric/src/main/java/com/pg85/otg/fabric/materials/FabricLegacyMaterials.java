@@ -83,7 +83,7 @@ class FabricLegacyMaterials
             case "log", "wood" -> Blocks.OAK_LOG.defaultBlockState();
             case "log_2" -> Blocks.ACACIA_LOG.defaultBlockState();
             case "magma" -> Blocks.MAGMA_BLOCK.defaultBlockState();
-            case "tallgrass" -> Blocks.GRASS.defaultBlockState();
+            case "tallgrass" -> Blocks.SHORT_GRASS.defaultBlockState();
             case "cobble_wall" -> Blocks.COBBLESTONE_WALL.defaultBlockState();
             case "iron_fence" -> Blocks.IRON_BARS.defaultBlockState();
             case "workbench" -> Blocks.CRAFTING_TABLE.defaultBlockState();
@@ -529,7 +529,7 @@ class FabricLegacyMaterials
                     if (data == 2) {
                         return Blocks.FERN.defaultBlockState();
                     }
-                    return Blocks.GRASS.defaultBlockState();
+                    return Blocks.SHORT_GRASS.defaultBlockState();
 				case "wooden_slab":
 				case "wood_step":
 				case "oak_slab":

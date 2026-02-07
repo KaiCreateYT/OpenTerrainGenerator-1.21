@@ -76,7 +76,10 @@ public class PortalIgnitionHandler {
 
                 if (!player.isCreative()) {
                     if (stack.isDamageableItem()) {
-                        stack.hurtAndBreak(1, player, p -> p.broadcastBreakEvent(hand));
+                        stack.hurtAndBreak(1, player,
+                                hand == InteractionHand.MAIN_HAND
+                                        ? net.minecraft.world.entity.EquipmentSlot.MAINHAND
+                                        : net.minecraft.world.entity.EquipmentSlot.OFFHAND);
                     } else {
                         stack.shrink(1);
                     }

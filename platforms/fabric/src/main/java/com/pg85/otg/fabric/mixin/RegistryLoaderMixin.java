@@ -1,7 +1,7 @@
 package com.pg85.otg.fabric.mixin;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import com.mojang.serialization.Lifecycle;
+import net.minecraft.core.RegistrationInfo;
 import com.pg85.otg.OTG;
 import com.pg85.otg.config.settings.preset.*;
 import com.pg85.otg.constants.Constants;
@@ -281,7 +281,7 @@ public class RegistryLoaderMixin {
         // create a world preset for thepreset
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, preset.getPresetRegistryName().toLowerCase(Locale.ROOT));
         ResourceKey<WorldPreset> key = ResourceKey.create(Registries.WORLD_PRESET, id);
-        worldPresets.register(key, worldPreset, Lifecycle.stable());
+        worldPresets.register(key, worldPreset, RegistrationInfo.BUILT_IN);
         OTGLog.getLogger().info("Registered world preset: " + key.location());
     }
 
@@ -313,7 +313,7 @@ public class RegistryLoaderMixin {
             throw new RuntimeException("Could not find noise settings registry");
         }
         ResourceKey<NoiseGeneratorSettings> key = ResourceKey.create(Registries.NOISE_SETTINGS, ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, preset.getPresetRegistryName()));
-        registry.register(key, ngs, Lifecycle.stable());
+        registry.register(key, ngs, RegistrationInfo.BUILT_IN);
     }
 
     private static @NotNull NoiseRouter getZeroNoiseRouter() {
@@ -351,7 +351,7 @@ public class RegistryLoaderMixin {
                     DimensionType dimensionType = getDimensionType(preset.getPresetConfig().getDimensionSettings());
                     // register the dimension
                     WritableRegistry<DimensionType> dimensionTypes = getRegistryOrThrow(loaders, Registries.DIMENSION_TYPE);
-                    dimensionTypes.register(dimensionTypeKey, dimensionType, Lifecycle.stable());
+                    dimensionTypes.register(dimensionTypeKey, dimensionType, RegistrationInfo.BUILT_IN);
                     OTGLog.info("Registered dimension type: %s", dimensionTypeKey.location());
                     // return the key for use elsewhere
                     yield dimensionTypeKey;

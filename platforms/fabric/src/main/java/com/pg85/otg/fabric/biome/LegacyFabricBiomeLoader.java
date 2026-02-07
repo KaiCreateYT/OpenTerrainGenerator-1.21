@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.Map.Entry;
 
-import com.mojang.serialization.Lifecycle;
+import net.minecraft.core.RegistrationInfo;
 import com.pg85.otg.OTG;
 import com.pg85.otg.config.ConfigFunction;
 import com.pg85.otg.config.biome.BiomeConfig;
@@ -274,7 +274,7 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
                 BiomeConfig biomeConfig = (BiomeConfig) biomeSettings;
                 biome = LegacyFabricBiomeLoader.createOTGBiome(preset.getPresetConfig(), biomeConfig, featureHolder, carverHolder);
 
-                ref = biomeRegistry.register(resourceKey, biome, Lifecycle.stable());
+                ref = biomeRegistry.register(resourceKey, biome, RegistrationInfo.BUILT_IN);
             }
             presetBiomes.add(resourceKey);
 

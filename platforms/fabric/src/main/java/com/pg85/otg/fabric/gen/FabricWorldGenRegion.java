@@ -41,7 +41,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
-import net.minecraft.world.level.chunk.ChunkStatus;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import net.minecraft.world.level.levelgen.feature.Feature;
@@ -391,7 +391,7 @@ public class FabricWorldGenRegion extends LocalWorldGenRegion {
         int chunkZ = z >> 4;
 
         // Check if the chunk has been lit, otherwise cancel.
-        if (worldGenLevel.getChunk(chunkX, chunkZ).getStatus().isOrAfter(ChunkStatus.LIGHT)) {
+        if (worldGenLevel.getChunk(chunkX, chunkZ).getPersistedStatus().isOrAfter(ChunkStatus.LIGHT)) {
             // Get the light level of the block state? Different from old behaviour
             // TODO: Check that this does not break in 1.20
             return this.worldGenLevel.getLightEmission(new BlockPos(x, y, z));
@@ -474,7 +474,7 @@ public class FabricWorldGenRegion extends LocalWorldGenRegion {
 
         BlockEntity tileEntity = this.worldGenLevel.getBlockEntity(new BlockPos(x, y, z));
         if (tileEntity != null) {
-            tileEntity.load(nms);
+            tileEntity.loadCustomOnly(nms, this.worldGenLevel.registryAccess());
         } else {
             if (OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS)) {
                 OTGLog.log(
@@ -682,7 +682,7 @@ public class FabricWorldGenRegion extends LocalWorldGenRegion {
                     block.isSolid() ||
                     (
                         (
-                            monster.getMobType() == MobType.WATER
+                            monster.canBreatheUnderwater()
                             || monster instanceof Guardian
                         )
                         && !block.isLiquid()
@@ -725,8 +725,7 @@ public class FabricWorldGenRegion extends LocalWorldGenRegion {
                             (int) entityData.getZ()
                         )),
                         MobSpawnType.CHUNK_GENERATION,
-                        null, // TODO: Missing functionality in EntityFunction
-                        nbtTagCompound
+                        null // TODO: Missing functionality in EntityFunction
                     );
                 this.worldGenLevel.addFreshEntity(monster);
             }
@@ -803,7 +802,7 @@ public class FabricWorldGenRegion extends LocalWorldGenRegion {
                 ? this.worldGenLevel.getChunk(pos.x, pos.z, ChunkStatus.CARVERS, false)
                 : null;
         }
-        if (chunk == null || !chunk.getStatus().isOrAfter(ChunkStatus.CARVERS)) {
+        if (chunk == null || !chunk.getPersistedStatus().isOrAfter(ChunkStatus.CARVERS)) {
             return this.chunkGenerator.getHighestBlockYInUnloadedChunk(
                 x,
                 z,

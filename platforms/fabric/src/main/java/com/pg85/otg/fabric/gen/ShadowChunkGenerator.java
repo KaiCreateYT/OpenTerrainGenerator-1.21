@@ -34,6 +34,9 @@ import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.TerrainAdjustment;
+import net.minecraft.world.level.levelgen.structure.placement.RandomSpreadStructurePlacement;
+import net.minecraft.world.level.levelgen.structure.placement.RandomSpreadType;
+import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
 import net.minecraft.world.level.levelgen.structure.structures.EndCityStructure;
 import net.minecraft.world.level.levelgen.structure.structures.JigsawStructure;
 import net.minecraft.world.level.levelgen.structure.structures.OceanMonumentStructure;
@@ -51,6 +54,10 @@ import org.jetbrains.annotations.Nullable;
  * is now async via CompletableFuture.supplyAsync in OTGFabricChunkGenerator.
  */
 public class ShadowChunkGenerator {
+    // Dummy placement for checkStructurePresence calls -- always passes placement checks.
+    private static final StructurePlacement DUMMY_PLACEMENT =
+            new RandomSpreadStructurePlacement(32, 8, RandomSpreadType.LINEAR, 0);
+
     private final ThreadSafeLRUCache<BlockPos2D, LocalMaterialData[]> unloadedBlockColumnsCache;
     private final ThreadSafeLRUCache<ChunkCoordinate, ChunkAccess> unloadedChunksCache;
     private final ThreadSafeLRUCache<ChunkCoordinate, Integer> hasVanillaStructureChunkCache = new ThreadSafeLRUCache<>(4096);
@@ -298,7 +305,7 @@ public class ShadowChunkGenerator {
             return false;
         }
 
-        return switch (manager.checkStructurePresence(chunkPos, structure, false)) {
+        return switch (manager.checkStructurePresence(chunkPos, structure, DUMMY_PLACEMENT, false)) {
             case START_PRESENT -> true;
             case START_NOT_PRESENT -> false;
             case CHUNK_LOAD_NEEDED -> {

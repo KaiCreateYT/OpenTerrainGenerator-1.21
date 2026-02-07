@@ -144,18 +144,16 @@ public class FabricNBTHelper extends LocalNBTHelper {
     @Override
     public NamedBinaryTag getNBTFromLocation(LocalWorldGenRegion world, int x, int y, int z) {
         BlockEntity blockEntity = ((FabricWorldGenRegion) world).getBlockEntity(new BlockPos(x, y, z));
-        
+
         if (blockEntity == null) {
             return null;
         }
-        
-        CompoundTag nbt = new CompoundTag();
-        
-        blockEntity.load(nbt);
+
+        CompoundTag nbt = blockEntity.saveCustomOnly(blockEntity.getLevel().registryAccess());
         nbt.remove("x");
         nbt.remove("y");
         nbt.remove("z");
-        
+
         return getNBTFromNMSTagCompound(null, nbt);
     }
 
