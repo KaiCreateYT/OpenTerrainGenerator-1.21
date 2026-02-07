@@ -25,8 +25,10 @@ import java.util.Optional;
 
 @Mixin(ReloadableServerResources.class)
 public class WorldPresetTagsMixin {
-    @Inject(method = "updateRegistryTags", at = @At("RETURN"))
-    private void addOurOwnTags(RegistryAccess registryAccess, CallbackInfo ci) {
+    @Inject(method = "updateRegistryTags()V", at = @At("RETURN"))
+    private void addOurOwnTags(CallbackInfo ci) {
+        ReloadableServerResources self = (ReloadableServerResources) (Object) this;
+        RegistryAccess registryAccess = self.fullRegistries().get();
         OTGLog.getLogger().info("Adding OTG presets to the world preset tags");
         var presets = registryAccess.registryOrThrow(Registries.WORLD_PRESET);
         // get all the tags from the presets registry
