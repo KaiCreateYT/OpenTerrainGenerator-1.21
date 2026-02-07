@@ -3,7 +3,7 @@ package com.pg85.otg.fabric.mixin;
 import com.pg85.otg.fabric.biome.FabricBiomeLoader;
 import com.pg85.otg.fabric.biome.LegacyFabricBiomeLoader;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.BootstapContext;
+import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.data.worldgen.biome.BiomeData;
 import net.minecraft.world.level.biome.Biome;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,7 +16,7 @@ public class BiomeDataMixin {
 
     // Inject code at the end of the bootstrap method
     @Inject(method = "bootstrap", at = @At("TAIL"))
-    private static void storeHolderGetters(BootstapContext<Biome> arg, CallbackInfo ci) {
+    private static void storeHolderGetters(BootstrapContext<Biome> arg, CallbackInfo ci) {
         LegacyFabricBiomeLoader.PLACED_FEATURE_HOLDER = arg.lookup(Registries.PLACED_FEATURE);
         LegacyFabricBiomeLoader.CONFIGURED_CARVER_HOLDER = arg.lookup(Registries.CONFIGURED_CARVER);
         LegacyFabricBiomeLoader.BIOME_DATA_INITIALIZED = true;
