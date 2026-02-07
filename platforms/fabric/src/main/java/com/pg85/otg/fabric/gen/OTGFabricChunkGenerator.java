@@ -47,7 +47,7 @@ import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
+
 import java.util.function.Predicate;
 
 @Getter
@@ -345,7 +345,7 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
 
     @Override
     public CompletableFuture<ChunkAccess> fillFromNoise(
-            Executor executor, Blender blender, RandomState randomState, StructureManager structureManager,
+            Blender blender, RandomState randomState, StructureManager structureManager,
             ChunkAccess chunkAccess
     ) {
         ChunkCoordinate chunkCoord = ChunkCoordinate.fromChunkCoords(
