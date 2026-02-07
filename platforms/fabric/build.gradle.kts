@@ -46,7 +46,7 @@ dependencies {
 }
 
 loom {
-    //accessWidenerPath = file("src/main/resources/META-INF/otg.accesswidener")
+    accessWidenerPath = file("src/main/resources/META-INF/otg.accesswidener")
 }
 
 tasks {
@@ -83,7 +83,7 @@ tasks {
     }
 
     remapJar {
-        //injectAccessWidener = true
+        injectAccessWidener = true
         dependsOn(shadowJar)
         inputFile.set(shadowJar.get().archiveFile)
 

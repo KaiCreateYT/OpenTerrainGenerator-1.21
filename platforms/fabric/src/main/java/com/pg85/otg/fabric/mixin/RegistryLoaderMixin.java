@@ -1,6 +1,6 @@
 package com.pg85.otg.fabric.mixin;
 
-import com.mojang.datafixers.util.Pair;
+import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.serialization.Lifecycle;
 import com.pg85.otg.OTG;
 import com.pg85.otg.config.settings.preset.*;
@@ -18,7 +18,6 @@ import net.minecraft.data.worldgen.SurfaceRuleData;
 import net.minecraft.resources.RegistryDataLoader;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.level.biome.*;
@@ -33,52 +32,57 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import java.util.*;
 
 @Mixin(RegistryDataLoader.class)
 @SuppressWarnings("unused") // Mixins are by nature unused
 public class RegistryLoaderMixin {
-    // Explainer: The injector below needs to match:
-    // 1. The method signature of the target method
-    // 2. The CallbackInfoReturnable parameter (not normal CallbackInfo)
-    // 3. The local variables in the target method, in order
-    // Only then do we get access to the list of registries
+    // In 1.21.1, the actual registry loading logic moved to a private overload:
+    //   private static load(LoadingFunction, RegistryAccess, List<RegistryData<?>>)
+    // The local variable List<Loader<?>> holds all writable registries being loaded.
+    // We use @Local from MixinExtras to capture it (access widener exposes Loader/LoadingFunction).
     @Inject(
-            method = "load(Lnet/minecraft/server/packs/resources/ResourceManager;Lnet/minecraft/core/RegistryAccess;" +
-                    "Ljava/util/List;)Lnet/minecraft/core/RegistryAccess$Frozen;",
+            method = "load(" +
+                    "Lnet/minecraft/resources/RegistryDataLoader$LoadingFunction;" +
+                    "Lnet/minecraft/core/RegistryAccess;" +
+                    "Ljava/util/List;" +
+                    ")Lnet/minecraft/core/RegistryAccess$Frozen;",
             at = @At(
                 value = "INVOKE",
                 target = "Ljava/util/List;forEach(Ljava/util/function/Consumer;)V",
                 ordinal = 1
-            ),
-            locals = LocalCapture.CAPTURE_FAILHARD
+            )
     )
-    @SuppressWarnings("rawtypes") // Raw types required for this to work, not used in the code
-    private static void loadOTGPresets(ResourceManager resourceManager, RegistryAccess registryAccess, List<RegistryDataLoader.RegistryData<?>> list,
-                                       CallbackInfoReturnable ci, Map errorMap, List<Pair<WritableRegistry<?>, Object>> registries) {
-        if (getRegistry(registries, Registries.DIMENSION) != null ) {
+    @SuppressWarnings("rawtypes")
+    private static void loadOTGPresets(
+            RegistryDataLoader.LoadingFunction loadingFunction,
+            RegistryAccess registryAccess,
+            List<RegistryDataLoader.RegistryData<?>> list,
+            CallbackInfoReturnable ci,
+            @Local List<RegistryDataLoader.Loader<?>> loaders
+    ) {
+        if (getRegistry(loaders, Registries.DIMENSION) != null) {
             // vanilla auto-registers the level stems based on the world preset, so we can ignore this
             return;
         }
 
         OTGLog.getLogger().info("Registering the following OTG presets: %s", OTG.getEngine().getPresetLoader().getAllPresets());
 
-        //printAllRegistriesForDebug(registries);
+        //printAllRegistriesForDebug(loaders);
 
         // register biomes
-        registerBiomes(registries);
+        registerBiomes(loaders);
 
         // Register our dimension types in the format otg:preset
-        HashMap<Preset, ResourceKey<DimensionType>> dimensionTypes = registerDimensionTypes(registries);
+        HashMap<Preset, ResourceKey<DimensionType>> dimensionTypes = registerDimensionTypes(loaders);
 
         // register noise generator settings for each preset
         for (Preset preset : dimensionTypes.keySet()) {
-            registerNoiseGenSettings(preset, registries, registryAccess);
+            registerNoiseGenSettings(preset, loaders, registryAccess);
         }
 
-        WritableRegistry<WorldPreset> worldPresets = getRegistry(registries, Registries.WORLD_PRESET);
+        WritableRegistry<WorldPreset> worldPresets = getRegistry(loaders, Registries.WORLD_PRESET);
         if (worldPresets == null) {
             OTGLog.getLogger().error("Could not find world preset registry");
             return;
@@ -92,14 +96,14 @@ public class RegistryLoaderMixin {
             OTGLog.getLogger().info("Registering world preset: %s", dimensionTypes.get(preset).location());
 
             // create level stems, with at least one using the Overworld resource key
-            Map<ResourceKey<LevelStem>, LevelStem> levelStems = createLevelStems(preset, registries);
+            Map<ResourceKey<LevelStem>, LevelStem> levelStems = createLevelStems(preset, loaders);
 
             // register world presets, using the level stems
             registerWorldPresets(preset, worldPresets, levelStems);
         }
     }
 
-    private static void registerBiomes(List<Pair<WritableRegistry<?>, Object>> registries) {
+    private static void registerBiomes(List<RegistryDataLoader.Loader<?>> loaders) {
         if (OTG.getEngine().getPluginConfig().getDeveloperModeEnabled()) {
             // clear all the caches
             OTG.getEngine().getCustomObjectManager().reloadCustomObjectFiles();
@@ -107,7 +111,7 @@ public class RegistryLoaderMixin {
         }
 
         LegacyFabricBiomeLoader loader = (LegacyFabricBiomeLoader) OTG.getEngine().getPresetLoader();
-        WritableRegistry<Biome> biomeWritableRegistry = getRegistry(registries, Registries.BIOME);
+        WritableRegistry<Biome> biomeWritableRegistry = getRegistry(loaders, Registries.BIOME);
         if (biomeWritableRegistry == null) {
             OTGLog.getLogger().error("Could not find biome registry");
             return;
@@ -115,25 +119,24 @@ public class RegistryLoaderMixin {
         loader.registerBiomes(biomeWritableRegistry);
     }
 
-    private static void printAllRegistriesForDebug(List<Pair<WritableRegistry<?>, Object>> registries) {
+    private static void printAllRegistriesForDebug(List<RegistryDataLoader.Loader<?>> loaders) {
         System.out.println("--*--");
-        for (Pair<WritableRegistry<?>, Object> registry : registries) {
-            OTGLog.info("Registry: %s", registry.getFirst().key());
-            //OTGLog.info("Object: %s", registry.getSecond());
+        for (RegistryDataLoader.Loader<?> entry : loaders) {
+            OTGLog.info("Registry: %s", entry.registry().key());
         }
         System.out.println("--*--");
     }
 
     private static Map<ResourceKey<LevelStem>, LevelStem> createLevelStems(
             Preset preset,
-            List<Pair<WritableRegistry<?>, Object>> registries
+            List<RegistryDataLoader.Loader<?>> loaders
     ) {
         var dimensionNames = preset.getDimensionNames();
         int counter = 0;
 
         Map<ResourceKey<LevelStem>, LevelStem> levelStems = new HashMap<>();
-        HolderGetter<DimensionType> dimensionHolders = getRegistryOrThrow(registries, Registries.DIMENSION_TYPE).asLookup();
-        HolderGetter<NoiseGeneratorSettings> noiseHolders = getRegistryOrThrow(registries, Registries.NOISE_SETTINGS).asLookup();
+        HolderGetter<DimensionType> dimensionHolders = getRegistryOrThrow(loaders, Registries.DIMENSION_TYPE).asLookup();
+        HolderGetter<NoiseGeneratorSettings> noiseHolders = getRegistryOrThrow(loaders, Registries.NOISE_SETTINGS).asLookup();
 
         for (String dim : dimensionNames) {
             ResourceKey<LevelStem> key;
@@ -190,7 +193,7 @@ public class RegistryLoaderMixin {
                     //continue;
                 }
 
-                Registry<Biome> biomeRegistry = getRegistryOrThrow(registries, Registries.BIOME);
+                Registry<Biome> biomeRegistry = getRegistryOrThrow(loaders, Registries.BIOME);
 
                 chunkGenerator = new OTGFabricChunkGenerator(
                         new OTGFabricBiomeProvider(preset.getFolderName(), 0L),
@@ -214,7 +217,7 @@ public class RegistryLoaderMixin {
                 }
 
                 if (dimensionKey == BuiltinDimensionTypes.OVERWORLD) {
-                    Holder<MultiNoiseBiomeSourceParameterList> overworldBiomeSource = getRegistryOrThrow(registries, Registries.MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST)
+                    Holder<MultiNoiseBiomeSourceParameterList> overworldBiomeSource = getRegistryOrThrow(loaders, Registries.MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST)
                             .asLookup().getOrThrow(MultiNoiseBiomeSourceParameterLists.OVERWORLD);
                     if (!overworldBiomeSource.isBound()) {
                         OTGLog.getLogger().error("Overworld biome source is not bound");
@@ -226,7 +229,7 @@ public class RegistryLoaderMixin {
                             overworldNoise
                     );
                 } else if (dimensionKey == BuiltinDimensionTypes.NETHER) {
-                    Holder<MultiNoiseBiomeSourceParameterList> netherBiomeSource = getRegistryOrThrow(registries, Registries.MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST)
+                    Holder<MultiNoiseBiomeSourceParameterList> netherBiomeSource = getRegistryOrThrow(loaders, Registries.MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST)
                             .asLookup().getOrThrow(MultiNoiseBiomeSourceParameterLists.NETHER);
                     if (!netherBiomeSource.isBound()) {
                         OTGLog.getLogger().error("Nether biome source is not bound");
@@ -238,7 +241,7 @@ public class RegistryLoaderMixin {
                             netherNoise
                     );
                 } else if (dimensionKey == BuiltinDimensionTypes.END) {
-                    var biomes = getRegistryOrThrow(registries, Registries.BIOME).asLookup();
+                    var biomes = getRegistryOrThrow(loaders, Registries.BIOME).asLookup();
                     Holder<NoiseGeneratorSettings> endNoise = noiseHolders.getOrThrow(NoiseGeneratorSettings.END);
                     chunkGenerator = new NoiseBasedChunkGenerator(
                             TheEndBiomeSource.create(biomes),
@@ -284,7 +287,7 @@ public class RegistryLoaderMixin {
 
     private static void registerNoiseGenSettings(
             Preset preset,
-            List<Pair<WritableRegistry<?>, Object>> registries,
+            List<RegistryDataLoader.Loader<?>> loaders,
             RegistryAccess registryAccess) {
         PresetSettings presetSettings = preset.getPresetConfig();
         DimensionSettings dimensionSettings = presetSettings.getDimensionSettings();
@@ -305,7 +308,7 @@ public class RegistryLoaderMixin {
         );
 
         // register the noise settings
-        WritableRegistry<NoiseGeneratorSettings> registry = getRegistry(registries, Registries.NOISE_SETTINGS);
+        WritableRegistry<NoiseGeneratorSettings> registry = getRegistry(loaders, Registries.NOISE_SETTINGS);
         if (registry == null) {
             throw new RuntimeException("Could not find noise settings registry");
         }
@@ -333,7 +336,7 @@ public class RegistryLoaderMixin {
         );
     }
 
-    private static @NotNull HashMap<Preset, ResourceKey<DimensionType>> registerDimensionTypes(List<Pair<WritableRegistry<?>, Object>> list2) {
+    private static @NotNull HashMap<Preset, ResourceKey<DimensionType>> registerDimensionTypes(List<RegistryDataLoader.Loader<?>> loaders) {
         var map = new HashMap<Preset, ResourceKey<DimensionType>>();
         for (Preset preset : OTG.getEngine().getPresetLoader().getAllPresets()) {
             OTGDimensionType otgDimensionType = preset.getPresetConfig().getDimensionSettings().getDimensionType();
@@ -347,7 +350,7 @@ public class RegistryLoaderMixin {
                     // create settings for OTG dimension
                     DimensionType dimensionType = getDimensionType(preset.getPresetConfig().getDimensionSettings());
                     // register the dimension
-                    WritableRegistry<DimensionType> dimensionTypes = getRegistryOrThrow(list2, Registries.DIMENSION_TYPE);
+                    WritableRegistry<DimensionType> dimensionTypes = getRegistryOrThrow(loaders, Registries.DIMENSION_TYPE);
                     dimensionTypes.register(dimensionTypeKey, dimensionType, Lifecycle.stable());
                     OTGLog.info("Registered dimension type: %s", dimensionTypeKey.location());
                     // return the key for use elsewhere
@@ -389,8 +392,8 @@ public class RegistryLoaderMixin {
         );
     }
 
-    private static <T> WritableRegistry<T> getRegistryOrThrow(List<Pair<WritableRegistry<?>, Object>> registries, ResourceKey<Registry<T>> key) {
-        WritableRegistry<T> registry = getRegistry(registries, key);
+    private static <T> WritableRegistry<T> getRegistryOrThrow(List<RegistryDataLoader.Loader<?>> loaders, ResourceKey<Registry<T>> key) {
+        WritableRegistry<T> registry = getRegistry(loaders, key);
         if (registry == null) {
             throw new RuntimeException("Could not find registry for key " + key.location());
         }
@@ -398,14 +401,12 @@ public class RegistryLoaderMixin {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> WritableRegistry<T> getRegistry(List<Pair<WritableRegistry<?>, Object>> registries, ResourceKey<Registry<T>> key) {
-        List<? extends WritableRegistry<?>> x = registries.stream()
-                .map(Pair::getFirst)
-                .filter(result -> result.key().equals(key))
-                .toList();
-        if (x.isEmpty()) {
-            return null;
+    private static <T> WritableRegistry<T> getRegistry(List<RegistryDataLoader.Loader<?>> loaders, ResourceKey<Registry<T>> key) {
+        for (RegistryDataLoader.Loader<?> entry : loaders) {
+            if (entry.registry().key().equals(key)) {
+                return (WritableRegistry<T>) entry.registry();
+            }
         }
-        return (WritableRegistry<T>) x.get(0);
+        return null;
     }
 }
