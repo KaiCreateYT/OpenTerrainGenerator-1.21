@@ -2,9 +2,9 @@ name: Build & Release
 
 on:
   push:
-    branches: [ "1.20.1", "main", "master" ]
+    branches: [ "1.20.1", "1.21.1", "main", "master" ]
   pull_request:
-    branches: [ "1.20.1", "main", "master" ]
+    branches: [ "1.20.1", "1.21.1", "main", "master" ]
 
 jobs:
   build:
@@ -14,10 +14,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Set up JDK 17
+    - name: Set up JDK
       uses: actions/setup-java@v4
       with:
-        java-version: '17'
+        java-version: ${{ github.ref_name == '1.21.1' && '21' || '17' }}
         distribution: 'temurin'
 
     - name: Setup Gradle
@@ -44,7 +44,7 @@ jobs:
 
     - name: Delete old dev release
       if: github.event_name == 'push'
-      run: gh release delete dev --yes || true
+      run: gh release delete dev-${{ github.ref_name }} --yes || true
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -52,8 +52,8 @@ jobs:
       if: github.event_name == 'push'
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: dev
-        name: "Unofficial Development Build (${{ steps.sha.outputs.SHORT_SHA }})"
+        tag_name: dev-${{ github.ref_name }}
+        name: "Dev Build ${{ github.ref_name }} (${{ steps.sha.outputs.SHORT_SHA }})"
         prerelease: true
         body: |
           **UNOFFICIAL** automatic development build from `${{ github.ref_name }}` branch.
