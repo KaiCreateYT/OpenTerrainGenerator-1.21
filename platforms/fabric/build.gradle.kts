@@ -41,8 +41,8 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:1.18.32")
 
     // Cardinal Components API for player portal state tracking
-    modImplementation("dev.onyxstudios.cardinal-components-api:cardinal-components-base:${project.property("cardinal_components_version")}")
-    modImplementation("dev.onyxstudios.cardinal-components-api:cardinal-components-entity:${project.property("cardinal_components_version")}")
+    modImplementation("org.ladysnake.cardinal-components-api:cardinal-components-base:${project.property("cardinal_components_version")}")
+    modImplementation("org.ladysnake.cardinal-components-api:cardinal-components-entity:${project.property("cardinal_components_version")}")
 }
 
 loom {
