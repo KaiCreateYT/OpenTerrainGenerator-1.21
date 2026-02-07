@@ -145,7 +145,7 @@ public class RegistryLoaderMixin {
             } else if (counter == 2) {
                 key = LevelStem.END;
             } else {
-                key = ResourceKey.create(Registries.LEVEL_STEM, new ResourceLocation(dim));
+                key = ResourceKey.create(Registries.LEVEL_STEM, ResourceLocation.parse(dim));
             }
 
             ChunkGenerator chunkGenerator;
@@ -165,7 +165,7 @@ public class RegistryLoaderMixin {
 
                 ResourceKey<DimensionType> dimensionKey = switch (dimPreset.getPresetConfig().getDimensionSettings().getDimensionType()) {
                     // OTG dimension
-                    case OTG -> ResourceKey.create(Registries.DIMENSION_TYPE, new ResourceLocation(Constants.MOD_ID_SHORT, dimPreset.getPresetRegistryName()));
+                    case OTG -> ResourceKey.create(Registries.DIMENSION_TYPE, ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, dimPreset.getPresetRegistryName()));
                     case OVERWORLD -> BuiltinDimensionTypes.OVERWORLD;
                     case NETHER -> BuiltinDimensionTypes.NETHER;
                     case END -> BuiltinDimensionTypes.END;
@@ -175,7 +175,7 @@ public class RegistryLoaderMixin {
                     case OVERWORLD -> NoiseGeneratorSettings.OVERWORLD;
                     case NETHER -> NoiseGeneratorSettings.NETHER;
                     case END -> NoiseGeneratorSettings.END;
-                    case OTG -> ResourceKey.create(Registries.NOISE_SETTINGS, new ResourceLocation(Constants.MOD_ID_SHORT, dimPreset.getPresetRegistryName()));
+                    case OTG -> ResourceKey.create(Registries.NOISE_SETTINGS, ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, dimPreset.getPresetRegistryName()));
                 };
 
                 Holder.Reference<DimensionType> dimensionReference = dimensionHolders.getOrThrow(dimensionKey);
@@ -202,7 +202,7 @@ public class RegistryLoaderMixin {
                         chunkGenerator
                 );
             } else {
-                ResourceKey<DimensionType> dimensionKey = ResourceKey.create(Registries.DIMENSION_TYPE, new ResourceLocation(dim));
+                ResourceKey<DimensionType> dimensionKey = ResourceKey.create(Registries.DIMENSION_TYPE, ResourceLocation.parse(dim));
                 Optional<Holder.Reference<DimensionType>> dimensionTypeHolder = dimensionHolders.get(dimensionKey);
                 if (dimensionTypeHolder.isEmpty()) {
                     OTGLog.getLogger().error("Could not find dimension reference for dimension %s", dimensionKey.location());
@@ -276,7 +276,7 @@ public class RegistryLoaderMixin {
 
         WorldPreset worldPreset = new WorldPreset(levelStems);
         // create a world preset for thepreset
-        ResourceLocation id = new ResourceLocation(Constants.MOD_ID_SHORT, preset.getPresetRegistryName().toLowerCase(Locale.ROOT));
+        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, preset.getPresetRegistryName().toLowerCase(Locale.ROOT));
         ResourceKey<WorldPreset> key = ResourceKey.create(Registries.WORLD_PRESET, id);
         worldPresets.register(key, worldPreset, Lifecycle.stable());
         OTGLog.getLogger().info("Registered world preset: " + key.location());
@@ -309,7 +309,7 @@ public class RegistryLoaderMixin {
         if (registry == null) {
             throw new RuntimeException("Could not find noise settings registry");
         }
-        ResourceKey<NoiseGeneratorSettings> key = ResourceKey.create(Registries.NOISE_SETTINGS, new ResourceLocation(Constants.MOD_ID_SHORT, preset.getPresetRegistryName()));
+        ResourceKey<NoiseGeneratorSettings> key = ResourceKey.create(Registries.NOISE_SETTINGS, ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, preset.getPresetRegistryName()));
         registry.register(key, ngs, Lifecycle.stable());
     }
 
@@ -342,7 +342,7 @@ public class RegistryLoaderMixin {
                 case NETHER -> BuiltinDimensionTypes.NETHER;
                 case END -> BuiltinDimensionTypes.END;
                 case OTG -> {
-                    ResourceLocation id = new ResourceLocation(Constants.MOD_ID_SHORT, preset.getPresetRegistryName().toLowerCase(Locale.ROOT));
+                    ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, preset.getPresetRegistryName().toLowerCase(Locale.ROOT));
                     ResourceKey<DimensionType> dimensionTypeKey = ResourceKey.create(Registries.DIMENSION_TYPE, id);
                     // create settings for OTG dimension
                     DimensionType dimensionType = getDimensionType(preset.getPresetConfig().getDimensionSettings());
@@ -372,8 +372,8 @@ public class RegistryLoaderMixin {
                 settings.getMinY(),
                 settings.getHeight(),
                 settings.getLogicalHeight(),
-                TagKey.create(Registries.BLOCK, new ResourceLocation(settings.getInfiniburn())),
-                new ResourceLocation(settings.getEffectsLocation().toLowerCase(Locale.ROOT)),
+                TagKey.create(Registries.BLOCK, ResourceLocation.parse(settings.getInfiniburn())),
+                ResourceLocation.parse(settings.getEffectsLocation().toLowerCase(Locale.ROOT)),
                 (float) settings.getAmbientLight(),
                 new DimensionType.MonsterSettings(
                         settings.isPiglinSafe(),

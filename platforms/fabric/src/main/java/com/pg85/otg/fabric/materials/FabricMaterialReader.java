@@ -193,7 +193,7 @@ public class FabricMaterialReader implements IMaterialReader {
         {
             // This returns AIR if block is not found ><.
             // TODO: Is this still the case? -auth
-            Optional<Holder.Reference<Block>> result = blockLookup.get(ResourceKey.create(Registries.BLOCK, new ResourceLocation(blockNameCorrected)));
+            Optional<Holder.Reference<Block>> result = blockLookup.get(ResourceKey.create(Registries.BLOCK, ResourceLocation.parse(blockNameCorrected)));
             block = result.map(Holder.Reference::value).orElse(null);
 
             if(block != null && (block != Blocks.AIR || blockNameCorrected.toLowerCase().endsWith("air")))

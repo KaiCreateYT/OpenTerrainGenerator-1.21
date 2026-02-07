@@ -21,7 +21,7 @@ public final class DimensionKeys {
      */
     public static ResourceKey<Level> otg(String name) {
         return ResourceKey.create(Registries.DIMENSION,
-                new ResourceLocation(Constants.MOD_ID_SHORT, DimensionNameUtils.normalizeName(name)));
+                ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, DimensionNameUtils.normalizeName(name)));
     }
 
     /**

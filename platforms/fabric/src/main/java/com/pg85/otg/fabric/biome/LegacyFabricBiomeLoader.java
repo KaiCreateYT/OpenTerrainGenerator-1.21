@@ -232,7 +232,7 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
 
             // When using TemplateForBiome, we'll fetch the non-OTG biome from the registry, including any settings registered to it.
             // For normal biomes we create our own new OTG biome and apply settings from the biome config.
-            ResourceLocation resourceLocation = new ResourceLocation(iBiomeResourceLocation.toResourceLocationString());
+            ResourceLocation resourceLocation = ResourceLocation.parse(iBiomeResourceLocation.toResourceLocationString());
             ResourceKey<Biome> resourceKey;
             Biome biome;
             Holder.Reference<Biome> ref;
@@ -396,7 +396,7 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
             if (res instanceof RegistryResource registryResource)
             {
                 GenerationStep.Decoration stage = GenerationStep.Decoration.valueOf(registryResource.getDecorationStage());
-                Optional<Holder.Reference<PlacedFeature>> placedFeatureReference = featureHolderGetter.get(ResourceKey.create(Registries.PLACED_FEATURE, new ResourceLocation(registryResource.getFeatureKey())));
+                Optional<Holder.Reference<PlacedFeature>> placedFeatureReference = featureHolderGetter.get(ResourceKey.create(Registries.PLACED_FEATURE, ResourceLocation.parse(registryResource.getFeatureKey())));
                 if(
                         placedFeatureReference.isPresent()
                         && placedFeatureReference.get().isBound()
@@ -522,7 +522,7 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
 
     private static <T> Optional<Holder.Reference<T>> getFromRegistry(Registry<T> registry, ResourceKey<Registry<T>> registryResourceKey, String locationString) {
         try {
-            return registry.getHolder(ResourceKey.create(registryResourceKey, new ResourceLocation(locationString)));
+            return registry.getHolder(ResourceKey.create(registryResourceKey, ResourceLocation.parse(locationString)));
         } catch (Exception e) {
             OTGLog.error(CONFIGS, "Could not find registry entry for '" + locationString + "'");
             return Optional.empty();
@@ -825,7 +825,7 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
         Map<String, BiomeSettings> biomeConfigsByName,
         Registry<Biome> biomeRegistry
     ) {
-        ResourceLocation location = new ResourceLocation(biomeId);
+        ResourceLocation location = ResourceLocation.parse(biomeId);
         ResourceKey<Biome> biomeKey = ResourceKey.create(Registries.BIOME, location);
 
         if (biomeRegistry.containsKey(biomeKey)) {

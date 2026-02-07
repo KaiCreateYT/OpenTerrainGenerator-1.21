@@ -12,7 +12,7 @@ import net.minecraft.world.entity.player.Player;
 public class OTGComponents implements EntityComponentInitializer {
 
     public static final ComponentKey<OTGPlayerComponent> OTG_PLAYER = ComponentRegistry.getOrCreate(
-            new ResourceLocation(Constants.MOD_ID_SHORT, "otg_player"),
+            ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, "otg_player"),
             OTGPlayerComponent.class
     );
 

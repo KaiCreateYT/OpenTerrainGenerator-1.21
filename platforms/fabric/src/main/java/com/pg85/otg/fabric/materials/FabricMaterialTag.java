@@ -21,7 +21,7 @@ public class FabricMaterialTag extends LocalMaterialTag {
         ) {
             return null;
         }
-        TagKey<Block> tagKey = TagKey.create(Registries.BLOCK, new ResourceLocation(tag));
+        TagKey<Block> tagKey = TagKey.create(Registries.BLOCK, ResourceLocation.parse(tag));
         return new FabricMaterialTag(tagKey, tag);
     }
 

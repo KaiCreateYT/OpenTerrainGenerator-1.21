@@ -60,7 +60,7 @@ public class FabricBiomeTagMapper {
         Holder.Reference<Biome> holder = holderOpt.get();
 
         for (String fabricTag : fabricTags) {
-            TagKey<Biome> tagKey = TagKey.create(Registries.BIOME, new ResourceLocation(fabricTag));
+            TagKey<Biome> tagKey = TagKey.create(Registries.BIOME, ResourceLocation.parse(fabricTag));
             if (holder.is(tagKey)) {
                 return true;
             }
@@ -80,7 +80,7 @@ public class FabricBiomeTagMapper {
 
         TagKey<Biome>[] keys = new TagKey[fabricTags.length];
         for (int i = 0; i < fabricTags.length; i++) {
-            keys[i] = TagKey.create(Registries.BIOME, new ResourceLocation(fabricTags[i]));
+            keys[i] = TagKey.create(Registries.BIOME, ResourceLocation.parse(fabricTags[i]));
         }
         return keys;
     }

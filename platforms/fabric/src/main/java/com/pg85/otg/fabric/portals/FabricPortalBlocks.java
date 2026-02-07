@@ -30,7 +30,7 @@ public class FabricPortalBlocks {
             );
 
             String id = "otg_portal_" + color;
-            Registry.register(BuiltInRegistries.BLOCK, new ResourceLocation(Constants.MOD_ID_SHORT, id), block);
+            Registry.register(BuiltInRegistries.BLOCK, ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, id), block);
             PORTAL_BLOCKS.put(color, block);
         }
     }

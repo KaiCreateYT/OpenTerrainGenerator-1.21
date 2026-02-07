@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class BuiltInRegistriesMixin {
     @Inject(method = "<clinit>", at = @At("RETURN"))
     private static void registerGeneratorAndBiomeSource(CallbackInfo ci) {
-        Registry.register(BuiltInRegistries.BIOME_SOURCE, new ResourceLocation(Constants.MOD_ID_SHORT, Constants.MOD_ID_SHORT), OTGFabricBiomeProvider.CODEC);
-        Registry.register(BuiltInRegistries.CHUNK_GENERATOR, new ResourceLocation(Constants.MOD_ID_SHORT, Constants.MOD_ID_SHORT), OTGFabricChunkGenerator.CODEC);
+        Registry.register(BuiltInRegistries.BIOME_SOURCE, ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, Constants.MOD_ID_SHORT), OTGFabricBiomeProvider.CODEC);
+        Registry.register(BuiltInRegistries.CHUNK_GENERATOR, ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, Constants.MOD_ID_SHORT), OTGFabricChunkGenerator.CODEC);
     }
 }

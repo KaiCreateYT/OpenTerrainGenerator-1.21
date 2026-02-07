@@ -341,8 +341,8 @@ public class FabricDimensionHelper implements PlatformDimensionHelper<MinecraftS
                 settings.getMinY(),
                 settings.getHeight(),
                 settings.getLogicalHeight(),
-                TagKey.create(Registries.BLOCK, new ResourceLocation(settings.getInfiniburn())),
-                new ResourceLocation(settings.getEffectsLocation().toLowerCase(Locale.ROOT)),
+                TagKey.create(Registries.BLOCK, ResourceLocation.parse(settings.getInfiniburn())),
+                ResourceLocation.parse(settings.getEffectsLocation().toLowerCase(Locale.ROOT)),
                 (float) settings.getAmbientLight(),
                 new DimensionType.MonsterSettings(
                         settings.isPiglinSafe(),
