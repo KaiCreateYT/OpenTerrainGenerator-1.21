@@ -42,9 +42,10 @@ jobs:
       id: sha
       run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
-    - name: Delete old dev release
+    - name: Delete old dev release and tag
       if: github.event_name == 'push'
-      run: gh release delete dev-${{ github.ref_name }} --yes || true
+      run: |
+        gh release delete dev-${{ github.ref_name }} --yes --cleanup-tag || true
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
