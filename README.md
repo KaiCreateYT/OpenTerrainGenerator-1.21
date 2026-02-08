@@ -1,6 +1,6 @@
 ##  OpenTerrainGenerator by Team OTG
 
-OpenTerrainGenerator for MC 1.21.1 (Fabric). Alpha builds are available in the dev-releases channel of the OTG Discord.
+OpenTerrainGenerator for MC 1.21.1 (Fabric & NeoForge). Alpha builds are available in the dev-releases channel of the OTG Discord.
 
 
 
@@ -12,18 +12,22 @@ OpenTerrainGenerator for MC 1.21.1 (Fabric). Alpha builds are available in the d
 * <a href="https://github.com/SuperCoder7979">SuperCoder79</a>
 * <a href="https://github.com/SXRWahrheit">Wahrheit</a>
 
-We're always looking for people to contribute or collaborate with. For OTG 1.20, we have switched to developing on Fabric first, with plans to port to other platforms. If you'd like to contribute, collaborate or become part of Team OTG, join us on the OTG Discord!
+We're always looking for people to contribute or collaborate with. OTG 1.21.1 supports both Fabric and NeoForge. If you'd like to contribute, collaborate or become part of Team OTG, join us on the OTG Discord!
 
 ## Installation / building
 
-- As with Forge mods, clone the repo, then run `/gradlew genEclipseRuns`, then `/gradlew eclipse` (for Eclipse IDE).
-- To create release jars in the `build/distributions` folder, update the build version in build.gradle, then run `/gradlew`.
-- If you're having problems, make a sacrifice to the gradle gods and/or run `/gradlew clean` and then `/gradlew --refresh-dependencies`.
+```bash
+# Build both platforms (Fabric + NeoForge)
+./gradlew build
 
-### IntelliJ Building Instructions
+# Output:
+#   build/distributions/otg-fabric-0.2.0-dev1.jar
+#   build/distributions/otg-neoforge-0.2.0-dev1.jar
+```
 
-- All you have to do is Open IntelliJ and import the project folder, make sure you Trust the gradle project, and IntelliJ will do the rest :)
-- Follow the same instructions that you do for Eclipse if you want to build -- do note that IntelliJ has a gradle GUI that you can use once you've imported the project. (Should be on the right of the code.)
+For IntelliJ: open the project folder, trust the Gradle project, done. For Eclipse: `./gradlew genEclipseRuns && ./gradlew eclipse`.
+
+If Gradle is being a bitch: `./gradlew clean --refresh-dependencies build`.
 
 ## Commands
 
@@ -145,18 +149,33 @@ Throughput: 410.6 chunks/sec
 Per chunk: 2.436 ms
 ```
 
-## Recommended Mods (Fabric 1.21.1)
+## Recommended Mods (1.21.1)
+
+### Fabric
 
 | Mod | Description | Required |
 |-----|-------------|----------|
 | [Fabric API](https://modrinth.com/mod/fabric-api) | Core Fabric modding library | Yes |
-| [C2ME](https://modrinth.com/mod/c2me-fabric) | Chunk generation multithreading and scheduling. Highly recommended for multiplayer servers. | No |
-| [Lithium](https://modrinth.com/mod/lithium) | General server-side optimization (game logic, mob AI, block ticking). No config needed. | No |
-| [Sodium](https://modrinth.com/mod/sodium) | Client-side rendering optimization. Huge FPS improvement. | No (client only) |
-| [Iris](https://modrinth.com/mod/iris) | Shader support compatible with Sodium. OptiFine shaders on Fabric. | No (client only) |
-| [Cardinal Components API](https://modrinth.com/mod/cardinal-components-api) | Data attachment API (v6). Used by OTG for custom dimension management. | Yes |
+| [Cardinal Components API](https://modrinth.com/mod/cardinal-components-api) | Data attachment API (v6). Used by OTG for portal player data. | Yes |
+| [C2ME](https://modrinth.com/mod/c2me-fabric) | Chunk generation multithreading. Highly recommended for multiplayer. | No |
+| [Lithium](https://modrinth.com/mod/lithium) | Server-side optimization. | No |
+| [ScalableLux](https://modrinth.com/mod/scalablelux) | Multithreaded lighting engine (Starlight successor). | No |
+| [Sodium](https://modrinth.com/mod/sodium) | Client-side rendering optimization. | No (client only) |
+| [Iris](https://modrinth.com/mod/iris) | Shader support compatible with Sodium. | No (client only) |
 
-**Note:** Starlight is no longer needed — its lighting improvements were merged into vanilla MC 1.20+.
+### NeoForge
+
+| Mod | Description | Required |
+|-----|-------------|----------|
+| NeoForge 21.1.x | Mod loader | Yes |
+| [C2ME](https://modrinth.com/mod/c2me-fabric) | Chunk generation multithreading. Highly recommended for multiplayer. | No |
+| [Sodium](https://modrinth.com/mod/sodium) | Client-side rendering optimization. | No (client only) |
+| [Iris](https://modrinth.com/mod/iris) | Shader support compatible with Sodium. | No (client only) |
+| [ScalableLux](https://modrinth.com/mod/scalablelux) | Multithreaded lighting engine (Starlight successor). | No |
+
+NeoForge has Data Attachments built-in (no CCA dependency needed).
+
+**Note:** Starlight is replaced by [ScalableLux](https://modrinth.com/mod/scalablelux) in 1.21.1.
 
 ## Links
 * [CurseForge](https://minecraft.curseforge.com/projects/open-terrain-generator)

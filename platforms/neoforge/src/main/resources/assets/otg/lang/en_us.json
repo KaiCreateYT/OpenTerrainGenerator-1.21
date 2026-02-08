@@ -1,0 +1,18 @@
+{
+  "generator.otg.default":        "OTG Default",
+  "generator.otg.alienjungle":    "Alien Jungle",
+  "generator.otg.bb":             "Biome Bundle",
+  "generator.otg.biome_bundle":   "Biome Bundle",
+  "generator.otg.bbop":           "Biome Bundle o' Plenty",
+  "generator.otg.world_dregora":  "Dregora (Legacy)",
+  "generator.otg.dregora":        "Dregora",
+  "generator.otg.dregorarl":      "DregoraRL",
+  "generator.otg.eternal":        "Eternal",
+  "generator.otg.flatlands":      "Flatlands",
+  "generator.otg.skylands":       "Skylands",
+  "generator.otg.skylandslite":   "Skylands Lite",
+  "generator.otg.vanillavistas":  "Vanilla Vistas",
+  "generator.otg.vv":             "Vanilla Vistas",
+  "generator.otg.void":           "Void",
+  "generator.otg.wildlands":      "Wildlands"
+}

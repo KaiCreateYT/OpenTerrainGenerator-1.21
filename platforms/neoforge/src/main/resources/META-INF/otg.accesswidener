@@ -1,0 +1,5 @@
+accessWidener v2 named
+
+# RegistryDataLoader inner types needed for RegistryLoaderMixin
+accessible class net/minecraft/resources/RegistryDataLoader$Loader
+accessible class net/minecraft/resources/RegistryDataLoader$LoadingFunction

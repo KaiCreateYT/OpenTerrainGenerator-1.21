@@ -53,7 +53,9 @@ tasks {
     val copyPlatformJar = register<CopyFile>("copyPlatformJar") {
         sourceFile.set(otgPlatform.productionJar)
         destination.set(rootProject.layout.buildDirectory.dir("distributions").map {
-            it.file("otg-${project.name}-${project.property("otg_version")}.jar")
+            val build = project.property("otg_build").toString()
+            val suffix = if (build.isEmpty()) "" else "-$build"
+            it.file("otg-${project.name}-${project.property("otg_version")}$suffix.jar")
         })
     }
 
