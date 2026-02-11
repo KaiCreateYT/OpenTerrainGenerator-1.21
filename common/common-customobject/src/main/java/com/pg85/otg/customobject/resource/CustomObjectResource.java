@@ -18,7 +18,7 @@ import java.util.Random;
 
 public class CustomObjectResource extends BiomeResourceBase implements ICustomObjectResource
 {	
-	private final List<CustomObject> objects = new ArrayList<>();
+	private volatile List<CustomObject> objects;
 	private final List<String> objectNames = new ArrayList<>();
 
 	public CustomObjectResource(BiomeSettings biomeConfig, List<String> args) {
@@ -46,15 +46,21 @@ public class CustomObjectResource extends BiomeResourceBase implements ICustomOb
 	
 	private List<CustomObject> getObjects(String presetFolderName, Path otgRootFolder,  CustomObjectManager customObjectManager, IMaterialReader materialReader, CustomObjectResourcesManager manager, IModLoadedChecker modLoadedChecker)
 	{
-		if(this.objects.isEmpty() && !this.objectNames.isEmpty())
-		{
-			CustomObject object;
-            for (String objectName : this.objectNames) {
-                object = customObjectManager.getGlobalObjects().getObjectByName(objectName, presetFolderName, otgRootFolder, customObjectManager, materialReader, manager, modLoadedChecker);
-                this.objects.add(object);
-            }
+		List<CustomObject> result = this.objects;
+		if (result == null) {
+			synchronized (this) {
+				result = this.objects;
+				if (result == null) {
+					result = new ArrayList<>();
+					for (String objectName : this.objectNames) {
+						result.add(customObjectManager.getGlobalObjects().getObjectByName(objectName, presetFolderName, otgRootFolder, customObjectManager, materialReader, manager, modLoadedChecker));
+					}
+					this.objects = List.copyOf(result);
+					result = this.objects;
+				}
+			}
 		}
-		return this.objects;
+		return result;
 	}
 	
 	@Override

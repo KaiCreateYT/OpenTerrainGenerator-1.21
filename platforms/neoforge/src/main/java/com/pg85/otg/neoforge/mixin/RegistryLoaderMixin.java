@@ -26,6 +26,11 @@ import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.*;
+import net.minecraft.world.level.levelgen.synth.NormalNoise;
+import com.pg85.otg.platform.noise.OTGNoiseRouterBuilder;
+import com.pg85.otg.neoforge.noise.NeoForgeNoiseParamRegistry;
+import net.minecraft.world.level.levelgen.DensityFunctions;
+import net.minecraft.world.level.levelgen.NoiseRouter;
 import net.minecraft.world.level.levelgen.presets.WorldPreset;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
@@ -273,19 +278,50 @@ public class RegistryLoaderMixin {
         DimensionSettings dimensionSettings = presetSettings.getDimensionSettings();
         BlockSettings blockSettings = presetSettings.getBlockSettings();
         ResourceSettings resourceSettings = presetSettings.getResourceSettings();
-        var ngs = new NoiseGeneratorSettings(
-                new NoiseSettings(dimensionSettings.getMinY(), dimensionSettings.getHeight(), 1, 2),
-                ((NeoForgeMaterialData) blockSettings.getDefaultStoneBlock()).getState(),
-                ((NeoForgeMaterialData) blockSettings.getWaterBlock()).getState(),
-                getZeroNoiseRouter(),
-                SurfaceRuleData.overworld(),
-                new OverworldBiomeBuilder().spawnTarget(),
-                63,
-                false,
-                false,
-                !resourceSettings.isDisableOreGen(),
-                false
-        );
+        boolean modernCaves = presetSettings.getCarverSettings().isUseModernCaves();
+        boolean aquifers = presetSettings.getNoiseCaveSettings().isAquifersEnabled();
+        boolean oreVeins = presetSettings.getNoiseCaveSettings().isVeinsEnabled() && !resourceSettings.isDisableOreGen();
+
+        NoiseGeneratorSettings ngs;
+        if (modernCaves) {
+            WritableRegistry<NormalNoise.NoiseParameters> noiseRegistry = getRegistry(loaders, Registries.NOISE);
+            if (noiseRegistry != null) {
+                NeoForgeNoiseParamRegistry.registerNoiseParameters(presetSettings, noiseRegistry);
+            }
+            HolderGetter<DensityFunction> densityGetter = getRegistryOrThrow(loaders, Registries.DENSITY_FUNCTION).asLookup();
+            HolderGetter<NormalNoise.NoiseParameters> noiseGetter = getRegistryOrThrow(loaders, Registries.NOISE).asLookup();
+            OTGNoiseRouterBuilder routerBuilder = new OTGNoiseRouterBuilder(densityGetter, noiseGetter);
+            String presetName = preset.getPresetRegistryName().toLowerCase(Locale.ROOT);
+            NoiseRouter router = routerBuilder.buildWithSettings(presetSettings.getNoiseCaveSettings(), presetName, false, false);
+
+            ngs = new NoiseGeneratorSettings(
+                    new NoiseSettings(dimensionSettings.getMinY(), dimensionSettings.getHeight(), 1, 2),
+                    ((NeoForgeMaterialData) blockSettings.getDefaultStoneBlock()).getState(),
+                    ((NeoForgeMaterialData) blockSettings.getWaterBlock()).getState(),
+                    router,
+                    SurfaceRuleData.overworld(),
+                    new OverworldBiomeBuilder().spawnTarget(),
+                    63,
+                    true,
+                    true,
+                    !resourceSettings.isDisableOreGen(),
+                    false
+            );
+        } else {
+            ngs = new NoiseGeneratorSettings(
+                    new NoiseSettings(dimensionSettings.getMinY(), dimensionSettings.getHeight(), 1, 2),
+                    ((NeoForgeMaterialData) blockSettings.getDefaultStoneBlock()).getState(),
+                    ((NeoForgeMaterialData) blockSettings.getWaterBlock()).getState(),
+                    getZeroNoiseRouter(),
+                    SurfaceRuleData.overworld(),
+                    new OverworldBiomeBuilder().spawnTarget(),
+                    63,
+                    false,
+                    false,
+                    !resourceSettings.isDisableOreGen(),
+                    false
+            );
+        }
 
         WritableRegistry<NoiseGeneratorSettings> registry = getRegistry(loaders, Registries.NOISE_SETTINGS);
         if (registry == null) {

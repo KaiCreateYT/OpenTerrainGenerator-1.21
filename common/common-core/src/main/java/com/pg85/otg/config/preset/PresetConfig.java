@@ -43,6 +43,7 @@ public class PresetConfig extends PresetSettings {
 
     protected boolean biomeConfigsHaveReplacement = false;
     protected int maxSmoothRadius = 2;
+    protected NoiseCaveSettings noiseCaveSettings;
 
     public PresetConfig(Path settingsDir, SettingsMap settingsReader, ArrayList<String> biomes) {
         super(settingsReader.getName());
@@ -55,6 +56,7 @@ public class PresetConfig extends PresetSettings {
                 this, settingsReader, PresetResourcesManager.get(), biomes, settingsDir);
         resourceSettings = ResourceSettings.getResourceSettings(settingsReader);
         terrainSettings = TerrainSettings.getTerrainSettings(settingsReader);
+        noiseCaveSettings = NoiseCaveSettings.getNoiseCaveSettings(settingsReader);
         imageSettings = ImageSettings.getImageSettings(settingsReader, biomes);
         structureSettings = StructureSettings.getStructureSettings(settingsReader);
         carverSettings = CarverSettings.getCarverSettings(settingsReader, terrainSettings);

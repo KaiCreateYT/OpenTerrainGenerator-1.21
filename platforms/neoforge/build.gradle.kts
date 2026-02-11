@@ -67,9 +67,11 @@ tasks {
             include(project(":common:common-customobject"))
             include(project(":common:common-generator"))
             include(project(":common:common-core"))
-            include(project(":platforms:shared"))
+            // shared excluded from dep filter — included via NeoForge-transformed jar below
             include(dependency("com.github.ben-manes.caffeine:caffeine"))
         }
+        dependsOn(":platforms:shared:transformProductionNeoForge")
+        from(zipTree(project(":platforms:shared").layout.buildDirectory.file("libs/shared-${project.property("otg_version")}-SNAPSHOT-transformProductionNeoForge.jar")))
         relocate("com.github.benmanes.caffeine", "com.pg85.otg.dependency.caffeine")
         exclude("architectury.common.json")
         configurations = listOf(otg)

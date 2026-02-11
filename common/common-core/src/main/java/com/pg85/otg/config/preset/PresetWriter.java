@@ -477,6 +477,167 @@ public class PresetWriter {
 
         writer.header2("Caves");
 
+        writer.putSetting(NoiseCaveSettings.NOISE_CAVES_ENABLED, presetConfig.getNoiseCaveSettings().isCavesEnabled(),
+                "Enables/disables noise-based caves (cheese/spaghetti/noodle) carved after OTG terrain.");
+        writer.putSetting(NoiseCaveSettings.FINAL_DENSITY_OFFSET, presetConfig.getNoiseCaveSettings().getFinalDensityOffset(),
+                "Adds to final density before air/fluid decision; negative = larger caves, positive = fewer caves.");
+        writer.putSetting(NoiseCaveSettings.FINAL_DENSITY_SCALE, presetConfig.getNoiseCaveSettings().getFinalDensityScale(),
+                "Multiplies final density; >1 tighter terrain, <1 bigger caves.");
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI2D_SCALE, presetConfig.getNoiseCaveSettings().getSpaghetti2dScale(),
+                "Scale for spaghetti 2D noise thickness/modulator.");
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI3D_SCALE, presetConfig.getNoiseCaveSettings().getSpaghetti3dScale(),
+                "Scale for spaghetti 3D rarity/thickness.");
+        writer.putSetting(NoiseCaveSettings.NOODLE_SCALE, presetConfig.getNoiseCaveSettings().getNoodleScale(),
+                "Scale for noodle tunnels density.");
+        writer.putSetting(NoiseCaveSettings.PILLAR_SCALE, presetConfig.getNoiseCaveSettings().getPillarScale(),
+                "Scale for cheese-cave pillars thickness/rarity.");
+        writer.putSetting(NoiseCaveSettings.VEINS_ENABLED, presetConfig.getNoiseCaveSettings().isVeinsEnabled(),
+                "Enables large ore veins.");
+        writer.putSetting(NoiseCaveSettings.AQUIFERS_ENABLED, presetConfig.getNoiseCaveSettings().isAquifersEnabled(),
+                "Enables aquifers in noise caves.");
+        writer.putSetting(NoiseCaveSettings.VEIN_MIN_Y, presetConfig.getNoiseCaveSettings().getVeinMinY(),
+                "Minimum Y for ore veins.");
+        writer.putSetting(NoiseCaveSettings.VEIN_MAX_Y, presetConfig.getNoiseCaveSettings().getVeinMaxY(),
+                "Maximum Y for ore veins.");
+
+        writer.header2("Noise Parameters");
+        writer.smallTitle("Advanced noise octave/amplitude tuning. Each noise has a FirstOctave (int) and Amplitudes (list of doubles).",
+                "FirstOctave controls the base frequency: lower = larger features, higher = finer detail.",
+                "Amplitudes control strength per octave layer. More entries = more octave layers blended together.",
+                "These match vanilla 1.18+ noise parameters. Only change if you know what you're doing.");
+
+        // --- Aquifer noises (water/lava filling in caves) ---
+        writer.smallTitle("Aquifer noises - control underground water/lava pocket placement and shape.",
+                "Only used when NoiseCaveAquifersEnabled is true.");
+        writer.putSetting(NoiseCaveSettings.AQUIFER_BARRIER_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getAquiferBarrierFirstOctave(),
+                "Barrier noise separates adjacent aquifer fluid pockets. Higher octave = sharper boundaries.");
+        writer.putSetting(NoiseCaveSettings.AQUIFER_BARRIER_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getAquiferBarrierAmplitudes()));
+        writer.putSetting(NoiseCaveSettings.AQUIFER_FLOODEDNESS_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getAquiferFloodednessFirstOctave(),
+                "Floodedness determines how full aquifer pockets are. More negative octave = larger flooded regions.");
+        writer.putSetting(NoiseCaveSettings.AQUIFER_FLOODEDNESS_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getAquiferFloodednessAmplitudes()));
+        writer.putSetting(NoiseCaveSettings.AQUIFER_LAVA_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getAquiferLavaFirstOctave(),
+                "Lava noise controls where aquifers use lava instead of water (deep underground).");
+        writer.putSetting(NoiseCaveSettings.AQUIFER_LAVA_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getAquiferLavaAmplitudes()));
+        writer.putSetting(NoiseCaveSettings.AQUIFER_SPREAD_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getAquiferSpreadFirstOctave(),
+                "Spread noise controls how far fluid levels vary between neighboring aquifer pockets.");
+        writer.putSetting(NoiseCaveSettings.AQUIFER_SPREAD_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getAquiferSpreadAmplitudes()));
+
+        // --- Pillar noises (stone columns inside cheese caves) ---
+        writer.smallTitle("Pillar noises - stone columns that break up large cheese caverns.",
+                "Pillars prevent cheese caves from being completely hollow.");
+        writer.putSetting(NoiseCaveSettings.PILLAR_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getPillarFirstOctave(),
+                "Main pillar shape noise. Lower octave = wider, more spaced-out pillars.");
+        writer.putSetting(NoiseCaveSettings.PILLAR_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getPillarAmplitudes()));
+        writer.putSetting(NoiseCaveSettings.PILLAR_RARENESS_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getPillarRarenessFirstOctave(),
+                "Controls how often pillars appear. More negative = sparser, rarer pillars.");
+        writer.putSetting(NoiseCaveSettings.PILLAR_RARENESS_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getPillarRarenessAmplitudes()));
+        writer.putSetting(NoiseCaveSettings.PILLAR_THICKNESS_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getPillarThicknessFirstOctave(),
+                "Pillar thickness variation. Affects how thick individual pillars are.");
+        writer.putSetting(NoiseCaveSettings.PILLAR_THICKNESS_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getPillarThicknessAmplitudes()));
+
+        // --- Spaghetti 2D noises (flat, winding tunnels) ---
+        writer.smallTitle("Spaghetti 2D noises - flat, horizontally-winding tunnel caves.",
+                "These create long, roughly horizontal passages at various depths.");
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI2D_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getSpaghetti2dFirstOctave(),
+                "Main spaghetti 2D shape. Controls horizontal tunnel curvature.");
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI2D_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getSpaghetti2dAmplitudes()));
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI2D_ELEVATION_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getSpaghetti2dElevationFirstOctave(),
+                "Y-level variation for spaghetti 2D tunnels. More negative = smoother elevation changes.");
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI2D_ELEVATION_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getSpaghetti2dElevationAmplitudes()));
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI2D_MODULATOR_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getSpaghetti2dModulatorFirstOctave(),
+                "Modulates 2D spaghetti frequency — creates sections of dense vs sparse tunnels.");
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI2D_MODULATOR_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getSpaghetti2dModulatorAmplitudes()));
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI2D_THICKNESS_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getSpaghetti2dThicknessFirstOctave(),
+                "Thickness variation of 2D spaghetti tunnels. Affects tunnel width.");
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI2D_THICKNESS_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getSpaghetti2dThicknessAmplitudes()));
+
+        // --- Spaghetti 3D noises (twisting tunnels in all directions) ---
+        writer.smallTitle("Spaghetti 3D noises - tunnels that twist freely in all three dimensions.",
+                "Two separate 3D noise channels are combined for more complex tunnel shapes.");
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI3D1_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getSpaghetti3d1FirstOctave(),
+                "First 3D spaghetti noise channel. Combined with channel 2 for tunnel shape.");
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI3D1_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getSpaghetti3d1Amplitudes()));
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI3D2_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getSpaghetti3d2FirstOctave(),
+                "Second 3D spaghetti noise channel. Combined with channel 1.");
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI3D2_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getSpaghetti3d2Amplitudes()));
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI3D_RARITY_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getSpaghetti3dRarityFirstOctave(),
+                "Controls how densely 3D spaghetti tunnels are packed. More negative = sparser tunnels.");
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI3D_RARITY_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getSpaghetti3dRarityAmplitudes()));
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI3D_THICKNESS_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getSpaghetti3dThicknessFirstOctave(),
+                "Thickness variation of 3D spaghetti tunnels.");
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI3D_THICKNESS_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getSpaghetti3dThicknessAmplitudes()));
+
+        // --- Spaghetti roughness (wall texture for spaghetti caves) ---
+        writer.smallTitle("Spaghetti roughness - adds irregular bumps to spaghetti tunnel walls.",
+                "Without roughness, spaghetti tunnels would have perfectly smooth walls.");
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI_ROUGHNESS_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getSpaghettiRoughnessFirstOctave(),
+                "Main roughness noise applied to spaghetti cave walls.");
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI_ROUGHNESS_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getSpaghettiRoughnessAmplitudes()));
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI_ROUGHNESS_MODULATOR_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getSpaghettiRoughnessModulatorFirstOctave(),
+                "Modulates roughness intensity — creates smoother and rougher sections along tunnels.");
+        writer.putSetting(NoiseCaveSettings.SPAGHETTI_ROUGHNESS_MODULATOR_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getSpaghettiRoughnessModulatorAmplitudes()));
+
+        // --- Cave entrance / cheese noises (large caverns) ---
+        writer.smallTitle("Cave entrance and cheese noises - control large open caverns (cheese caves).",
+                "Cheese caves are the big underground chambers. Cave entrances connect them to the surface.",
+                "Cave layer noise determines at which Y-levels cheese caves form.");
+        writer.putSetting(NoiseCaveSettings.CAVE_ENTRANCE_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getCaveEntranceFirstOctave(),
+                "Cave entrance noise — creates openings from surface down to cave systems.");
+        writer.putSetting(NoiseCaveSettings.CAVE_ENTRANCE_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getCaveEntranceAmplitudes()));
+        writer.putSetting(NoiseCaveSettings.CAVE_LAYER_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getCaveLayerFirstOctave(),
+                "Cave layer noise — determines Y-levels where cheese caverns form. Squared for sharp layering.");
+        writer.putSetting(NoiseCaveSettings.CAVE_LAYER_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getCaveLayerAmplitudes()));
+        writer.putSetting(NoiseCaveSettings.CAVE_CHEESE_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getCaveCheeseFirstOctave(),
+                "Main cheese cave shape noise. This is the primary large-cavern generator.",
+                "More negative octave = bigger caverns. Vanilla uses 9 amplitude layers for rich detail.");
+        writer.putSetting(NoiseCaveSettings.CAVE_CHEESE_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getCaveCheeseAmplitudes()));
+
+        // --- Noodle noises (thin connecting tunnels) ---
+        writer.smallTitle("Noodle noises - thin, winding tunnels that connect larger cave features.",
+                "Noodles are thinner than spaghetti and add connectivity between caves.");
+        writer.putSetting(NoiseCaveSettings.NOODLE_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getNoodleFirstOctave(),
+                "Main noodle activation noise — determines where noodle tunnels can form.");
+        writer.putSetting(NoiseCaveSettings.NOODLE_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getNoodleAmplitudes()));
+        writer.putSetting(NoiseCaveSettings.NOODLE_THICKNESS_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getNoodleThicknessFirstOctave(),
+                "Noodle tunnel thickness. Affects how wide the thin tunnels are.");
+        writer.putSetting(NoiseCaveSettings.NOODLE_THICKNESS_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getNoodleThicknessAmplitudes()));
+        writer.putSetting(NoiseCaveSettings.NOODLE_RIDGE_A_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getNoodleRidgeAFirstOctave(),
+                "Ridge noise A — combined with ridge B to create the noodle tunnel cross-section shape.");
+        writer.putSetting(NoiseCaveSettings.NOODLE_RIDGE_A_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getNoodleRidgeAAmplitudes()));
+        writer.putSetting(NoiseCaveSettings.NOODLE_RIDGE_B_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getNoodleRidgeBFirstOctave(),
+                "Ridge noise B — combined with ridge A. max(|A|, |B|) defines the tunnel boundary.");
+        writer.putSetting(NoiseCaveSettings.NOODLE_RIDGE_B_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getNoodleRidgeBAmplitudes()));
+
+        // --- Ore vein noises (large copper/iron vein generation) ---
+        writer.smallTitle("Ore vein noises - control 1.18+ large ore vein generation.",
+                "Only used when NoiseCaveVeinsEnabled is true.",
+                "Large ore veins are massive deposits of copper/iron with surrounding granite/tuff.");
+        writer.putSetting(NoiseCaveSettings.ORE_VEININESS_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getOreVeininessFirstOctave(),
+                "Veininess noise — determines regions where ore veins can spawn.");
+        writer.putSetting(NoiseCaveSettings.ORE_VEININESS_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getOreVeininessAmplitudes()));
+        writer.putSetting(NoiseCaveSettings.ORE_VEIN_A_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getOreVeinAFirstOctave(),
+                "Ore vein A noise — first channel for vein shape (combined with B for final shape).");
+        writer.putSetting(NoiseCaveSettings.ORE_VEIN_A_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getOreVeinAAmplitudes()));
+        writer.putSetting(NoiseCaveSettings.ORE_VEIN_B_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getOreVeinBFirstOctave(),
+                "Ore vein B noise — second channel for vein shape.");
+        writer.putSetting(NoiseCaveSettings.ORE_VEIN_B_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getOreVeinBAmplitudes()));
+        writer.putSetting(NoiseCaveSettings.ORE_GAP_FIRST_OCTAVE, presetConfig.getNoiseCaveSettings().getOreGapFirstOctave(),
+                "Ore gap noise — creates empty spaces within ore veins (makes them less solid).");
+        writer.putSetting(NoiseCaveSettings.ORE_GAP_AMPLITUDES, toStringList(presetConfig.getNoiseCaveSettings().getOreGapAmplitudes()));
+
+        writer.putSetting(CarverSettings.USE_MODERN_CAVES, presetConfig.getCarverSettings().isUseModernCaves(),
+                "Enables the 1.18+ style noise-cave pipeline and aquifers. When false, OTG uses only legacy carvers."
+        );
+        writer.putSetting(CarverSettings.AQUIFERS_ENABLED, presetConfig.getCarverSettings().isAquifersEnabled(),
+                "Controls vanilla-style aquifers (water/lava filling) used by noise caves."
+        );
+        writer.putSetting(CarverSettings.ORE_VEINS_ENABLED, presetConfig.getCarverSettings().isOreVeinsEnabled(),
+                "Generates large 1.18+ ore veins. Has no effect when ore generation is disabled globally."
+        );
+        writer.putSetting(CarverSettings.LEGACY_CARVERS_ENABLED, presetConfig.getCarverSettings().isLegacyCarversEnabled(),
+                "If true, legacy OTG carvers (caves/ravines) can run when modern caves are disabled."
+        );
+
         writer.putSetting(CarverSettings.CAVES_ENABLED, presetConfig.getCarverSettings().isCavesEnabled(),
                 "Enables/disables OTG caves. OTG should automatically disable caves/carvers for biomes when modded carvers are detected."
         );
@@ -630,5 +791,13 @@ public class PresetWriter {
         writer.putSetting(GameRuleSettings.DO_TRADER_SPAWNING, gameRuleSettings.isDoTraderSpawning());
         writer.putSetting(GameRuleSettings.FORGIVE_DEAD_PLAYERS, gameRuleSettings.isForgiveDeadPlayers());
         writer.putSetting(GameRuleSettings.UNIVERSAL_ANGER, gameRuleSettings.isUniversalAnger());
+    }
+
+    private static java.util.List<String> toStringList(java.util.List<Double> values) {
+        java.util.List<String> out = new java.util.ArrayList<>(values.size());
+        for (Double value : values) {
+            out.add(value.toString());
+        }
+        return out;
     }
 }

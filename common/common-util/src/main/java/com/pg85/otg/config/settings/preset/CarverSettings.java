@@ -11,6 +11,14 @@ import lombok.Getter;
 @Builder
 @Getter
 public class CarverSettings extends ConfigSection {
+    // Toggle between legacy OTG carvers and modern 1.18+ style pipeline
+    private final boolean useModernCaves;
+    // Whether to allow vanilla-style aquifers when modern caves are enabled
+    private final boolean aquifersEnabled;
+    // Whether large ore veins (1.18+) should be generated
+    private final boolean oreVeinsEnabled;
+    // Keep legacy OTG carvers available even if modern caves are on
+    private final boolean legacyCarversEnabled;
     private final boolean cavesEnabled;
     private final int caveFrequency;
     private final int caveRarity;
@@ -29,6 +37,27 @@ public class CarverSettings extends ConfigSection {
     private final double ravineDepth;
     private final int ravineMinAltitude;
     private final int ravineMaxAltitude;
+
+    public static final Setting<Boolean> USE_MODERN_CAVES = Settings.booleanSetting(
+            "UseModernCaves", false,
+            t -> ((CarverSettings) t).isUseModernCaves(),
+            "Enables the 1.18+ style noise-cave pipeline and aquifers. When false, OTG uses only legacy carvers."
+    );
+    public static final Setting<Boolean> AQUIFERS_ENABLED = Settings.booleanSetting(
+            "AquifersEnabled", true,
+            t -> ((CarverSettings) t).isAquifersEnabled(),
+            "Controls vanilla-style aquifers (water/lava filling) used by noise caves."
+    );
+    public static final Setting<Boolean> ORE_VEINS_ENABLED = Settings.booleanSetting(
+            "OreVeinsEnabled", true,
+            t -> ((CarverSettings) t).isOreVeinsEnabled(),
+            "Generates large 1.18+ ore veins. Has no effect when ore generation is disabled globally."
+    );
+    public static final Setting<Boolean> LEGACY_CARVERS_ENABLED = Settings.booleanSetting(
+            "LegacyCarversEnabled", true,
+            t -> ((CarverSettings) t).isLegacyCarversEnabled(),
+            "If true, legacy OTG carvers (caves/ravines) can run when modern caves are disabled."
+    );
 
     public static final Setting<Integer> CAVE_RARITY = Settings.intSetting(
             "CaveRarity", 14, 0, 100,
@@ -137,6 +166,11 @@ public class CarverSettings extends ConfigSection {
 
     public static CarverSettings getCarverSettings(SettingsMap reader, TerrainSettings terrainSettings) {
         var carverSettingsBuilder = builder();
+
+        carverSettingsBuilder.useModernCaves(reader.getSetting(USE_MODERN_CAVES));
+        carverSettingsBuilder.aquifersEnabled(reader.getSetting(AQUIFERS_ENABLED));
+        carverSettingsBuilder.oreVeinsEnabled(reader.getSetting(ORE_VEINS_ENABLED));
+        carverSettingsBuilder.legacyCarversEnabled(reader.getSetting(LEGACY_CARVERS_ENABLED));
 
         carverSettingsBuilder.cavesEnabled(reader.getSetting(CAVES_ENABLED));
         carverSettingsBuilder.caveFrequency(reader.getSetting(CAVE_FREQUENCY));

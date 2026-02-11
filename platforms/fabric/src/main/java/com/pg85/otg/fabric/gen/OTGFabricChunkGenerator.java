@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.pg85.otg.OTG;
+import com.pg85.otg.config.settings.preset.NoiseCaveSettings;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.constants.settings.structure.CustomStructureType;
 import com.pg85.otg.customobject.structures.CustomStructureCache;
@@ -12,6 +13,7 @@ import com.pg85.otg.fabric.biome.OTGFabricBiomeProvider;
 import com.pg85.otg.gen.OTGChunkDecorator;
 import com.pg85.otg.gen.OTGChunkGenerator;
 import com.pg85.otg.interfaces.IBiome;
+import com.pg85.otg.platform.noise.OTGNoiseRouterData;
 import com.pg85.otg.presets.Preset;
 import com.pg85.otg.util.ChunkCoordinate;
 import com.pg85.otg.util.gen.ChunkBuffer;
@@ -80,6 +82,7 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
     private Long seed = 0L;
     private ServerLevel serverLevel = null;
     private final OTGWorldInfo otgWorldInfo;
+    private volatile RandomState caveRandomState = null;
 
     /**
      * Factory method for CODEC deserialization - biomeRegistry will be set later from ServerLevel
@@ -127,7 +130,6 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
         synchronized (this) {
             if (this.serverLevel == null) {
                 this.serverLevel = serverLevel;
-                // Set biomeRegistry from server if not set during construction (datapack loading)
                 if (this.biomeRegistry == null) {
                     this.biomeRegistry = serverLevel.registryAccess().registryOrThrow(Registries.BIOME);
                 }
@@ -140,23 +142,18 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
         if(!OTG.getEngine().getPluginConfig().getDecorationEnabled()) {
             return;
         }
-        // Do OTG resource decoration, then MC decoration for any non-OTG resources registered to this biome, then snow.
         ChunkCoordinate chunkBeingDecorated = getChunkCoordinate(worldGenLevel, chunkAccess);
         FabricWorldGenRegion fabricWorldGenRegion = new FabricWorldGenRegion(this.preset.getFolderName(), OTG.getEngine().getPluginConfig(), this.preset.getPresetConfig(), otgWorldInfo, worldGenLevel, chunkAccess, this);
         IBiome biome = this.internalGenerator.getCachedBiomeProvider().getNoiseBiome((chunkAccess.getPos().x << 2) + 2, (chunkAccess.getPos().z << 2) + 2);
 
-        // World save folder name may not be identical to level name, fetch it.
         Path worldSaveFolder = worldGenLevel.getLevel().getServer().getWorldPath(LevelResource.PLAYER_DATA_DIR).getParent();
 
         this.chunkDecorator.decorate(chunkBeingDecorated, fabricWorldGenRegion, biome.getBiomeSettings(), getStructureCache(worldSaveFolder));
         super.applyBiomeDecoration(worldGenLevel, chunkAccess, structureManager);
 
-        // Template biomes handle their own snow, OTG biomes use OTG snow.
-        // TODO: Snow is handled per chunk, so this may cause some artifacts on biome borders.
         if(!biome.getBiomeSettings().getIdentitySettings().isTemplateForBiome()) {
             this.chunkDecorator.doSnowAndIce(fabricWorldGenRegion, chunkBeingDecorated);
         }
-
     }
 
     public void saveStructureCache() {
@@ -175,10 +172,8 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
         return ChunkCoordinate.fromBlockCoords(worldX, worldZ);
     }
 
-    public CustomStructureCache getStructureCache(Path worldSaveFolder)
-    {
-        if(this.structureCache == null)
-        {
+    public CustomStructureCache getStructureCache(Path worldSaveFolder) {
+        if(this.structureCache == null) {
             this.structureCache = OTG.getEngine().createCustomStructureCache(
                     this.preset.getFolderName(),
                     worldSaveFolder,
@@ -232,9 +227,12 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
     @Override
     public void applyCarvers(WorldGenRegion worldGenRegion, long seed, RandomState randomState, BiomeManager biomeManager, StructureManager structureManager, ChunkAccess chunkAccess, GenerationStep.Carving carving) {
 
-        handleOTGCarvers(seed, chunkAccess, carving);
+        if (this.preset.getPresetConfig().getCarverSettings().isUseModernCaves()) {
+            this.horribleDelegateForCarvers.applyCarvers(worldGenRegion, seed, randomState, biomeManager, structureManager, chunkAccess, carving);
+            return;
+        }
 
-        //applyNonOTGCarvers(seed, biomeManager, chunkAccess, carving);
+        handleOTGCarvers(seed, chunkAccess, carving);
 
         List<String> defaultCavesAndRavines = Arrays.asList("minecraft:cave", "minecraft:underwater_cave", "minecraft:nether_cave", "minecraft:canyon", "minecraft:underwater_canyon");
 
@@ -275,17 +273,13 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
         BiomeGenerationSettings biomegenerationsettings = biome.getBiome().getGenerationSettings();
         Iterable<Holder<ConfiguredWorldCarver<?>>> iterable = biomegenerationsettings.getCarvers(carving);
 
-        // Only use OTG carvers when default mc carvers are found
         List<String> defaultCaves = Arrays.asList("minecraft:cave", "minecraft:underwater_cave", "minecraft:nether_cave");
         boolean cavesEnabled = this.preset.getPresetConfig().getCarverSettings().isCavesEnabled();
-        if (cavesEnabled)
-        {
-            for (Holder<ConfiguredWorldCarver<?>> carver : iterable)
-            {
+        if (cavesEnabled) {
+            for (Holder<ConfiguredWorldCarver<?>> carver : iterable) {
                 if (defaultCaves.stream().noneMatch(
                         b -> b.equalsIgnoreCase(carver.unwrapKey().map(Objects::toString).orElse(""))
-                ))
-                {
+                )) {
                     cavesEnabled = false;
                     break;
                 }
@@ -294,14 +288,11 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
 
         List<String> defaultRavines = Arrays.asList("minecraft:canyon", "minecraft:underwater_canyon");
         boolean ravinesEnabled = this.preset.getPresetConfig().getCarverSettings().isRavinesEnabled();
-        if (ravinesEnabled)
-        {
-            for (Holder<ConfiguredWorldCarver<?>> carver : iterable)
-            {
+        if (ravinesEnabled) {
+            for (Holder<ConfiguredWorldCarver<?>> carver : iterable) {
                 if (defaultRavines.stream().noneMatch(
                         b -> b.equalsIgnoreCase(carver.unwrapKey().map(Objects::toString).orElse(""))
-                ))
-                {
+                )) {
                     ravinesEnabled = false;
                     break;
                 }
@@ -351,7 +342,6 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
         ChunkCoordinate chunkCoord = ChunkCoordinate.fromChunkCoords(
                 chunkAccess.getPos().x, chunkAccess.getPos().z);
 
-        // Structure data is already available — STRUCTURE ChunkStatus completed before NOISE.
         ObjectList<JigsawStructureData> structures = new ObjectArrayList<>(10);
         ChunkPos pos = chunkAccess.getPos();
         for (Map.Entry<Structure, StructureStart> n : chunkAccess.getAllStarts().entrySet()) {
@@ -377,10 +367,96 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
         this.internalGenerator.populateNoise(otgWorldInfo, buffer,
                 buffer.getChunkCoordinate(), structures, random);
 
+        if (this.preset.getPresetConfig().getCarverSettings().isUseModernCaves()) {
+            carveWithNoise(blender, randomState, structureManager, chunkAccess);
+        }
+
         return CompletableFuture.completedFuture(chunkAccess);
     }
 
+    private void carveWithNoise(Blender blender, RandomState randomState, StructureManager structureManager, ChunkAccess targetChunk) {
+        // Build a cave-only RandomState (cached). Uses terrain-independent cave density:
+        // no slopedCheese, no rangeChoice — just spaghetti/noodle/cheese noise directly.
+        if (this.caveRandomState == null) {
+            synchronized (this) {
+                if (this.caveRandomState == null) {
+                    NoiseCaveSettings caveCfg = this.preset.getPresetConfig().getNoiseCaveSettings();
+                    NoiseSettings ns = this.settings.value().noiseSettings();
+                    DensityFunction caveDensity = OTGNoiseRouterData.caveDensityForCarving(
+                            randomState.noises, caveCfg,
+                            this.preset.getFolderName(), ns.minY(), ns.height() + ns.minY()
+                    );
 
+                    // NoiseRouter with ONLY cave density as finalDensity, everything else zeroed.
+                    DensityFunction zero = DensityFunctions.constant(0);
+                    NoiseRouter caveRouter = new NoiseRouter(
+                            zero, zero, zero, zero,
+                            zero, zero, zero, zero,
+                            zero, zero, zero,
+                            caveDensity,
+                            zero, zero, zero
+                    );
+
+                    NoiseGeneratorSettings original = this.settings.value();
+                    NoiseGeneratorSettings caveOnlySettings = new NoiseGeneratorSettings(
+                            original.noiseSettings(), original.defaultBlock(), original.defaultFluid(),
+                            caveRouter, original.surfaceRule(), original.spawnTarget(),
+                            original.seaLevel(), original.disableMobGeneration(),
+                            false, false, original.useLegacyRandomSource()
+                    );
+
+                    this.caveRandomState = RandomState.create(caveOnlySettings, randomState.noises, this.seed);
+                    OTG.log("[OTG] Created cave-only RandomState (terrain-independent density)");
+                }
+            }
+        }
+
+        // Evaluate cave density directly at every block — bypasses NoiseChunk entirely.
+        // NoiseChunk's cell-based caching (cacheOnce, cacheAllInCell) causes blocky artifacts
+        // without interpolated(), and interpolated() + blendDensity cause chunk-boundary strips.
+        // Direct evaluation is slower but produces correct smooth cave boundaries.
+        DensityFunction caveDensity = this.caveRandomState.router().finalDensity();
+
+        NoiseSettings noiseSettings = this.settings.value().noiseSettings();
+        int minY = noiseSettings.minY();
+        int maxY = minY + noiseSettings.height();
+
+        BlockPos.MutableBlockPos blockPos = new BlockPos.MutableBlockPos();
+        BlockState air = Blocks.AIR.defaultBlockState();
+
+        int carved = 0, skippedSolid = 0;
+        boolean firstChunk = targetChunk.getPos().x == 0 && targetChunk.getPos().z == 0;
+
+        int minX = targetChunk.getPos().getMinBlockX();
+        int minZ = targetChunk.getPos().getMinBlockZ();
+
+        for (int x = 0; x < Constants.CHUNK_SIZE; x++) {
+            int worldX = minX + x;
+            for (int z = 0; z < Constants.CHUNK_SIZE; z++) {
+                int worldZ = minZ + z;
+                for (int worldY = minY; worldY < maxY; worldY++) {
+                    blockPos.set(worldX, worldY, worldZ);
+                    BlockState existing = targetChunk.getBlockState(blockPos);
+                    if (existing.isAir() || existing.liquid() || existing.is(Blocks.BEDROCK)) continue;
+
+                    double density = caveDensity.compute(
+                            new DensityFunction.SinglePointContext(worldX, worldY, worldZ)
+                    );
+
+                    if (density <= 0) {
+                        targetChunk.setBlockState(blockPos, air, false);
+                        carved++;
+                    } else {
+                        skippedSolid++;
+                    }
+                }
+            }
+        }
+
+        if (firstChunk) {
+            OTG.log("[OTG] carveWithNoise chunk(0,0): carved=" + carved + " skippedSolid=" + skippedSolid);
+        }
+    }
 
     public @NotNull Random getRandomFromChunkCoord(ChunkCoordinate chunkCoord) {
         return new Random(this.seed + chunkCoord.getChunkX()*341873128712L + chunkCoord.getChunkZ()*132897987541L);
@@ -396,13 +472,11 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
         return settings.value().noiseSettings().minY();
     }
 
-    // For later lookup - will return the height of the terrain at the given x and z coordinates, but not save anything to the column
     @Override
     public int getBaseHeight(int i, int j, Heightmap.Types types, LevelHeightAccessor levelHeightAccessor, RandomState randomState) {
         return this.sampleHeightmap(i, j, null, types.isOpaque());
     }
 
-    // For generation - will generate the chunk and save the data to the column
     @Override
     public NoiseColumn getBaseColumn(int i, int j, LevelHeightAccessor levelHeightAccessor, RandomState randomState) {
         BlockState[] blockStates = new BlockState[levelHeightAccessor.getHeight()];
@@ -411,72 +485,53 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
     }
 
     @Override
-    public void addDebugScreenInfo(List<String> list, RandomState randomState, BlockPos blockPos) {
-        IBiome biome = this.internalGenerator.getCachedBiomeProvider().getNoiseBiome(blockPos.getX(), blockPos.getZ());
+    public void addDebugScreenInfo(List<String> list, RandomState randomState, BlockPos debugPos) {
+        IBiome biome = this.internalGenerator.getCachedBiomeProvider().getNoiseBiome(debugPos.getX(), debugPos.getZ());
         list.add("Preset: " + this.preset.getFolderName());
         list.add("Biome: " + biome.getBiomeSettings().getIdentitySettings().getDisplayName());
         list.add("OTG Debug { "+otgWorldInfo.toString()+" }");
     }
 
-    private int sampleHeightmap(int x, int z, @Nullable BlockState[] blockStates, @Nullable Predicate<BlockState> predicate)
-    {
-        // Get all of the coordinate starts and positions
+    private int sampleHeightmap(int x, int z, @Nullable BlockState[] blockStates, @Nullable Predicate<BlockState> predicate) {
         int xStart = Math.floorDiv(x, 4);
         int zStart = Math.floorDiv(z, 4);
         int xProgress = Math.floorMod(x, 4);
         int zProgress = Math.floorMod(z, 4);
         double xLerp = (double) xProgress / 4.0;
         double zLerp = (double) zProgress / 4.0;
-        // Create the noise data in a 2 * 2 * 32 grid for interpolation.
         double[][] noiseData = new double[4][this.internalGenerator.getNoiseSizeY() + 1];
 
-        // Initialize noise array.
-        for (int i = 0; i < noiseData.length; i++)
-        {
+        for (int i = 0; i < noiseData.length; i++) {
             noiseData[i] = new double[this.internalGenerator.getNoiseSizeY() + 1];
         }
 
-        // Sample all 4 nearby columns.
         this.internalGenerator.getNoiseColumn(noiseData[0], xStart, zStart);
         this.internalGenerator.getNoiseColumn(noiseData[1], xStart, zStart + 1);
         this.internalGenerator.getNoiseColumn(noiseData[2], xStart + 1, zStart);
         this.internalGenerator.getNoiseColumn(noiseData[3], xStart + 1, zStart + 1);
 
-        // [0, 32] -> noise chunks
-        for (int noiseY = this.internalGenerator.getNoiseSizeY() - 1; noiseY >= 0; --noiseY)
-        {
-            // Gets all the noise in a 2x2x2 cube and interpolates it together.
-            // Lower pieces
+        for (int noiseY = this.internalGenerator.getNoiseSizeY() - 1; noiseY >= 0; --noiseY) {
             double val000 = noiseData[0][noiseY];
             double val010 = noiseData[1][noiseY];
             double val100 = noiseData[2][noiseY];
             double val110 = noiseData[3][noiseY];
-            // Upper pieces
             double val001 = noiseData[0][noiseY + 1];
             double val011 = noiseData[1][noiseY + 1];
             double val101 = noiseData[2][noiseY + 1];
             double val111 = noiseData[3][noiseY + 1];
 
-            // [0, 8] -> noise pieces
-            for (int pieceY = 7; pieceY >= 0; --pieceY)
-            {
-                double yLerp = (double) pieceY / 8.0;
-                // Density at this position given the current y interpolation
-                //double density = MathHelper.lerp3(yLerp, xLerp, zLerp, val000, val001, val100, val101, val010, val011, val110, val111);
-                double density = MathHelper.lerp3(xLerp, yLerp, zLerp, val000, val100, val010, val110, val001, val101, val011, val111);
+            for (int pieceY = 7; pieceY >= 0; --pieceY) {
+                double yLerp2 = (double) pieceY / 8.0;
+                double density = MathHelper.lerp3(xLerp, yLerp2, zLerp, val000, val100, val010, val110, val001, val101, val011, val111);
 
-                // Get the real y position (translate noise chunk and noise piece)
                 int y = (noiseY * 8) + pieceY;
 
                 BlockState state = this.getBlockState(density, y);
-                if (blockStates != null)
-                {
+                if (blockStates != null) {
                     blockStates[y] = state;
                 }
 
-                // return y if it fails the check
-                if (predicate != null && predicate.test(state))
-                {
+                if (predicate != null && predicate.test(state)) {
                     return y + 1;
                 }
             }
@@ -485,45 +540,28 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
         return 0;
     }
 
-    // MC's NoiseChunkGenerator returns defaultBlock and defaultFluid here, so callers
-    // apparently don't rely on any blocks (re)placed after base terrain gen, only on
-    // the default block/liquid set for the dimension (stone/water for overworld,
-    // netherrack/lava for nether), that MC uses for base terrain gen.
-    // We can do the same, no need to pass biome config and fetch replaced blocks etc.
-    // OTG does place blocks other than defaultBlock/defaultLiquid during base terrain gen
-    // (for replaceblocks/sagc), but that shouldn't matter for the callers of this method.
-    // Actually, it's probably better if they don't see OTG's replaced blocks, and just see
-    // the default blocks instead, as vanilla MC would do.
-    private BlockState getBlockState(double density, int y)
-    {
-        if (density > 0.0D)
-        {
+    private BlockState getBlockState(double density, int y) {
+        if (density > 0.0D) {
             return this.settings.value().defaultBlock();
-        }
-        else if (y < this.getSeaLevel())
-        {
+        } else if (y < this.getSeaLevel()) {
             return this.settings.value().defaultFluid();
         } else {
             return Blocks.AIR.defaultBlockState();
         }
     }
 
-    public Boolean checkHasVanillaStructureWithoutLoading(ServerLevel level, ChunkCoordinate chunkCoord)
-    {
+    public Boolean checkHasVanillaStructureWithoutLoading(ServerLevel level, ChunkCoordinate chunkCoord) {
         return this.shadowChunkGenerator.checkHasVanillaStructureWithoutLoading(level, chunkCoord, this.internalGenerator.getCachedBiomeProvider(), false);
     }
 
-    public int getHighestBlockYInUnloadedChunk(int x, int z, boolean findSolid, boolean findLiquid, boolean ignoreLiquid, boolean ignoreSnow)
-    {
+    public int getHighestBlockYInUnloadedChunk(int x, int z, boolean findSolid, boolean findLiquid, boolean ignoreLiquid, boolean ignoreSnow) {
         return this.shadowChunkGenerator.getHighestBlockYInUnloadedChunk(this.serverLevel, this, this.otgWorldInfo, x, z, findSolid, findLiquid, ignoreLiquid, ignoreSnow);
     }
 
-    public LocalMaterialData getMaterialInUnloadedChunk(int x, int y, int z)
-    {
+    public LocalMaterialData getMaterialInUnloadedChunk(int x, int y, int z) {
         return this.shadowChunkGenerator.getMaterialInUnloadedChunk(this.serverLevel, this, this.otgWorldInfo, x, y, z);
     }
 
-    // Portal settings getters
     public String getPortalColor() {
         if (preset != null && preset.getPresetConfig() != null) {
             return preset.getPresetConfig().getPortalSettings().getPortalColor();
