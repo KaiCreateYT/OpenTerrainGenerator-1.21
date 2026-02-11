@@ -3,3 +3,22 @@ accessWidener v2 named
 # RegistryDataLoader inner types needed for RegistryLoaderMixin
 accessible class net/minecraft/resources/RegistryDataLoader$Loader
 accessible class net/minecraft/resources/RegistryDataLoader$LoadingFunction
+
+# DensityFunctions inner types needed for OTGNoiseRouterData
+accessible class net/minecraft/world/level/levelgen/DensityFunctions$WeirdScaledSampler
+accessible class net/minecraft/world/level/levelgen/DensityFunctions$WeirdScaledSampler$RarityValueMapper
+
+# NoiseRouterData.overworld() needed for OTGNoiseRouterBuilder fallback
+accessible method net/minecraft/world/level/levelgen/NoiseRouterData overworld (Lnet/minecraft/core/HolderGetter;Lnet/minecraft/core/HolderGetter;ZZ)Lnet/minecraft/world/level/levelgen/NoiseRouter;
+
+# RandomState.noises needed for carveWithNoise to build cave density functions
+accessible field net/minecraft/world/level/levelgen/RandomState noises Lnet/minecraft/core/HolderGetter;
+
+# NoiseChunk.wrap needed to register density functions with the interpolation system
+accessible method net/minecraft/world/level/levelgen/NoiseChunk wrap (Lnet/minecraft/world/level/levelgen/DensityFunction;)Lnet/minecraft/world/level/levelgen/DensityFunction;
+
+# NoiseChunk.getInterpolatedState - with disabled aquifer: null=solid(d>0), AIR=cave(d<=0)
+accessible method net/minecraft/world/level/levelgen/NoiseChunk getInterpolatedState ()Lnet/minecraft/world/level/block/state/BlockState;
+
+# NoiseChunk.initialDensityNoJaggedness - vanilla terrain density without caves, for filtering terrain mismatch
+accessible field net/minecraft/world/level/levelgen/NoiseChunk initialDensityNoJaggedness Lnet/minecraft/world/level/levelgen/DensityFunction;

@@ -12,6 +12,7 @@ import com.pg85.otg.neoforge.biome.OTGNeoForgeBiomeProvider;
 import com.pg85.otg.gen.OTGChunkDecorator;
 import com.pg85.otg.gen.OTGChunkGenerator;
 import com.pg85.otg.interfaces.IBiome;
+import com.pg85.otg.platform.noise.OTGNoiseRouterData;
 import com.pg85.otg.presets.Preset;
 import com.pg85.otg.util.ChunkCoordinate;
 import com.pg85.otg.util.gen.ChunkBuffer;
@@ -38,6 +39,7 @@ import net.minecraft.world.level.levelgen.blending.Blender;
 import net.minecraft.world.level.levelgen.carver.CarvingContext;
 import net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver;
 import net.minecraft.world.level.levelgen.structure.*;
+import net.minecraft.world.level.levelgen.synth.NormalNoise;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.storage.LevelResource;
@@ -49,6 +51,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import java.util.function.Predicate;
+import java.lang.reflect.Method;
 
 @Getter
 public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
@@ -232,6 +235,12 @@ public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
     @Override
     public void applyCarvers(WorldGenRegion worldGenRegion, long seed, RandomState randomState, BiomeManager biomeManager, StructureManager structureManager, ChunkAccess chunkAccess, GenerationStep.Carving carving) {
 
+        // Modern pipeline: delegate entirely to vanilla noise generator (includes carvers + aquifers)
+        if (this.preset.getPresetConfig().getCarverSettings().isUseModernCaves()) {
+            this.horribleDelegateForCarvers.applyCarvers(worldGenRegion, seed, randomState, biomeManager, structureManager, chunkAccess, carving);
+            return;
+        }
+
         handleOTGCarvers(seed, chunkAccess, carving);
 
         //applyNonOTGCarvers(seed, biomeManager, chunkAccess, carving);
@@ -377,7 +386,97 @@ public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
         this.internalGenerator.populateNoise(otgWorldInfo, buffer,
                 buffer.getChunkCoordinate(), structures, random);
 
+        if (this.preset.getPresetConfig().getCarverSettings().isUseModernCaves()) {
+            carveWithNoise(blender, randomState, structureManager, chunkAccess);
+        }
+
         return CompletableFuture.completedFuture(chunkAccess);
+    }
+
+    private void carveWithNoise(Blender blender, RandomState randomState, StructureManager structureManager, ChunkAccess targetChunk) {
+        NoiseSettings noiseSettings = this.settings.value().noiseSettings().clampToHeightAccessor(targetChunk.getHeightAccessorForGeneration());
+        int cellHeight = noiseSettings.getCellHeight();
+        int cellWidth = noiseSettings.getCellWidth();
+        int cellCountY = noiseSettings.height() / cellHeight;
+        int cellCountXZ = Constants.CHUNK_SIZE / cellWidth;
+
+        NoiseChunk noiseChunk = targetChunk.getOrCreateNoiseChunk(chunk -> this.createNoiseChunk(chunk, structureManager, blender, randomState));
+        noiseChunk.initializeForFirstCellX();
+
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        BlockState air = Blocks.AIR.defaultBlockState();
+        String presetName = this.preset.getPresetRegistryName().toLowerCase(java.util.Locale.ROOT);
+        var noiseGetter = callNoiseGetter(randomState);
+        DensityFunction caveDensity = OTGNoiseRouterData.caveDensityForCarving(
+                noiseGetter,
+                this.preset.getPresetConfig().getNoiseCaveSettings(),
+                presetName,
+                noiseSettings.minY(),
+                noiseSettings.minY() + noiseSettings.height()
+        );
+        DensityFunction wrappedCaveDensity = callWrap(noiseChunk, DensityFunctions.cacheAllInCell(caveDensity));
+
+        for (int cellX = 0; cellX < cellCountXZ; cellX++) {
+            noiseChunk.advanceCellX(cellX);
+
+            for (int cellZ = 0; cellZ < cellCountXZ; cellZ++) {
+                for (int cellY = cellCountY - 1; cellY >= 0; cellY--) {
+                    noiseChunk.selectCellYZ(cellY, cellZ);
+
+                    for (int innerY = cellHeight - 1; innerY >= 0; innerY--) {
+                        int worldY = noiseSettings.minY() + (cellY * cellHeight) + innerY;
+                        double yLerp = (double) innerY / (double) cellHeight;
+                        noiseChunk.updateForY(worldY, yLerp);
+
+                        for (int innerX = 0; innerX < cellWidth; innerX++) {
+                            int worldX = targetChunk.getPos().getMinBlockX() + cellX * cellWidth + innerX;
+                            double xLerp = (double) innerX / (double) cellWidth;
+                            noiseChunk.updateForX(worldX, xLerp);
+
+                            for (int innerZ = 0; innerZ < cellWidth; innerZ++) {
+                                int worldZ = targetChunk.getPos().getMinBlockZ() + cellZ * cellWidth + innerZ;
+                                double zLerp = (double) innerZ / (double) cellWidth;
+                                noiseChunk.updateForZ(worldZ, zLerp);
+
+                                double caveValue = wrappedCaveDensity.compute(noiseChunk);
+                                if (caveValue < 0.0) {
+                                    BlockState state = noiseChunk.aquifer().computeSubstance(noiseChunk, caveValue);
+                                    if (state == null) {
+                                        state = air;
+                                    }
+                                    targetChunk.setBlockState(pos.set(worldX, worldY, worldZ), state, false);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            noiseChunk.swapSlices();
+        }
+
+        noiseChunk.stopInterpolation();
+    }
+
+    private static DensityFunction callWrap(NoiseChunk noiseChunk, DensityFunction densityFunction) {
+        try {
+            Method m = NoiseChunk.class.getDeclaredMethod("wrap", DensityFunction.class);
+            m.setAccessible(true);
+            return (DensityFunction) m.invoke(noiseChunk, densityFunction);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to call NoiseChunk#wrap", e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static HolderGetter<NormalNoise.NoiseParameters> callNoiseGetter(RandomState randomState) {
+        try {
+            var field = RandomState.class.getDeclaredField("noises");
+            field.setAccessible(true);
+            return (HolderGetter<NormalNoise.NoiseParameters>) field.get(randomState);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to access RandomState#noises", e);
+        }
     }
 
 

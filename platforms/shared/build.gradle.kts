@@ -17,6 +17,10 @@ configurations {
     }
 }
 
+loom {
+    accessWidenerPath = file("src/main/resources/otg-shared.accesswidener")
+}
+
 dependencies {
     modImplementation ("net.fabricmc:fabric-loader:${project.property("fabric_loader_version")}")
     //modApi "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}"

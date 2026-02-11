@@ -30,7 +30,8 @@ public abstract class PresetSettings implements ConfigFile {
 	protected PortalSettings portalSettings;
 	protected DimensionSettings dimensionSettings;
 	protected GenerationSettings generationSettings;
-	protected TerrainSettings terrainSettings;
+    protected TerrainSettings terrainSettings;
+    protected NoiseCaveSettings noiseCaveSettings;
 	protected ImageSettings imageSettings;
 	protected VisualSettings visualSettings;
 	protected PresetInfo presetInfo;
@@ -62,4 +63,3 @@ public abstract class PresetSettings implements ConfigFile {
 		return otgWorldInfo;
 	}
 }
-

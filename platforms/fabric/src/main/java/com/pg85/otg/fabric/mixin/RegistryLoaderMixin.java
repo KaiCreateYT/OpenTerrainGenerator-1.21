@@ -26,6 +26,11 @@ import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.*;
+import net.minecraft.world.level.levelgen.synth.NormalNoise;
+import com.pg85.otg.platform.noise.OTGNoiseParamRegistry;
+import com.pg85.otg.platform.noise.OTGNoiseRouterBuilder;
+import net.minecraft.world.level.levelgen.DensityFunctions;
+import net.minecraft.world.level.levelgen.NoiseRouter;
 import net.minecraft.world.level.levelgen.presets.WorldPreset;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
@@ -300,19 +305,50 @@ public class RegistryLoaderMixin {
         DimensionSettings dimensionSettings = presetSettings.getDimensionSettings();
         BlockSettings blockSettings = presetSettings.getBlockSettings();
         ResourceSettings resourceSettings = presetSettings.getResourceSettings();
-        var ngs = new NoiseGeneratorSettings(
-                new NoiseSettings(dimensionSettings.getMinY(), dimensionSettings.getHeight(), 1, 2),
-                ((FabricMaterialData) blockSettings.getDefaultStoneBlock()).getState(),
-                ((FabricMaterialData) blockSettings.getWaterBlock()).getState(),
-                getZeroNoiseRouter(),
-                SurfaceRuleData.overworld(),
-                new OverworldBiomeBuilder().spawnTarget(),
-                63,
-                false,
-                false, // is aquifers enabled
-                !resourceSettings.isDisableOreGen(), // is veins enabled
-                false // use legacy random source
-        );
+        boolean modernCaves = presetSettings.getCarverSettings().isUseModernCaves();
+        boolean aquifers = presetSettings.getNoiseCaveSettings().isAquifersEnabled();
+        boolean oreVeins = presetSettings.getNoiseCaveSettings().isVeinsEnabled() && !resourceSettings.isDisableOreGen();
+
+        NoiseGeneratorSettings ngs;
+        if (modernCaves) {
+            WritableRegistry<NormalNoise.NoiseParameters> noiseRegistry = getRegistry(loaders, Registries.NOISE);
+            if (noiseRegistry != null) {
+                OTGNoiseParamRegistry.registerNoiseParameters(presetSettings, noiseRegistry);
+            }
+            HolderGetter<DensityFunction> densityGetter = getRegistryOrThrow(loaders, Registries.DENSITY_FUNCTION).asLookup();
+            HolderGetter<NormalNoise.NoiseParameters> noiseGetter = getRegistryOrThrow(loaders, Registries.NOISE).asLookup();
+            OTGNoiseRouterBuilder routerBuilder = new OTGNoiseRouterBuilder(densityGetter, noiseGetter);
+            String presetName = preset.getPresetRegistryName().toLowerCase(Locale.ROOT);
+            NoiseRouter router = routerBuilder.buildWithSettings(presetSettings.getNoiseCaveSettings(), presetName, false, false);
+
+            ngs = new NoiseGeneratorSettings(
+                    new NoiseSettings(dimensionSettings.getMinY(), dimensionSettings.getHeight(), 1, 2),
+                    ((FabricMaterialData) blockSettings.getDefaultStoneBlock()).getState(),
+                    ((FabricMaterialData) blockSettings.getWaterBlock()).getState(),
+                    router,
+                    SurfaceRuleData.overworld(),
+                    new OverworldBiomeBuilder().spawnTarget(),
+                    63,
+                    aquifers,
+                    oreVeins,
+                    !resourceSettings.isDisableOreGen(), // vanilla ore toggle
+                    false // use legacy random source
+            );
+        } else {
+            ngs = new NoiseGeneratorSettings(
+                    new NoiseSettings(dimensionSettings.getMinY(), dimensionSettings.getHeight(), 1, 2),
+                    ((FabricMaterialData) blockSettings.getDefaultStoneBlock()).getState(),
+                    ((FabricMaterialData) blockSettings.getWaterBlock()).getState(),
+                    getZeroNoiseRouter(),
+                    SurfaceRuleData.overworld(),
+                    new OverworldBiomeBuilder().spawnTarget(),
+                    63,
+                    false,
+                    false, // is veins enabled
+                    !resourceSettings.isDisableOreGen(), // vanilla ore toggle
+                    false // use legacy random source
+            );
+        }
 
         // register the noise settings
         WritableRegistry<NoiseGeneratorSettings> registry = getRegistry(loaders, Registries.NOISE_SETTINGS);
