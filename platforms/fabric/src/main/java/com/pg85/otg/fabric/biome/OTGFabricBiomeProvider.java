@@ -5,6 +5,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.pg85.otg.OTG;
+import com.pg85.otg.gen.biome.UndergroundBiomeResolver;
 import com.pg85.otg.gen.biome.layers.BiomeLayers;
 import com.pg85.otg.gen.biome.layers.util.CachingLayerSampler;
 import com.pg85.otg.interfaces.ILayerSampler;
@@ -40,6 +41,7 @@ public class OTGFabricBiomeProvider extends BiomeSource implements ILayerSource,
     private long seed;
     private ThreadLocal<CachingLayerSampler> layer;
     private final Int2ObjectOpenHashMap<Holder<Biome>> keyLookup = new Int2ObjectOpenHashMap<>();
+    private UndergroundBiomeResolver undergroundResolver;
 
     public OTGFabricBiomeProvider(String presetFolderName, long seed) {
         this.presetFolderName = presetFolderName;
@@ -67,6 +69,7 @@ public class OTGFabricBiomeProvider extends BiomeSource implements ILayerSource,
         for (int otgBiomeID = 0; otgBiomeID < iBiomes.length; otgBiomeID++) {
             keyLookup.put(otgBiomeID, ((FabricBiome) iBiomes[otgBiomeID]).getBiomeHolder());
         }
+        this.undergroundResolver = new UndergroundBiomeResolver(iBiomes);
         return Stream.of(iBiomes).map(iBiome -> ((FabricBiome) iBiome).getBiomeHolder());
     }
 
@@ -88,12 +91,34 @@ public class OTGFabricBiomeProvider extends BiomeSource implements ILayerSource,
 
     @Override
     public Holder<Biome> getNoiseBiome(int i, int j, int k, Climate.Sampler sampler) {
-        return keyLookup.get(this.getLayer().get().sample(i, k));
+        return resolveNoiseBiome(i, j, k);
     }
 
     @Override
     public Holder<Biome> getNoiseBiome(int i, int j, int k) {
-        return keyLookup.get(this.getLayer().get().sample(i, k));
+        return resolveNoiseBiome(i, j, k);
+    }
+
+    private Holder<Biome> resolveNoiseBiome(int noiseX, int noiseY, int noiseZ) {
+        int surfaceBiomeId = this.getLayer().get().sample(noiseX, noiseZ);
+
+        if (undergroundResolver != null && undergroundResolver.hasUndergroundBiomes()) {
+            // Convert noise coordinates to world coordinates (noise = world >> 2)
+            int worldY = noiseY << 2;
+
+            // Estimate surface height: placeholder until Task 5 adds proper estimation
+            int estimatedSurfaceY = 64;
+
+            int undergroundBiomeId = undergroundResolver.resolve(surfaceBiomeId, worldY, estimatedSurfaceY);
+            if (undergroundBiomeId >= 0) {
+                Holder<Biome> underground = keyLookup.get(undergroundBiomeId);
+                if (underground != null) {
+                    return underground;
+                }
+            }
+        }
+
+        return keyLookup.get(surfaceBiomeId);
     }
 
     public void setSeed(long seed) {
