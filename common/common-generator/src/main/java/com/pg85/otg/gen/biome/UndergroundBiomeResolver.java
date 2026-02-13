@@ -3,6 +3,8 @@ package com.pg85.otg.gen.biome;
 import com.pg85.otg.config.settings.biome.BiomeSettings;
 import com.pg85.otg.config.settings.biome.UndergroundBiomeSettings;
 import com.pg85.otg.interfaces.IBiome;
+import com.pg85.otg.util.OTGLog;
+import com.pg85.otg.util.logging.LogCategory;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 import java.util.ArrayList;
@@ -108,6 +110,14 @@ public class UndergroundBiomeResolver {
             if (!candidates.isEmpty()) {
                 candidatesBySurfaceBiome.put(surfaceId, List.copyOf(candidates));
             }
+        }
+
+        if (OTGLog.getLogCategoryEnabled(LogCategory.BIOME_REGISTRY)) {
+            int totalUnderground = undergroundBiomes.size();
+            int surfacesWithUnderground = candidatesBySurfaceBiome.size();
+            OTGLog.info(LogCategory.BIOME_REGISTRY,
+                    "Underground biome resolver initialized: %d underground biomes, %d surface biomes have candidates",
+                    totalUnderground, surfacesWithUnderground);
         }
     }
 
