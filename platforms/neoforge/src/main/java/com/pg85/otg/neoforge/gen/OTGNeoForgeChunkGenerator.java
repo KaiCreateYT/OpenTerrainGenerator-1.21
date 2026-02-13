@@ -39,7 +39,6 @@ import net.minecraft.world.level.levelgen.blending.Blender;
 import net.minecraft.world.level.levelgen.carver.CarvingContext;
 import net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver;
 import net.minecraft.world.level.levelgen.structure.*;
-import net.minecraft.world.level.levelgen.synth.NormalNoise;
 import net.minecraft.world.level.levelgen.synth.SimplexNoise;
 import com.pg85.otg.config.settings.preset.NoiseCaveSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
@@ -53,7 +52,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import java.util.function.Predicate;
-import java.lang.reflect.Method;
 
 @Getter
 public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
@@ -85,6 +83,7 @@ public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
     private Long seed = 0L;
     private ServerLevel serverLevel = null;
     private final OTGWorldInfo otgWorldInfo;
+    private volatile RandomState caveRandomState = null;
     private volatile SimplexNoise breakthroughNoise = null;
 
     /**
@@ -397,129 +396,109 @@ public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
     }
 
     private void carveWithNoise(Blender blender, RandomState randomState, StructureManager structureManager, ChunkAccess targetChunk, ChunkBuffer terrainBuffer) {
-        NoiseSettings noiseSettings = this.settings.value().noiseSettings().clampToHeightAccessor(targetChunk.getHeightAccessorForGeneration());
-        int cellHeight = noiseSettings.getCellHeight();
-        int cellWidth = noiseSettings.getCellWidth();
-        int cellCountY = noiseSettings.height() / cellHeight;
-        int cellCountXZ = Constants.CHUNK_SIZE / cellWidth;
+        // Build a cave-only RandomState (cached). Uses terrain-independent cave density.
+        if (this.caveRandomState == null) {
+            synchronized (this) {
+                if (this.caveRandomState == null) {
+                    NoiseCaveSettings caveCfg = this.preset.getPresetConfig().getNoiseCaveSettings();
+                    NoiseSettings ns = this.settings.value().noiseSettings();
+                    // With AT, randomState.noises is directly accessible (no reflection needed)
+                    DensityFunction caveDensity = OTGNoiseRouterData.caveDensityForCarving(
+                            randomState.noises, caveCfg,
+                            this.preset.getFolderName(), ns.minY(), ns.height() + ns.minY()
+                    );
 
-        NoiseChunk noiseChunk = targetChunk.getOrCreateNoiseChunk(chunk -> this.createNoiseChunk(chunk, structureManager, blender, randomState));
-        noiseChunk.initializeForFirstCellX();
+                    DensityFunction zero = DensityFunctions.constant(0);
+                    NoiseRouter caveRouter = new NoiseRouter(
+                            zero, zero, zero, zero,
+                            zero, zero, zero, zero,
+                            zero, zero, zero,
+                            caveDensity,
+                            zero, zero, zero
+                    );
 
-        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+                    NoiseGeneratorSettings original = this.settings.value();
+                    NoiseGeneratorSettings caveOnlySettings = new NoiseGeneratorSettings(
+                            original.noiseSettings(), original.defaultBlock(), original.defaultFluid(),
+                            caveRouter, original.surfaceRule(), original.spawnTarget(),
+                            original.seaLevel(), original.disableMobGeneration(),
+                            false, false, original.useLegacyRandomSource()
+                    );
+
+                    this.caveRandomState = RandomState.create(caveOnlySettings, randomState.noises, this.seed);
+                    this.breakthroughNoise = new SimplexNoise(new WorldgenRandom(new LegacyRandomSource(this.seed ^ 0xCA0EB1A5L)));
+                    OTG.log("[OTG] Created cave-only RandomState (terrain-independent density)");
+                }
+            }
+        }
+
+        // Direct per-block evaluation — no NoiseChunk cell interpolation.
+        DensityFunction caveDensity = this.caveRandomState.router().finalDensity();
+
+        NoiseSettings noiseSettings = this.settings.value().noiseSettings();
+        int minY = noiseSettings.minY();
+        int maxY = minY + noiseSettings.height();
+
+        BlockPos.MutableBlockPos blockPos = new BlockPos.MutableBlockPos();
         BlockState air = Blocks.AIR.defaultBlockState();
-        String presetName = this.preset.getPresetRegistryName().toLowerCase(java.util.Locale.ROOT);
-        var noiseGetter = callNoiseGetter(randomState);
-        DensityFunction caveDensity = OTGNoiseRouterData.caveDensityForCarving(
-                noiseGetter,
-                this.preset.getPresetConfig().getNoiseCaveSettings(),
-                presetName,
-                noiseSettings.minY(),
-                noiseSettings.minY() + noiseSettings.height()
-        );
-        DensityFunction wrappedCaveDensity = callWrap(noiseChunk, DensityFunctions.cacheAllInCell(caveDensity));
 
-        // Surface suppression config
+        int carved = 0, skippedSolid = 0;
+        boolean firstChunk = targetChunk.getPos().x == 0 && targetChunk.getPos().z == 0;
+
+        int minX = targetChunk.getPos().getMinBlockX();
+        int minZ = targetChunk.getPos().getMinBlockZ();
+
         NoiseCaveSettings caveCfg = this.preset.getPresetConfig().getNoiseCaveSettings();
         int suppressionRange = caveCfg.getSurfaceSuppressionRange();
         double breakthroughChance = caveCfg.getSurfaceBreakthroughChance();
         double breakthroughScale = caveCfg.getSurfaceBreakthroughScale();
         double breakthroughThreshold = 1.0 - 2.0 * breakthroughChance;
 
-        if (this.breakthroughNoise == null) {
-            synchronized (this) {
-                if (this.breakthroughNoise == null) {
-                    this.breakthroughNoise = new SimplexNoise(new WorldgenRandom(new LegacyRandomSource(this.seed ^ 0xCA0EB1A5L)));
+        for (int x = 0; x < Constants.CHUNK_SIZE; x++) {
+            int worldX = minX + x;
+            for (int z = 0; z < Constants.CHUNK_SIZE; z++) {
+                int worldZ = minZ + z;
+
+                int surfaceY = terrainBuffer.getHighestBlockForColumn(x, z);
+
+                boolean isBreakthroughColumn = false;
+                if (breakthroughChance > 0.0) {
+                    double bNoise = this.breakthroughNoise.getValue(
+                            worldX / breakthroughScale, worldZ / breakthroughScale);
+                    isBreakthroughColumn = bNoise >= breakthroughThreshold;
                 }
-            }
-        }
 
-        int minX = targetChunk.getPos().getMinBlockX();
-        int minZ = targetChunk.getPos().getMinBlockZ();
+                for (int worldY = minY; worldY < maxY; worldY++) {
+                    blockPos.set(worldX, worldY, worldZ);
+                    BlockState existing = targetChunk.getBlockState(blockPos);
+                    if (existing.isAir() || existing.liquid() || existing.is(Blocks.BEDROCK)) continue;
 
-        for (int cellX = 0; cellX < cellCountXZ; cellX++) {
-            noiseChunk.advanceCellX(cellX);
+                    double density = caveDensity.compute(
+                            new DensityFunction.SinglePointContext(worldX, worldY, worldZ)
+                    );
 
-            for (int cellZ = 0; cellZ < cellCountXZ; cellZ++) {
-                for (int cellY = cellCountY - 1; cellY >= 0; cellY--) {
-                    noiseChunk.selectCellYZ(cellY, cellZ);
-
-                    for (int innerY = cellHeight - 1; innerY >= 0; innerY--) {
-                        int worldY = noiseSettings.minY() + (cellY * cellHeight) + innerY;
-                        double yLerp = (double) innerY / (double) cellHeight;
-                        noiseChunk.updateForY(worldY, yLerp);
-
-                        for (int innerX = 0; innerX < cellWidth; innerX++) {
-                            int worldX = minX + cellX * cellWidth + innerX;
-                            double xLerp = (double) innerX / (double) cellWidth;
-                            noiseChunk.updateForX(worldX, xLerp);
-
-                            for (int innerZ = 0; innerZ < cellWidth; innerZ++) {
-                                int worldZ = minZ + cellZ * cellWidth + innerZ;
-                                double zLerp = (double) innerZ / (double) cellWidth;
-                                noiseChunk.updateForZ(worldZ, zLerp);
-
-                                double caveValue = wrappedCaveDensity.compute(noiseChunk);
-
-                                // Surface-relative suppression with breakthrough
-                                int localX = worldX - minX;
-                                int localZ = worldZ - minZ;
-                                int surfaceY = terrainBuffer.getHighestBlockForColumn(localX, localZ);
-                                if (!isBreakthroughColumn(worldX, worldZ, breakthroughChance, breakthroughScale, breakthroughThreshold) && surfaceY > 0) {
-                                    int distFromSurface = surfaceY - worldY;
-                                    if (distFromSurface >= 0 && distFromSurface < suppressionRange) {
-                                        double suppressionFactor = 0.5 * (1.0 - (double) distFromSurface / suppressionRange);
-                                        caveValue += suppressionFactor;
-                                    }
-                                }
-
-                                if (caveValue < 0.0) {
-                                    BlockState state = noiseChunk.aquifer().computeSubstance(noiseChunk, caveValue);
-                                    if (state == null) {
-                                        state = air;
-                                    }
-                                    targetChunk.setBlockState(pos.set(worldX, worldY, worldZ), state, false);
-                                }
-                            }
+                    if (!isBreakthroughColumn && surfaceY > 0) {
+                        int distFromSurface = surfaceY - worldY;
+                        if (distFromSurface >= 0 && distFromSurface < suppressionRange) {
+                            double suppressionFactor = 0.5 * (1.0 - (double) distFromSurface / suppressionRange);
+                            density += suppressionFactor;
                         }
+                    }
+
+                    if (density <= 0) {
+                        targetChunk.setBlockState(blockPos, air, false);
+                        carved++;
+                    } else {
+                        skippedSolid++;
                     }
                 }
             }
-
-            noiseChunk.swapSlices();
         }
 
-        noiseChunk.stopInterpolation();
-    }
-
-    private boolean isBreakthroughColumn(int worldX, int worldZ, double breakthroughChance, double breakthroughScale, double breakthroughThreshold) {
-        if (breakthroughChance <= 0.0) return false;
-        double bNoise = this.breakthroughNoise.getValue(worldX / breakthroughScale, worldZ / breakthroughScale);
-        return bNoise >= breakthroughThreshold;
-    }
-
-    private static DensityFunction callWrap(NoiseChunk noiseChunk, DensityFunction densityFunction) {
-        try {
-            Method m = NoiseChunk.class.getDeclaredMethod("wrap", DensityFunction.class);
-            m.setAccessible(true);
-            return (DensityFunction) m.invoke(noiseChunk, densityFunction);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to call NoiseChunk#wrap", e);
+        if (firstChunk) {
+            OTG.log("[OTG] carveWithNoise chunk(0,0): carved=" + carved + " skippedSolid=" + skippedSolid);
         }
     }
-
-    @SuppressWarnings("unchecked")
-    private static HolderGetter<NormalNoise.NoiseParameters> callNoiseGetter(RandomState randomState) {
-        try {
-            var field = RandomState.class.getDeclaredField("noises");
-            field.setAccessible(true);
-            return (HolderGetter<NormalNoise.NoiseParameters>) field.get(randomState);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to access RandomState#noises", e);
-        }
-    }
-
-
 
     public @NotNull Random getRandomFromChunkCoord(ChunkCoordinate chunkCoord) {
         return new Random(this.seed + chunkCoord.getChunkX()*341873128712L + chunkCoord.getChunkZ()*132897987541L);
