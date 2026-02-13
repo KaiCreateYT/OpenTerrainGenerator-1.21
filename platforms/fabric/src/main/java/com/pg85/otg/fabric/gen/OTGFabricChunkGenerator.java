@@ -38,6 +38,7 @@ import net.minecraft.world.level.chunk.*;
 import net.minecraft.world.level.levelgen.*;
 import net.minecraft.world.level.levelgen.blending.Blender;
 import net.minecraft.world.level.levelgen.carver.CarvingContext;
+import net.minecraft.world.level.levelgen.synth.SimplexNoise;
 import net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver;
 import net.minecraft.world.level.levelgen.structure.*;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
@@ -83,6 +84,7 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
     private ServerLevel serverLevel = null;
     private final OTGWorldInfo otgWorldInfo;
     private volatile RandomState caveRandomState = null;
+    private volatile SimplexNoise breakthroughNoise = null;
 
     /**
      * Factory method for CODEC deserialization - biomeRegistry will be set later from ServerLevel
@@ -368,13 +370,13 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
                 buffer.getChunkCoordinate(), structures, random);
 
         if (this.preset.getPresetConfig().getCarverSettings().isUseModernCaves()) {
-            carveWithNoise(blender, randomState, structureManager, chunkAccess);
+            carveWithNoise(blender, randomState, structureManager, chunkAccess, buffer);
         }
 
         return CompletableFuture.completedFuture(chunkAccess);
     }
 
-    private void carveWithNoise(Blender blender, RandomState randomState, StructureManager structureManager, ChunkAccess targetChunk) {
+    private void carveWithNoise(Blender blender, RandomState randomState, StructureManager structureManager, ChunkAccess targetChunk, ChunkBuffer terrainBuffer) {
         // Build a cave-only RandomState (cached). Uses terrain-independent cave density:
         // no slopedCheese, no rangeChoice — just spaghetti/noodle/cheese noise directly.
         if (this.caveRandomState == null) {
@@ -407,6 +409,7 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
 
                     this.caveRandomState = RandomState.create(caveOnlySettings, randomState.noises, this.seed);
                     OTG.log("[OTG] Created cave-only RandomState (terrain-independent density)");
+                    this.breakthroughNoise = new SimplexNoise(new WorldgenRandom(new LegacyRandomSource(this.seed ^ 0xCA0EB1A5L)));
                 }
             }
         }
@@ -430,10 +433,30 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
         int minX = targetChunk.getPos().getMinBlockX();
         int minZ = targetChunk.getPos().getMinBlockZ();
 
+        NoiseCaveSettings caveCfg = this.preset.getPresetConfig().getNoiseCaveSettings();
+        int suppressionRange = caveCfg.getSurfaceSuppressionRange();
+        double breakthroughChance = caveCfg.getSurfaceBreakthroughChance();
+        double breakthroughScale = caveCfg.getSurfaceBreakthroughScale();
+        // Precompute threshold: SimplexNoise returns [-1, 1].
+        // Map chance 0.0->1.0 to threshold 1.0->-1.0 (linear).
+        double breakthroughThreshold = 1.0 - 2.0 * breakthroughChance;
+
         for (int x = 0; x < Constants.CHUNK_SIZE; x++) {
             int worldX = minX + x;
             for (int z = 0; z < Constants.CHUNK_SIZE; z++) {
                 int worldZ = minZ + z;
+
+                // Surface height from OTG terrain generation (set during populateNoise)
+                int surfaceY = terrainBuffer.getHighestBlockForColumn(x, z);
+
+                // Sample breakthrough noise once per column (2D, large scale)
+                boolean isBreakthroughColumn = false;
+                if (breakthroughChance > 0.0) {
+                    double bNoise = this.breakthroughNoise.getValue(
+                            worldX / breakthroughScale, worldZ / breakthroughScale);
+                    isBreakthroughColumn = bNoise >= breakthroughThreshold;
+                }
+
                 for (int worldY = minY; worldY < maxY; worldY++) {
                     blockPos.set(worldX, worldY, worldZ);
                     BlockState existing = targetChunk.getBlockState(blockPos);
@@ -442,6 +465,16 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
                     double density = caveDensity.compute(
                             new DensityFunction.SinglePointContext(worldX, worldY, worldZ)
                     );
+
+                    // Surface-relative suppression
+                    if (!isBreakthroughColumn && surfaceY > 0) {
+                        int distFromSurface = surfaceY - worldY;
+                        if (distFromSurface >= 0 && distFromSurface < suppressionRange) {
+                            // Linear ramp: 0 at suppressionRange distance, 0.5 at surface
+                            double suppressionFactor = 0.5 * (1.0 - (double) distFromSurface / suppressionRange);
+                            density += suppressionFactor;
+                        }
+                    }
 
                     if (density <= 0) {
                         targetChunk.setBlockState(blockPos, air, false);

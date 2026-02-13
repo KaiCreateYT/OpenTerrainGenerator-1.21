@@ -250,11 +250,8 @@ public class OTGNoiseRouterData {
         DensityFunction bedrockProtection = DensityFunctions.yClampedGradient(minY, minY + 5, 0.2, 0.0);
         allCaves = DensityFunctions.add(allCaves, bedrockProtection);
 
-        // Surface suppression: prevents most caves from breaking through to surface.
-        // Starts at Y=50, ramps to +0.5 at Y=80. Gentle enough that strong entrance
-        // signals can still occasionally reach surface (desirable for natural entrances).
-        DensityFunction surfaceSuppression = DensityFunctions.yClampedGradient(50, 80, 0.0, 0.5);
-        allCaves = DensityFunctions.add(allCaves, surfaceSuppression);
+        // Surface suppression moved to carveWithNoise() for surface-relative behavior.
+        // See OTGFabricChunkGenerator.carveWithNoise() for breakthrough logic.
 
         DensityFunction scaled = DensityFunctions.add(
                 DensityFunctions.mul(allCaves, DensityFunctions.constant(settings.getFinalDensityScale())),

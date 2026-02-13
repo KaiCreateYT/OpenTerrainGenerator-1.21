@@ -25,6 +25,9 @@ public class NoiseCaveSettings extends ConfigSection {
     private final boolean aquifersEnabled;
     private final int veinMinY;
     private final int veinMaxY;
+    private final int surfaceSuppressionRange;
+    private final double surfaceBreakthroughChance;
+    private final double surfaceBreakthroughScale;
 
     private final int aquiferBarrierFirstOctave;
     private final List<Double> aquiferBarrierAmplitudes;
@@ -154,6 +157,24 @@ public class NoiseCaveSettings extends ConfigSection {
             "NoiseCaveVeinMaxY", 50, -128, 320,
             t -> ((NoiseCaveSettings) t).getVeinMaxY(),
             "Maksymalny Y dla ore veins (vanilla: 50)."
+    );
+
+    public static final Setting<Integer> SURFACE_SUPPRESSION_RANGE = Settings.intSetting(
+            "NoiseCaveSurfaceSuppressionRange", 30, 5, 100,
+            t -> ((NoiseCaveSettings) t).getSurfaceSuppressionRange(),
+            "Ile bloków pod surface level zaczyna się tłumienie jaskiń. Mniejsza wartość = jaskinie kończą się bliżej powierzchni."
+    );
+
+    public static final Setting<Double> SURFACE_BREAKTHROUGH_CHANCE = Settings.doubleSetting(
+            "NoiseCaveSurfaceBreakthroughChance", 0.1, 0.0, 1.0,
+            t -> ((NoiseCaveSettings) t).getSurfaceBreakthroughChance(),
+            "Jaki procent terenu pozwala jaskiniom przebić się na powierzchnię (0.0 = brak, 1.0 = wszędzie). Kontroluje próg noise."
+    );
+
+    public static final Setting<Double> SURFACE_BREAKTHROUGH_SCALE = Settings.doubleSetting(
+            "NoiseCaveSurfaceBreakthroughScale", 128.0, 16.0, 512.0,
+            t -> ((NoiseCaveSettings) t).getSurfaceBreakthroughScale(),
+            "Skala noise dla regionów breakthrough. Większa = większe regiony z wejściami do jaskiń."
     );
 
     public static final Setting<Integer> AQUIFER_BARRIER_FIRST_OCTAVE = Settings.intSetting(
@@ -406,6 +427,9 @@ public class NoiseCaveSettings extends ConfigSection {
         }
         builder.veinMinY(minY);
         builder.veinMaxY(maxY);
+        builder.surfaceSuppressionRange(reader.getSetting(SURFACE_SUPPRESSION_RANGE));
+        builder.surfaceBreakthroughChance(reader.getSetting(SURFACE_BREAKTHROUGH_CHANCE));
+        builder.surfaceBreakthroughScale(reader.getSetting(SURFACE_BREAKTHROUGH_SCALE));
 
         builder.aquiferBarrierFirstOctave(reader.getSetting(AQUIFER_BARRIER_FIRST_OCTAVE));
         builder.aquiferBarrierAmplitudes(parseAmplitudes(reader, AQUIFER_BARRIER_AMPLITUDES));

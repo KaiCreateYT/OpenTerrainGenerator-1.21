@@ -40,6 +40,8 @@ import net.minecraft.world.level.levelgen.carver.CarvingContext;
 import net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver;
 import net.minecraft.world.level.levelgen.structure.*;
 import net.minecraft.world.level.levelgen.synth.NormalNoise;
+import net.minecraft.world.level.levelgen.synth.SimplexNoise;
+import com.pg85.otg.config.settings.preset.NoiseCaveSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.storage.LevelResource;
@@ -83,6 +85,7 @@ public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
     private Long seed = 0L;
     private ServerLevel serverLevel = null;
     private final OTGWorldInfo otgWorldInfo;
+    private volatile SimplexNoise breakthroughNoise = null;
 
     /**
      * Factory method for CODEC deserialization - biomeRegistry will be set later from ServerLevel
@@ -387,13 +390,13 @@ public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
                 buffer.getChunkCoordinate(), structures, random);
 
         if (this.preset.getPresetConfig().getCarverSettings().isUseModernCaves()) {
-            carveWithNoise(blender, randomState, structureManager, chunkAccess);
+            carveWithNoise(blender, randomState, structureManager, chunkAccess, buffer);
         }
 
         return CompletableFuture.completedFuture(chunkAccess);
     }
 
-    private void carveWithNoise(Blender blender, RandomState randomState, StructureManager structureManager, ChunkAccess targetChunk) {
+    private void carveWithNoise(Blender blender, RandomState randomState, StructureManager structureManager, ChunkAccess targetChunk, ChunkBuffer terrainBuffer) {
         NoiseSettings noiseSettings = this.settings.value().noiseSettings().clampToHeightAccessor(targetChunk.getHeightAccessorForGeneration());
         int cellHeight = noiseSettings.getCellHeight();
         int cellWidth = noiseSettings.getCellWidth();
@@ -416,6 +419,24 @@ public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
         );
         DensityFunction wrappedCaveDensity = callWrap(noiseChunk, DensityFunctions.cacheAllInCell(caveDensity));
 
+        // Surface suppression config
+        NoiseCaveSettings caveCfg = this.preset.getPresetConfig().getNoiseCaveSettings();
+        int suppressionRange = caveCfg.getSurfaceSuppressionRange();
+        double breakthroughChance = caveCfg.getSurfaceBreakthroughChance();
+        double breakthroughScale = caveCfg.getSurfaceBreakthroughScale();
+        double breakthroughThreshold = 1.0 - 2.0 * breakthroughChance;
+
+        if (this.breakthroughNoise == null) {
+            synchronized (this) {
+                if (this.breakthroughNoise == null) {
+                    this.breakthroughNoise = new SimplexNoise(new WorldgenRandom(new LegacyRandomSource(this.seed ^ 0xCA0EB1A5L)));
+                }
+            }
+        }
+
+        int minX = targetChunk.getPos().getMinBlockX();
+        int minZ = targetChunk.getPos().getMinBlockZ();
+
         for (int cellX = 0; cellX < cellCountXZ; cellX++) {
             noiseChunk.advanceCellX(cellX);
 
@@ -429,16 +450,29 @@ public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
                         noiseChunk.updateForY(worldY, yLerp);
 
                         for (int innerX = 0; innerX < cellWidth; innerX++) {
-                            int worldX = targetChunk.getPos().getMinBlockX() + cellX * cellWidth + innerX;
+                            int worldX = minX + cellX * cellWidth + innerX;
                             double xLerp = (double) innerX / (double) cellWidth;
                             noiseChunk.updateForX(worldX, xLerp);
 
                             for (int innerZ = 0; innerZ < cellWidth; innerZ++) {
-                                int worldZ = targetChunk.getPos().getMinBlockZ() + cellZ * cellWidth + innerZ;
+                                int worldZ = minZ + cellZ * cellWidth + innerZ;
                                 double zLerp = (double) innerZ / (double) cellWidth;
                                 noiseChunk.updateForZ(worldZ, zLerp);
 
                                 double caveValue = wrappedCaveDensity.compute(noiseChunk);
+
+                                // Surface-relative suppression with breakthrough
+                                int localX = worldX - minX;
+                                int localZ = worldZ - minZ;
+                                int surfaceY = terrainBuffer.getHighestBlockForColumn(localX, localZ);
+                                if (!isBreakthroughColumn(worldX, worldZ, breakthroughChance, breakthroughScale, breakthroughThreshold) && surfaceY > 0) {
+                                    int distFromSurface = surfaceY - worldY;
+                                    if (distFromSurface >= 0 && distFromSurface < suppressionRange) {
+                                        double suppressionFactor = 0.5 * (1.0 - (double) distFromSurface / suppressionRange);
+                                        caveValue += suppressionFactor;
+                                    }
+                                }
+
                                 if (caveValue < 0.0) {
                                     BlockState state = noiseChunk.aquifer().computeSubstance(noiseChunk, caveValue);
                                     if (state == null) {
@@ -456,6 +490,12 @@ public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
         }
 
         noiseChunk.stopInterpolation();
+    }
+
+    private boolean isBreakthroughColumn(int worldX, int worldZ, double breakthroughChance, double breakthroughScale, double breakthroughThreshold) {
+        if (breakthroughChance <= 0.0) return false;
+        double bNoise = this.breakthroughNoise.getValue(worldX / breakthroughScale, worldZ / breakthroughScale);
+        return bNoise >= breakthroughThreshold;
     }
 
     private static DensityFunction callWrap(NoiseChunk noiseChunk, DensityFunction densityFunction) {
