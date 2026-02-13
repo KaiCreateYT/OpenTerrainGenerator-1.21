@@ -1,0 +1,14 @@
+# Lush Caves — underground biome under warm, wet surface biomes
+
+IsUndergroundBiome: true
+UndergroundMinY: -64
+UndergroundMaxY: 30
+UndergroundPriority: 10
+
+MinSurfaceTemperature: 0.5
+MaxSurfaceTemperature: 2.0
+MinSurfaceWetness: 0.7
+MaxSurfaceWetness: 1.0
+
+BiomeTemperature: 0.9
+BiomeWetness: 0.9

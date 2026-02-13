@@ -1,0 +1,14 @@
+# Dripstone Caves — underground biome under dry, continental areas
+
+IsUndergroundBiome: true
+UndergroundMinY: -64
+UndergroundMaxY: 30
+UndergroundPriority: 20
+
+MinSurfaceTemperature: 0.0
+MaxSurfaceTemperature: 2.0
+MinSurfaceWetness: 0.0
+MaxSurfaceWetness: 0.4
+
+BiomeTemperature: 0.5
+BiomeWetness: 0.2

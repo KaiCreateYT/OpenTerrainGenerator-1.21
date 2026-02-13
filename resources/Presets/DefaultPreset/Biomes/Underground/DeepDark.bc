@@ -1,0 +1,14 @@
+# Deep Dark — deep underground biome, low priority
+
+IsUndergroundBiome: true
+UndergroundMinY: -64
+UndergroundMaxY: -20
+UndergroundPriority: 5
+
+MinSurfaceTemperature: 0.0
+MaxSurfaceTemperature: 2.0
+MinSurfaceWetness: 0.0
+MaxSurfaceWetness: 1.0
+
+BiomeTemperature: 0.8
+BiomeWetness: 0.4
