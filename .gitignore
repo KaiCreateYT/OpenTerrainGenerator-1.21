@@ -76,6 +76,9 @@ session.lock
 /.architectury-transformer/
 /platforms/shared/run/
 
+# Worktrees
+.worktrees
+
 # Filesystem dust
 Thumbs.db
 .DS_Store
