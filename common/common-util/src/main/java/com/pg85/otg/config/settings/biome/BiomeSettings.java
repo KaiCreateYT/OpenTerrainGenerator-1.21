@@ -42,6 +42,7 @@ public abstract class BiomeSettings implements ConfigFile {
     protected BiomeVisualSettings visualSettings = null;
     protected SurfaceSettings surfaceSettings = null;
     protected BiomeResourceSettings resourceSettings = null;
+    protected UndergroundBiomeSettings undergroundSettings = null;
 
     protected BiomeTagSettings biomeTagSettings = null;
     protected BiomeStructureTagConfig biomeStructureTagConfig = null;
@@ -166,6 +167,8 @@ public abstract class BiomeSettings implements ConfigFile {
                                 provider,
                                 presetSettings.getConfigName()
                         )));
+
+        undergroundSettings = UndergroundBiomeSettings.getUndergroundBiomeSettings(settingsMap);
     }
 
     @Override
@@ -203,6 +206,8 @@ public abstract class BiomeSettings implements ConfigFile {
                 writeAlteredConfigSection(writer, biomeStructureTagConfig);
             }
         }
+        if (undergroundSettings != null)
+            writeConfigSection(writer, undergroundSettings);
     }
 
     public void writeConfigSection(SettingsMap writer, ConfigSection section) {
