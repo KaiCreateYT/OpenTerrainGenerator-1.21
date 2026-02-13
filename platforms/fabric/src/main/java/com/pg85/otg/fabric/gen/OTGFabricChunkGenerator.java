@@ -137,6 +137,10 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
                 if (this.biomeRegistry == null) {
                     this.biomeRegistry = serverLevel.registryAccess().registryOrThrow(Registries.BIOME);
                 }
+                // Wire surface height estimation for underground biome resolution
+                biomeSource.setSurfaceHeightEstimator((worldX, worldZ) ->
+                    this.getHighestBlockYInUnloadedChunk(worldX, worldZ, true, true, true, true)
+                );
             }
         }
     }

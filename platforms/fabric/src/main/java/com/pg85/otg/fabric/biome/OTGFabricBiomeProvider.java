@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Predicate;
+import java.util.function.ToIntBiFunction;
 import java.util.stream.Stream;
 
 @Getter
@@ -42,6 +43,7 @@ public class OTGFabricBiomeProvider extends BiomeSource implements ILayerSource,
     private ThreadLocal<CachingLayerSampler> layer;
     private final Int2ObjectOpenHashMap<Holder<Biome>> keyLookup = new Int2ObjectOpenHashMap<>();
     private UndergroundBiomeResolver undergroundResolver;
+    private volatile ToIntBiFunction<Integer, Integer> surfaceHeightEstimator;
 
     public OTGFabricBiomeProvider(String presetFolderName, long seed) {
         this.presetFolderName = presetFolderName;
@@ -106,8 +108,13 @@ public class OTGFabricBiomeProvider extends BiomeSource implements ILayerSource,
             // Convert noise coordinates to world coordinates (noise = world >> 2)
             int worldY = noiseY << 2;
 
-            // Estimate surface height: placeholder until Task 5 adds proper estimation
-            int estimatedSurfaceY = 64;
+            int estimatedSurfaceY;
+            if (surfaceHeightEstimator != null) {
+                // noiseX/noiseZ are in noise coordinates (world >> 2)
+                estimatedSurfaceY = surfaceHeightEstimator.applyAsInt(noiseX << 2, noiseZ << 2);
+            } else {
+                estimatedSurfaceY = 64; // fallback
+            }
 
             int undergroundBiomeId = undergroundResolver.resolve(surfaceBiomeId, worldY, estimatedSurfaceY);
             if (undergroundBiomeId >= 0) {
@@ -119,6 +126,10 @@ public class OTGFabricBiomeProvider extends BiomeSource implements ILayerSource,
         }
 
         return keyLookup.get(surfaceBiomeId);
+    }
+
+    public void setSurfaceHeightEstimator(ToIntBiFunction<Integer, Integer> estimator) {
+        this.surfaceHeightEstimator = estimator;
     }
 
     public void setSeed(long seed) {
