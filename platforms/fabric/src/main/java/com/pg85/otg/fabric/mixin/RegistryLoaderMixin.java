@@ -122,6 +122,22 @@ public class RegistryLoaderMixin {
             OTG.getEngine().getPresetLoader().loadPresetsFromDisk();
         }
 
+        // Override bootstrap HolderGetters with real registry lookups.
+        // The bootstrap context (BiomeDataMixin) creates unbound holder references
+        // that never get bound because they belong to a transient builder, not the
+        // materialized registry. Using the actual loaded registries here gives us
+        // holders that ARE (or will be) properly bound when the registry freezes.
+        WritableRegistry<net.minecraft.world.level.levelgen.placement.PlacedFeature> pfRegistry =
+                getRegistry(loaders, Registries.PLACED_FEATURE);
+        if (pfRegistry != null) {
+            LegacyFabricBiomeLoader.PLACED_FEATURE_HOLDER = pfRegistry.asLookup();
+        }
+        WritableRegistry<net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver<?>> carverRegistry =
+                getRegistry(loaders, Registries.CONFIGURED_CARVER);
+        if (carverRegistry != null) {
+            LegacyFabricBiomeLoader.CONFIGURED_CARVER_HOLDER = carverRegistry.asLookup();
+        }
+
         LegacyFabricBiomeLoader loader = (LegacyFabricBiomeLoader) OTG.getEngine().getPresetLoader();
         WritableRegistry<Biome> biomeWritableRegistry = getRegistry(loaders, Registries.BIOME);
         if (biomeWritableRegistry == null) {

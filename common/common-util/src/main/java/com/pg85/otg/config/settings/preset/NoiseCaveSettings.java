@@ -29,6 +29,7 @@ public class NoiseCaveSettings extends ConfigSection {
     private final double surfaceBreakthroughChance;
     private final double surfaceBreakthroughScale;
     private final boolean debugCaveTypes;
+    private final double undergroundBiomeCheeseDensityThreshold;
 
     private final int aquiferBarrierFirstOctave;
     private final List<Double> aquiferBarrierAmplitudes;
@@ -182,6 +183,15 @@ public class NoiseCaveSettings extends ConfigSection {
             "NoiseCaveDebugCaveTypes", false,
             t -> ((NoiseCaveSettings) t).isDebugCaveTypes(),
             "Replaces cave air with colored glass per cave type: yellow=cheese, red=spaghetti, blue=noodle."
+    );
+
+    public static final Setting<Double> UNDERGROUND_BIOME_CHEESE_THRESHOLD = Settings.doubleSetting(
+            "UndergroundBiomeCheeseDensityThreshold", 0.0, -5.0, 5.0,
+            t -> ((NoiseCaveSettings) t).getUndergroundBiomeCheeseDensityThreshold(),
+            "Cheese cave density threshold for underground biome placement.",
+            "Underground biomes only appear where cheese density < this threshold.",
+            "0.0 = at cave boundary. Higher = extends biome into surrounding walls.",
+            "Set to -999 to effectively disable cheese gating."
     );
 
     public static final Setting<Integer> AQUIFER_BARRIER_FIRST_OCTAVE = Settings.intSetting(
@@ -438,6 +448,7 @@ public class NoiseCaveSettings extends ConfigSection {
         builder.surfaceBreakthroughChance(reader.getSetting(SURFACE_BREAKTHROUGH_CHANCE));
         builder.surfaceBreakthroughScale(reader.getSetting(SURFACE_BREAKTHROUGH_SCALE));
         builder.debugCaveTypes(reader.getSetting(DEBUG_CAVE_TYPES));
+        builder.undergroundBiomeCheeseDensityThreshold(reader.getSetting(UNDERGROUND_BIOME_CHEESE_THRESHOLD));
 
         builder.aquiferBarrierFirstOctave(reader.getSetting(AQUIFER_BARRIER_FIRST_OCTAVE));
         builder.aquiferBarrierAmplitudes(parseAmplitudes(reader, AQUIFER_BARRIER_AMPLITUDES));

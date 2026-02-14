@@ -308,43 +308,50 @@ public class LegacyNeoForgeBiomeLoader extends LocalPresetLoader {
             List<Integer> idsForBiome = worldBiomes.computeIfAbsent(biomeSettings.getIdentitySettings().getBiomeName(), k -> new ArrayList<>());
             idsForBiome.add(otgBiomeId);
 
-            // Make a list of isle and border biomes per generation depth
-            if(biomeSettings.getGenerationSettings().isIsleBiome())
-            {
-                // Make or get a list for this group depth, then add
-                List<BiomeData> biomesAtDepth = isleBiomesAtDepth.getOrDefault(biomeSettings.getGenerationSettings().getBiomeSizeWhenIsle(), new ArrayList<>());
-                biomesAtDepth.add(
-                        new BiomeData(
-                                otgBiomeId,
-                                biomeSettings.getGenerationSettings().getBiomeRarityWhenIsle(),
-                                biomeSettings.getGenerationSettings().getBiomeSizeWhenIsle(),
-                                biomeSettings.getVisualSettings().getBiomeTemperature(),
-                                biomeSettings.getGenerationSettings().getIsleInBiomes(),
-                                biomeSettings.getGenerationSettings().getBorderInBiomes(),
-                                biomeSettings.getGenerationSettings().getOnlyBorderNear(),
-                                biomeSettings.getGenerationSettings().getNotBorderNear()
-                        )
-                );
-                isleBiomesAtDepth.put(biomeSettings.getGenerationSettings().getBiomeSizeWhenIsle(), biomesAtDepth);
-            }
+            // Underground biomes don't participate in 2D layer system (isle/border placement).
+            // They are resolved by UndergroundBiomeResolver based on Y coordinate at runtime.
+            boolean isUnderground = biomeSettings.getUndergroundSettings() != null
+                    && biomeSettings.getUndergroundSettings().isUndergroundBiome();
 
-            if(biomeSettings.getGenerationSettings().isBorderBiome())
-            {
-                // Make or get a list for this group depth, then add
-                List<BiomeData> biomesAtDepth = borderBiomesAtDepth.getOrDefault(biomeSettings.getGenerationSettings().getBiomeSizeWhenBorder(), new ArrayList<>());
-                biomesAtDepth.add(
-                        new BiomeData(
-                                otgBiomeId,
-                                biomeSettings.getGenerationSettings().getBiomeRarity(),
-                                biomeSettings.getGenerationSettings().getBiomeSizeWhenBorder(),
-                                biomeSettings.getVisualSettings().getBiomeTemperature(),
-                                biomeSettings.getGenerationSettings().getIsleInBiomes(),
-                                biomeSettings.getGenerationSettings().getBorderInBiomes(),
-                                biomeSettings.getGenerationSettings().getOnlyBorderNear(),
-                                biomeSettings.getGenerationSettings().getNotBorderNear()
-                        )
-                );
-                borderBiomesAtDepth.put(biomeSettings.getGenerationSettings().getBiomeSizeWhenBorder(), biomesAtDepth);
+            if (!isUnderground) {
+                // Make a list of isle and border biomes per generation depth
+                if(biomeSettings.getGenerationSettings().isIsleBiome())
+                {
+                    // Make or get a list for this group depth, then add
+                    List<BiomeData> biomesAtDepth = isleBiomesAtDepth.getOrDefault(biomeSettings.getGenerationSettings().getBiomeSizeWhenIsle(), new ArrayList<>());
+                    biomesAtDepth.add(
+                            new BiomeData(
+                                    otgBiomeId,
+                                    biomeSettings.getGenerationSettings().getBiomeRarityWhenIsle(),
+                                    biomeSettings.getGenerationSettings().getBiomeSizeWhenIsle(),
+                                    biomeSettings.getVisualSettings().getBiomeTemperature(),
+                                    biomeSettings.getGenerationSettings().getIsleInBiomes(),
+                                    biomeSettings.getGenerationSettings().getBorderInBiomes(),
+                                    biomeSettings.getGenerationSettings().getOnlyBorderNear(),
+                                    biomeSettings.getGenerationSettings().getNotBorderNear()
+                            )
+                    );
+                    isleBiomesAtDepth.put(biomeSettings.getGenerationSettings().getBiomeSizeWhenIsle(), biomesAtDepth);
+                }
+
+                if(biomeSettings.getGenerationSettings().isBorderBiome())
+                {
+                    // Make or get a list for this group depth, then add
+                    List<BiomeData> biomesAtDepth = borderBiomesAtDepth.getOrDefault(biomeSettings.getGenerationSettings().getBiomeSizeWhenBorder(), new ArrayList<>());
+                    biomesAtDepth.add(
+                            new BiomeData(
+                                    otgBiomeId,
+                                    biomeSettings.getGenerationSettings().getBiomeRarity(),
+                                    biomeSettings.getGenerationSettings().getBiomeSizeWhenBorder(),
+                                    biomeSettings.getVisualSettings().getBiomeTemperature(),
+                                    biomeSettings.getGenerationSettings().getIsleInBiomes(),
+                                    biomeSettings.getGenerationSettings().getBorderInBiomes(),
+                                    biomeSettings.getGenerationSettings().getOnlyBorderNear(),
+                                    biomeSettings.getGenerationSettings().getNotBorderNear()
+                            )
+                    );
+                    borderBiomesAtDepth.put(biomeSettings.getGenerationSettings().getBiomeSizeWhenBorder(), biomesAtDepth);
+                }
             }
 
             // Index BiomeColor for FromImageMode and /otg map

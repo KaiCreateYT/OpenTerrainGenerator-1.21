@@ -60,7 +60,7 @@ public class UndergroundBiomeSettings extends ConfigSection {
     );
 
     public static final Setting<Integer> UNDERGROUND_MAX_Y = Settings.intSetting(
-            "UndergroundMaxY", 30, -2048, 2048,
+            "UndergroundMaxY", 320, -2048, 2048,
             t -> ((UndergroundBiomeSettings) t).getUndergroundMaxY(),
             "Maximum Y coordinate where this underground biome can appear."
     );

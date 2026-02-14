@@ -60,6 +60,7 @@ public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
         if (this.seed == 0L) {
             this.setSeed(BiomeManager.obfuscateSeed(seed));
         }
+        initCaveComponents(randomState);
         return super.createState(structureSetLookup, randomState, seed);
     }
 
@@ -126,6 +127,64 @@ public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
                 biomeSource.setSeed(seed);
                 internalGenerator.setSeed(seed);
             }
+        }
+    }
+
+    /**
+     * Initializes cave density components (idempotent, thread-safe).
+     * Called from createState() (before biome queries) so cheese density
+     * is available for underground biome gating during the BIOMES step.
+     * Also called as fallback from carveWithNoise() in case createState() wasn't reached.
+     */
+    private void initCaveComponents(RandomState randomState) {
+        if (this.caveRandomState != null) return;
+        if (!this.preset.getPresetConfig().getCarverSettings().isUseModernCaves()) return;
+        synchronized (this) {
+            if (this.caveRandomState != null) return;
+            NoiseCaveSettings caveCfg = this.preset.getPresetConfig().getNoiseCaveSettings();
+            NoiseSettings ns = this.settings.value().noiseSettings();
+
+            OTGNoiseRouterData.CaveDensityComponents components = OTGNoiseRouterData.caveDensityComponentsForCarving(
+                    randomState.noises, caveCfg,
+                    this.preset.getFolderName(), ns.minY(), ns.height() + ns.minY()
+            );
+
+            // Pack component density functions into unused NoiseRouter slots so they
+            // go through RandomState.create() processing (noise holder resolution).
+            DensityFunction zero = DensityFunctions.constant(0);
+            NoiseRouter caveRouter = new NoiseRouter(
+                    components.spaghetti(),  // barrierNoise slot
+                    components.cheese(),     // fluidFloodedness slot
+                    components.noodle(),     // fluidSpread slot
+                    zero,
+                    zero, zero, zero, zero,
+                    zero, zero, zero,
+                    components.combined(),
+                    zero, zero, zero
+            );
+
+            NoiseGeneratorSettings original = this.settings.value();
+            NoiseGeneratorSettings caveOnlySettings = new NoiseGeneratorSettings(
+                    original.noiseSettings(), original.defaultBlock(), original.defaultFluid(),
+                    caveRouter, original.surfaceRule(), original.spawnTarget(),
+                    original.seaLevel(), original.disableMobGeneration(),
+                    false, false, original.useLegacyRandomSource()
+            );
+
+            this.caveRandomState = RandomState.create(caveOnlySettings, randomState.noises, this.seed);
+            NoiseRouter processedRouter = this.caveRandomState.router();
+            this.caveComponents = new OTGNoiseRouterData.CaveDensityComponents(
+                    processedRouter.barrierNoise(),
+                    processedRouter.fluidLevelFloodednessNoise(),
+                    processedRouter.fluidLevelSpreadNoise(),
+                    processedRouter.finalDensity()
+            );
+            this.breakthroughNoise = new SimplexNoise(new WorldgenRandom(new LegacyRandomSource(this.seed ^ 0xCA0EB1A5L)));
+            OTG.log("[OTG] Created cave-only RandomState (terrain-independent density, debug components resolved)");
+
+            // Pass cheese density to biome provider for underground biome gating
+            double threshold = caveCfg.getUndergroundBiomeCheeseDensityThreshold();
+            biomeSource.setCheeseCaveDensity(this.caveComponents.cheese(), threshold);
         }
     }
 
@@ -401,53 +460,8 @@ public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
     }
 
     private void carveWithNoise(Blender blender, RandomState randomState, StructureManager structureManager, ChunkAccess targetChunk, ChunkBuffer terrainBuffer) {
-        // Build a cave-only RandomState (cached). Uses terrain-independent cave density.
-        if (this.caveRandomState == null) {
-            synchronized (this) {
-                if (this.caveRandomState == null) {
-                    NoiseCaveSettings caveCfg = this.preset.getPresetConfig().getNoiseCaveSettings();
-                    NoiseSettings ns = this.settings.value().noiseSettings();
-
-                    OTGNoiseRouterData.CaveDensityComponents components = OTGNoiseRouterData.caveDensityComponentsForCarving(
-                            randomState.noises, caveCfg,
-                            this.preset.getFolderName(), ns.minY(), ns.height() + ns.minY()
-                    );
-
-                    // Pack component density functions into unused NoiseRouter slots so they
-                    // go through RandomState.create() processing (noise holder resolution).
-                    DensityFunction zero = DensityFunctions.constant(0);
-                    NoiseRouter caveRouter = new NoiseRouter(
-                            components.spaghetti(),  // barrierNoise slot → spaghetti debug
-                            components.cheese(),     // fluidFloodedness slot → cheese debug
-                            components.noodle(),     // fluidSpread slot → noodle debug
-                            zero,
-                            zero, zero, zero, zero,
-                            zero, zero, zero,
-                            components.combined(),
-                            zero, zero, zero
-                    );
-
-                    NoiseGeneratorSettings original = this.settings.value();
-                    NoiseGeneratorSettings caveOnlySettings = new NoiseGeneratorSettings(
-                            original.noiseSettings(), original.defaultBlock(), original.defaultFluid(),
-                            caveRouter, original.surfaceRule(), original.spawnTarget(),
-                            original.seaLevel(), original.disableMobGeneration(),
-                            false, false, original.useLegacyRandomSource()
-                    );
-
-                    this.caveRandomState = RandomState.create(caveOnlySettings, randomState.noises, this.seed);
-                    NoiseRouter processedRouter = this.caveRandomState.router();
-                    this.caveComponents = new OTGNoiseRouterData.CaveDensityComponents(
-                            processedRouter.barrierNoise(),
-                            processedRouter.fluidLevelFloodednessNoise(),
-                            processedRouter.fluidLevelSpreadNoise(),
-                            processedRouter.finalDensity()
-                    );
-                    this.breakthroughNoise = new SimplexNoise(new WorldgenRandom(new LegacyRandomSource(this.seed ^ 0xCA0EB1A5L)));
-                    OTG.log("[OTG] Created cave-only RandomState (terrain-independent density, debug components resolved)");
-                }
-            }
-        }
+        // Initialize cave components (idempotent — usually already done in createState)
+        initCaveComponents(randomState);
 
         // Direct per-block evaluation — no NoiseChunk cell interpolation.
         DensityFunction caveDensity = this.caveRandomState.router().finalDensity();

@@ -5,6 +5,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.pg85.otg.OTG;
+import com.pg85.otg.gen.biome.UndergroundBiomeResolver;
 import com.pg85.otg.gen.biome.layers.BiomeLayers;
 import com.pg85.otg.gen.biome.layers.util.CachingLayerSampler;
 import com.pg85.otg.interfaces.ILayerSampler;
@@ -20,11 +21,13 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.biome.Climate;
+import net.minecraft.world.level.levelgen.DensityFunction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Predicate;
+import java.util.function.ToIntBiFunction;
 import java.util.stream.Stream;
 
 @Getter
@@ -40,6 +43,10 @@ public class OTGNeoForgeBiomeProvider extends BiomeSource implements ILayerSourc
     private long seed;
     private ThreadLocal<CachingLayerSampler> layer;
     private final Int2ObjectOpenHashMap<Holder<Biome>> keyLookup = new Int2ObjectOpenHashMap<>();
+    private UndergroundBiomeResolver undergroundResolver;
+    private volatile ToIntBiFunction<Integer, Integer> surfaceHeightEstimator;
+    private volatile DensityFunction cheeseCaveDensity;
+    private volatile double cheeseDensityThreshold = 0.0;
 
     public OTGNeoForgeBiomeProvider(String presetFolderName, long seed) {
         this.presetFolderName = presetFolderName;
@@ -67,6 +74,7 @@ public class OTGNeoForgeBiomeProvider extends BiomeSource implements ILayerSourc
         for (int otgBiomeID = 0; otgBiomeID < iBiomes.length; otgBiomeID++) {
             keyLookup.put(otgBiomeID, ((NeoForgeBiome) iBiomes[otgBiomeID]).getBiomeHolder());
         }
+        this.undergroundResolver = new UndergroundBiomeResolver(iBiomes);
         return Stream.of(iBiomes).map(iBiome -> ((NeoForgeBiome) iBiome).getBiomeHolder());
     }
 
@@ -88,12 +96,54 @@ public class OTGNeoForgeBiomeProvider extends BiomeSource implements ILayerSourc
 
     @Override
     public Holder<Biome> getNoiseBiome(int i, int j, int k, Climate.Sampler sampler) {
-        return keyLookup.get(this.getLayer().get().sample(i, k));
+        return resolveNoiseBiome(i, j, k);
     }
 
     @Override
     public Holder<Biome> getNoiseBiome(int i, int j, int k) {
-        return keyLookup.get(this.getLayer().get().sample(i, k));
+        return resolveNoiseBiome(i, j, k);
+    }
+
+    private Holder<Biome> resolveNoiseBiome(int noiseX, int noiseY, int noiseZ) {
+        int surfaceBiomeId = this.getLayer().get().sample(noiseX, noiseZ);
+
+        if (undergroundResolver != null && undergroundResolver.hasUndergroundBiomes()) {
+            int worldY = noiseY << 2;
+            int worldX = noiseX << 2;
+            int worldZ = noiseZ << 2;
+
+            int estimatedSurfaceY = surfaceHeightEstimator != null
+                    ? surfaceHeightEstimator.applyAsInt(worldX, worldZ)
+                    : 64;
+
+            int undergroundBiomeId = undergroundResolver.resolve(surfaceBiomeId, worldY, estimatedSurfaceY);
+            if (undergroundBiomeId >= 0) {
+                // Gate: underground biomes only in cheese cave regions
+                DensityFunction cheese = this.cheeseCaveDensity;
+                if (cheese != null) {
+                    double density = cheese.compute(
+                            new DensityFunction.SinglePointContext(worldX, worldY, worldZ));
+                    if (density >= this.cheeseDensityThreshold) {
+                        return keyLookup.get(surfaceBiomeId);
+                    }
+                }
+                Holder<Biome> underground = keyLookup.get(undergroundBiomeId);
+                if (underground != null) {
+                    return underground;
+                }
+            }
+        }
+
+        return keyLookup.get(surfaceBiomeId);
+    }
+
+    public void setSurfaceHeightEstimator(ToIntBiFunction<Integer, Integer> estimator) {
+        this.surfaceHeightEstimator = estimator;
+    }
+
+    public void setCheeseCaveDensity(DensityFunction cheeseDensity, double threshold) {
+        this.cheeseCaveDensity = cheeseDensity;
+        this.cheeseDensityThreshold = threshold;
     }
 
     public void setSeed(long seed) {

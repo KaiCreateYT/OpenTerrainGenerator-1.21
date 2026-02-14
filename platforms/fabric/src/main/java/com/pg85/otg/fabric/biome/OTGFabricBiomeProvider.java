@@ -21,6 +21,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.biome.Climate;
+import net.minecraft.world.level.levelgen.DensityFunction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -44,6 +45,8 @@ public class OTGFabricBiomeProvider extends BiomeSource implements ILayerSource,
     private final Int2ObjectOpenHashMap<Holder<Biome>> keyLookup = new Int2ObjectOpenHashMap<>();
     private UndergroundBiomeResolver undergroundResolver;
     private volatile ToIntBiFunction<Integer, Integer> surfaceHeightEstimator;
+    private volatile DensityFunction cheeseCaveDensity;
+    private volatile double cheeseDensityThreshold = 0.0;
 
     public OTGFabricBiomeProvider(String presetFolderName, long seed) {
         this.presetFolderName = presetFolderName;
@@ -105,19 +108,25 @@ public class OTGFabricBiomeProvider extends BiomeSource implements ILayerSource,
         int surfaceBiomeId = this.getLayer().get().sample(noiseX, noiseZ);
 
         if (undergroundResolver != null && undergroundResolver.hasUndergroundBiomes()) {
-            // Convert noise coordinates to world coordinates (noise = world >> 2)
             int worldY = noiseY << 2;
+            int worldX = noiseX << 2;
+            int worldZ = noiseZ << 2;
 
-            int estimatedSurfaceY;
-            if (surfaceHeightEstimator != null) {
-                // noiseX/noiseZ are in noise coordinates (world >> 2)
-                estimatedSurfaceY = surfaceHeightEstimator.applyAsInt(noiseX << 2, noiseZ << 2);
-            } else {
-                estimatedSurfaceY = 64; // fallback
-            }
+            int estimatedSurfaceY = surfaceHeightEstimator != null
+                    ? surfaceHeightEstimator.applyAsInt(worldX, worldZ)
+                    : 64;
 
             int undergroundBiomeId = undergroundResolver.resolve(surfaceBiomeId, worldY, estimatedSurfaceY);
             if (undergroundBiomeId >= 0) {
+                // Gate: underground biomes only in cheese cave regions
+                DensityFunction cheese = this.cheeseCaveDensity;
+                if (cheese != null) {
+                    double density = cheese.compute(
+                            new DensityFunction.SinglePointContext(worldX, worldY, worldZ));
+                    if (density >= this.cheeseDensityThreshold) {
+                        return keyLookup.get(surfaceBiomeId);
+                    }
+                }
                 Holder<Biome> underground = keyLookup.get(undergroundBiomeId);
                 if (underground != null) {
                     return underground;
@@ -130,6 +139,11 @@ public class OTGFabricBiomeProvider extends BiomeSource implements ILayerSource,
 
     public void setSurfaceHeightEstimator(ToIntBiFunction<Integer, Integer> estimator) {
         this.surfaceHeightEstimator = estimator;
+    }
+
+    public void setCheeseCaveDensity(DensityFunction cheeseDensity, double threshold) {
+        this.cheeseCaveDensity = cheeseDensity;
+        this.cheeseDensityThreshold = threshold;
     }
 
     public void setSeed(long seed) {
