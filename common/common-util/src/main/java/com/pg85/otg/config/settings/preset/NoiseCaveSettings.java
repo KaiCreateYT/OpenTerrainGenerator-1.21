@@ -28,6 +28,7 @@ public class NoiseCaveSettings extends ConfigSection {
     private final int surfaceSuppressionRange;
     private final double surfaceBreakthroughChance;
     private final double surfaceBreakthroughScale;
+    private final boolean debugCaveTypes;
 
     private final int aquiferBarrierFirstOctave;
     private final List<Double> aquiferBarrierAmplitudes;
@@ -175,6 +176,12 @@ public class NoiseCaveSettings extends ConfigSection {
             "NoiseCaveSurfaceBreakthroughScale", 128.0, 16.0, 512.0,
             t -> ((NoiseCaveSettings) t).getSurfaceBreakthroughScale(),
             "Skala noise dla regionów breakthrough. Większa = większe regiony z wejściami do jaskiń."
+    );
+
+    public static final Setting<Boolean> DEBUG_CAVE_TYPES = Settings.booleanSetting(
+            "NoiseCaveDebugCaveTypes", false,
+            t -> ((NoiseCaveSettings) t).isDebugCaveTypes(),
+            "Replaces cave air with colored glass per cave type: yellow=cheese, red=spaghetti, blue=noodle."
     );
 
     public static final Setting<Integer> AQUIFER_BARRIER_FIRST_OCTAVE = Settings.intSetting(
@@ -430,6 +437,7 @@ public class NoiseCaveSettings extends ConfigSection {
         builder.surfaceSuppressionRange(reader.getSetting(SURFACE_SUPPRESSION_RANGE));
         builder.surfaceBreakthroughChance(reader.getSetting(SURFACE_BREAKTHROUGH_CHANCE));
         builder.surfaceBreakthroughScale(reader.getSetting(SURFACE_BREAKTHROUGH_SCALE));
+        builder.debugCaveTypes(reader.getSetting(DEBUG_CAVE_TYPES));
 
         builder.aquiferBarrierFirstOctave(reader.getSetting(AQUIFER_BARRIER_FIRST_OCTAVE));
         builder.aquiferBarrierAmplitudes(parseAmplitudes(reader, AQUIFER_BARRIER_AMPLITUDES));

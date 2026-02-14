@@ -16,6 +16,18 @@ import net.minecraft.world.level.levelgen.synth.NormalNoise;
  * Uses vanilla noise keys but applies per-component scaling and offsets from preset.
  */
 public class OTGNoiseRouterData {
+
+    /**
+     * Debug container: individual cave density functions per type.
+     * Evaluate each separately to determine which cave type carved a given block.
+     */
+    public record CaveDensityComponents(
+            DensityFunction spaghetti,
+            DensityFunction cheese,
+            DensityFunction noodle,
+            DensityFunction combined
+    ) {}
+
     private static ResourceLocation rl(String path) {
         return ResourceLocation.withDefaultNamespace(path);
     }
@@ -216,21 +228,16 @@ public class OTGNoiseRouterData {
                 entranceFunc
         );
 
-        // === Cheese caves (large caverns, suppressed near surface) ===
+        // === Cheese caves (large caverns) ===
+        // Cheese suppression moved to carveWithNoise() for surface-relative behavior.
         DensityFunction caveLayer = DensityFunctions.noise(noiseHolder(noise, null, "cave_layer"), 8.0);
         DensityFunction layer = DensityFunctions.mul(DensityFunctions.constant(4.0), caveLayer.square());
         DensityFunction caveCheeseNoise = DensityFunctions.noise(
                 noiseHolder(noise, null, "cave_cheese"),
                 0.6666666666666666 * settings.getSpaghetti3dScale()
         );
-        // Y-based suppression replaces terrain-dependent slopedCheese modulation.
         // Cheese constant 0.35 (vanilla=0.27): slightly smaller cheese caverns.
-        // Suppression ramps from Y=10 to Y=50: gradually kills cheese caves near surface.
-        DensityFunction cheeseSuppression = DensityFunctions.yClampedGradient(10, 50, 0.0, 1.0);
-        DensityFunction cheese = DensityFunctions.add(
-                DensityFunctions.add(DensityFunctions.constant(0.35), caveCheeseNoise).clamp(-1.0, 1.0),
-                cheeseSuppression
-        );
+        DensityFunction cheese = DensityFunctions.add(DensityFunctions.constant(0.35), caveCheeseNoise).clamp(-1.0, 1.0);
         DensityFunction cheeseCaves = DensityFunctions.add(layer, cheese);
 
         // === Combine all cave types (min = most aggressive carving wins) ===
@@ -259,6 +266,77 @@ public class OTGNoiseRouterData {
         );
 
         return scaled;
+    }
+
+    /**
+     * Debug version: returns individual density functions per cave type for visual debugging.
+     * Each component has bedrock protection and final scaling applied independently.
+     */
+    public static CaveDensityComponents caveDensityComponentsForCarving(
+            HolderGetter<NormalNoise.NoiseParameters> noise,
+            NoiseCaveSettings settings,
+            String presetName,
+            int minY,
+            int maxY
+    ) {
+        DensityFunction one = DensityFunctions.constant(1.0);
+        if (!settings.isCavesEnabled()) {
+            return new CaveDensityComponents(one, one, one, one);
+        }
+
+        DensityFunction y = DensityFunctions.yClampedGradient(minY, maxY, (double) minY, (double) maxY);
+
+        DensityFunction spaghettiRough = scaleDF(spaghettiRoughnessFunction(noise, null), settings.getSpaghetti3dScale());
+        DensityFunction spaghetti2d = scaleDF(spaghetti2D(noise, null), settings.getSpaghetti2dScale());
+        DensityFunction entranceFunc = scaleDF(entrances(spaghettiRough, noise, null), settings.getSpaghetti3dScale());
+        DensityFunction noodleFunc = scaleDF(noodle(y, noise, null), settings.getNoodleScale());
+        DensityFunction pillarsFunc = scaleDF(pillars(noise, null), settings.getPillarScale());
+
+        // Spaghetti (includes entrances)
+        DensityFunction spaghettiCaves = DensityFunctions.min(
+                DensityFunctions.add(spaghetti2d, spaghettiRough),
+                entranceFunc
+        );
+
+        // Cheese
+        DensityFunction caveLayer = DensityFunctions.noise(noiseHolder(noise, null, "cave_layer"), 8.0);
+        DensityFunction layer = DensityFunctions.mul(DensityFunctions.constant(4.0), caveLayer.square());
+        DensityFunction caveCheeseNoise = DensityFunctions.noise(
+                noiseHolder(noise, null, "cave_cheese"),
+                0.6666666666666666 * settings.getSpaghetti3dScale()
+        );
+        DensityFunction cheese = DensityFunctions.add(DensityFunctions.constant(0.35), caveCheeseNoise).clamp(-1.0, 1.0);
+        DensityFunction cheeseCaves = DensityFunctions.add(layer, cheese);
+
+        // Combined (same as caveDensityForCarving)
+        DensityFunction allCaves = DensityFunctions.min(spaghettiCaves, cheeseCaves);
+        allCaves = DensityFunctions.min(allCaves, noodleFunc);
+
+        DensityFunction pillarMask = DensityFunctions.rangeChoice(
+                pillarsFunc, -1000000.0, 0.15,
+                DensityFunctions.constant(-1000000.0), pillarsFunc
+        );
+        allCaves = DensityFunctions.max(allCaves, pillarMask);
+
+        DensityFunction bedrockProtection = DensityFunctions.yClampedGradient(minY, minY + 5, 0.2, 0.0);
+
+        // Apply bedrock protection + scaling to each component individually
+        double scale = settings.getFinalDensityScale();
+        double offset = settings.getFinalDensityOffset();
+
+        DensityFunction spaghettiScaled = applyScaling(DensityFunctions.add(spaghettiCaves, bedrockProtection), scale, offset);
+        DensityFunction cheeseScaled = applyScaling(DensityFunctions.add(cheeseCaves, bedrockProtection), scale, offset);
+        DensityFunction noodleScaled = applyScaling(DensityFunctions.add(noodleFunc, bedrockProtection), scale, offset);
+        DensityFunction combinedScaled = applyScaling(DensityFunctions.add(allCaves, bedrockProtection), scale, offset);
+
+        return new CaveDensityComponents(spaghettiScaled, cheeseScaled, noodleScaled, combinedScaled);
+    }
+
+    private static DensityFunction applyScaling(DensityFunction df, double scale, double offset) {
+        return DensityFunctions.add(
+                DensityFunctions.mul(df, DensityFunctions.constant(scale)),
+                DensityFunctions.constant(offset)
+        );
     }
 
     private static DensityFunction spaghettiRoughnessFunction(HolderGetter<NormalNoise.NoiseParameters> noise, String presetName) {

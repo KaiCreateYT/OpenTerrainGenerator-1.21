@@ -85,6 +85,8 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
     private final OTGWorldInfo otgWorldInfo;
     private volatile RandomState caveRandomState = null;
     private volatile SimplexNoise breakthroughNoise = null;
+    // Debug: individual cave type density functions for visual cave type identification
+    private volatile OTGNoiseRouterData.CaveDensityComponents caveComponents = null;
 
     /**
      * Factory method for CODEC deserialization - biomeRegistry will be set later from ServerLevel
@@ -384,18 +386,25 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
                 if (this.caveRandomState == null) {
                     NoiseCaveSettings caveCfg = this.preset.getPresetConfig().getNoiseCaveSettings();
                     NoiseSettings ns = this.settings.value().noiseSettings();
-                    DensityFunction caveDensity = OTGNoiseRouterData.caveDensityForCarving(
+
+                    // Build individual cave type density functions for debug visualization
+                    OTGNoiseRouterData.CaveDensityComponents components = OTGNoiseRouterData.caveDensityComponentsForCarving(
                             randomState.noises, caveCfg,
                             this.preset.getFolderName(), ns.minY(), ns.height() + ns.minY()
                     );
 
-                    // NoiseRouter with ONLY cave density as finalDensity, everything else zeroed.
+                    // Pack component density functions into unused NoiseRouter slots so they
+                    // go through RandomState.create() processing (noise holder resolution).
+                    // barrierNoise=spaghetti, fluidFloodedness=cheese, fluidSpread=noodle
                     DensityFunction zero = DensityFunctions.constant(0);
                     NoiseRouter caveRouter = new NoiseRouter(
-                            zero, zero, zero, zero,
+                            components.spaghetti(),  // barrierNoise slot → spaghetti debug
+                            components.cheese(),     // fluidFloodedness slot → cheese debug
+                            components.noodle(),     // fluidSpread slot → noodle debug
+                            zero,
                             zero, zero, zero, zero,
                             zero, zero, zero,
-                            caveDensity,
+                            components.combined(),
                             zero, zero, zero
                     );
 
@@ -408,7 +417,15 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
                     );
 
                     this.caveRandomState = RandomState.create(caveOnlySettings, randomState.noises, this.seed);
-                    OTG.log("[OTG] Created cave-only RandomState (terrain-independent density)");
+                    // Retrieve processed component functions from router (noise holders now resolved)
+                    NoiseRouter processedRouter = this.caveRandomState.router();
+                    this.caveComponents = new OTGNoiseRouterData.CaveDensityComponents(
+                            processedRouter.barrierNoise(),
+                            processedRouter.fluidLevelFloodednessNoise(),
+                            processedRouter.fluidLevelSpreadNoise(),
+                            processedRouter.finalDensity()
+                    );
+                    OTG.log("[OTG] Created cave-only RandomState (terrain-independent density, debug components resolved)");
                     this.breakthroughNoise = new SimplexNoise(new WorldgenRandom(new LegacyRandomSource(this.seed ^ 0xCA0EB1A5L)));
                 }
             }
@@ -426,6 +443,14 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
 
         BlockPos.MutableBlockPos blockPos = new BlockPos.MutableBlockPos();
         BlockState air = Blocks.AIR.defaultBlockState();
+        // Debug blocks: colored glass per cave type
+        BlockState debugCheese = Blocks.YELLOW_STAINED_GLASS.defaultBlockState();
+        BlockState debugSpaghetti = Blocks.RED_STAINED_GLASS.defaultBlockState();
+        BlockState debugNoodle = Blocks.BLUE_STAINED_GLASS.defaultBlockState();
+        boolean debugCaveTypes = this.preset.getPresetConfig().getNoiseCaveSettings().isDebugCaveTypes();
+
+        // Get individual density functions for debug mode
+        OTGNoiseRouterData.CaveDensityComponents components = this.caveComponents;
 
         int carved = 0, skippedSolid = 0;
         boolean firstChunk = targetChunk.getPos().x == 0 && targetChunk.getPos().z == 0;
@@ -466,18 +491,40 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
                             new DensityFunction.SinglePointContext(worldX, worldY, worldZ)
                     );
 
-                    // Surface-relative suppression
+                    // Surface-relative suppression: quadratic ramp so caves gradually
+                    // thin out near surface instead of cutting off sharply.
+                    // t=0 at suppressionRange depth, t=1 at surface.
+                    // Quadratic: suppression = maxSuppression * t^2
+                    // This means caves barely affected at bottom of range, strongly suppressed near surface.
                     if (!isBreakthroughColumn && surfaceY > 0) {
                         int distFromSurface = surfaceY - worldY;
                         if (distFromSurface >= 0 && distFromSurface < suppressionRange) {
-                            // Linear ramp: 0 at suppressionRange distance, 0.5 at surface
-                            double suppressionFactor = 0.5 * (1.0 - (double) distFromSurface / suppressionRange);
+                            double t = 1.0 - (double) distFromSurface / suppressionRange;
+                            double suppressionFactor = 0.5 * t * t;
                             density += suppressionFactor;
                         }
                     }
 
                     if (density <= 0) {
-                        targetChunk.setBlockState(blockPos, air, false);
+                        if (debugCaveTypes && components != null) {
+                            DensityFunction.SinglePointContext ctx = new DensityFunction.SinglePointContext(worldX, worldY, worldZ);
+                            double spaghettiD = components.spaghetti().compute(ctx);
+                            double cheeseD = components.cheese().compute(ctx);
+                            double noodleD = components.noodle().compute(ctx);
+
+                            // Which type has the lowest (most negative) density = most responsible for carving
+                            BlockState debugBlock;
+                            if (cheeseD <= spaghettiD && cheeseD <= noodleD) {
+                                debugBlock = debugCheese;
+                            } else if (spaghettiD <= cheeseD && spaghettiD <= noodleD) {
+                                debugBlock = debugSpaghetti;
+                            } else {
+                                debugBlock = debugNoodle;
+                            }
+                            targetChunk.setBlockState(blockPos, debugBlock, false);
+                        } else {
+                            targetChunk.setBlockState(blockPos, air, false);
+                        }
                         carved++;
                     } else {
                         skippedSolid++;

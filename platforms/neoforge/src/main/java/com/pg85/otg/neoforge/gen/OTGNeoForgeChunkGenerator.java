@@ -85,6 +85,7 @@ public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
     private final OTGWorldInfo otgWorldInfo;
     private volatile RandomState caveRandomState = null;
     private volatile SimplexNoise breakthroughNoise = null;
+    private volatile OTGNoiseRouterData.CaveDensityComponents caveComponents = null;
 
     /**
      * Factory method for CODEC deserialization - biomeRegistry will be set later from ServerLevel
@@ -402,18 +403,23 @@ public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
                 if (this.caveRandomState == null) {
                     NoiseCaveSettings caveCfg = this.preset.getPresetConfig().getNoiseCaveSettings();
                     NoiseSettings ns = this.settings.value().noiseSettings();
-                    // With AT, randomState.noises is directly accessible (no reflection needed)
-                    DensityFunction caveDensity = OTGNoiseRouterData.caveDensityForCarving(
+
+                    OTGNoiseRouterData.CaveDensityComponents components = OTGNoiseRouterData.caveDensityComponentsForCarving(
                             randomState.noises, caveCfg,
                             this.preset.getFolderName(), ns.minY(), ns.height() + ns.minY()
                     );
 
+                    // Pack component density functions into unused NoiseRouter slots so they
+                    // go through RandomState.create() processing (noise holder resolution).
                     DensityFunction zero = DensityFunctions.constant(0);
                     NoiseRouter caveRouter = new NoiseRouter(
-                            zero, zero, zero, zero,
+                            components.spaghetti(),  // barrierNoise slot → spaghetti debug
+                            components.cheese(),     // fluidFloodedness slot → cheese debug
+                            components.noodle(),     // fluidSpread slot → noodle debug
+                            zero,
                             zero, zero, zero, zero,
                             zero, zero, zero,
-                            caveDensity,
+                            components.combined(),
                             zero, zero, zero
                     );
 
@@ -426,8 +432,15 @@ public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
                     );
 
                     this.caveRandomState = RandomState.create(caveOnlySettings, randomState.noises, this.seed);
+                    NoiseRouter processedRouter = this.caveRandomState.router();
+                    this.caveComponents = new OTGNoiseRouterData.CaveDensityComponents(
+                            processedRouter.barrierNoise(),
+                            processedRouter.fluidLevelFloodednessNoise(),
+                            processedRouter.fluidLevelSpreadNoise(),
+                            processedRouter.finalDensity()
+                    );
                     this.breakthroughNoise = new SimplexNoise(new WorldgenRandom(new LegacyRandomSource(this.seed ^ 0xCA0EB1A5L)));
-                    OTG.log("[OTG] Created cave-only RandomState (terrain-independent density)");
+                    OTG.log("[OTG] Created cave-only RandomState (terrain-independent density, debug components resolved)");
                 }
             }
         }
@@ -441,6 +454,11 @@ public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
 
         BlockPos.MutableBlockPos blockPos = new BlockPos.MutableBlockPos();
         BlockState air = Blocks.AIR.defaultBlockState();
+        BlockState debugCheese = Blocks.YELLOW_STAINED_GLASS.defaultBlockState();
+        BlockState debugSpaghetti = Blocks.RED_STAINED_GLASS.defaultBlockState();
+        BlockState debugNoodle = Blocks.BLUE_STAINED_GLASS.defaultBlockState();
+        boolean debugCaveTypes = this.preset.getPresetConfig().getNoiseCaveSettings().isDebugCaveTypes();
+        OTGNoiseRouterData.CaveDensityComponents components = this.caveComponents;
 
         int carved = 0, skippedSolid = 0;
         boolean firstChunk = targetChunk.getPos().x == 0 && targetChunk.getPos().z == 0;
@@ -477,16 +495,36 @@ public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
                             new DensityFunction.SinglePointContext(worldX, worldY, worldZ)
                     );
 
+                    // Surface-relative suppression: quadratic ramp so caves gradually
+                    // thin out near surface instead of cutting off sharply.
                     if (!isBreakthroughColumn && surfaceY > 0) {
                         int distFromSurface = surfaceY - worldY;
                         if (distFromSurface >= 0 && distFromSurface < suppressionRange) {
-                            double suppressionFactor = 0.5 * (1.0 - (double) distFromSurface / suppressionRange);
+                            double t = 1.0 - (double) distFromSurface / suppressionRange;
+                            double suppressionFactor = 0.5 * t * t;
                             density += suppressionFactor;
                         }
                     }
 
                     if (density <= 0) {
-                        targetChunk.setBlockState(blockPos, air, false);
+                        if (debugCaveTypes && components != null) {
+                            DensityFunction.SinglePointContext ctx = new DensityFunction.SinglePointContext(worldX, worldY, worldZ);
+                            double spaghettiD = components.spaghetti().compute(ctx);
+                            double cheeseD = components.cheese().compute(ctx);
+                            double noodleD = components.noodle().compute(ctx);
+
+                            BlockState debugBlock;
+                            if (cheeseD <= spaghettiD && cheeseD <= noodleD) {
+                                debugBlock = debugCheese;
+                            } else if (spaghettiD <= cheeseD && spaghettiD <= noodleD) {
+                                debugBlock = debugSpaghetti;
+                            } else {
+                                debugBlock = debugNoodle;
+                            }
+                            targetChunk.setBlockState(blockPos, debugBlock, false);
+                        } else {
+                            targetChunk.setBlockState(blockPos, air, false);
+                        }
                         carved++;
                     } else {
                         skippedSolid++;
