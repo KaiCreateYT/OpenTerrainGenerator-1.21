@@ -62,7 +62,7 @@ public class FabricWorldGenRegion extends LocalWorldGenRegion {
     private final int EMPTY;
 
 
-    protected FabricWorldGenRegion(
+    public FabricWorldGenRegion(
         String presetFolderName,
         IPluginConfig pluginConfig,
         PresetConfig presetConfig,

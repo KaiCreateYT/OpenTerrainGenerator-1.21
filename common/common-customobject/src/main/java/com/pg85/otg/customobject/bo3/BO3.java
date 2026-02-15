@@ -441,8 +441,6 @@ public class BO3 implements StructuredCustomObject
 
 	private void handleBO3Functions(CustomStructure structure, CustomStructureCache structureCache, IWorldGenRegion worldGenRegion, Random random, Rotation rotation, int x, int y, int z, HashSet<ChunkCoordinate> chunks)
 	{
-		HashSet<ChunkCoordinate> chunksCustomObject = new HashSet<>();
-
 		// StructureCache can be null for non-otg worlds, when using /otg spawn/edit/export.
 		if (structure != null && structureCache != null)
 		{
@@ -452,7 +450,7 @@ public class BO3 implements StructuredCustomObject
 			}
 		} else if (structureCache != null)  {
 			CustomStructure placeHolderStructure = new BO3CustomStructure(new BO3CustomStructureCoordinate(worldGenRegion.getPresetFolderName(), this, this.getName(), Rotation.NORTH, x, (short) 0, z));
-			for (ChunkCoordinate structureCoord : chunksCustomObject)
+			for (ChunkCoordinate structureCoord : chunks)
 			{
 				structureCache.addBo3ToStructureCache(structureCoord, placeHolderStructure, false);			
 			}

@@ -1,8 +1,10 @@
 package com.pg85.otg.fabric;
 
 import com.pg85.otg.OTG;
+import com.pg85.otg.fabric.commands.FabricCommandWorldAccessor;
 import com.pg85.otg.fabric.dimensions.FabricDimensionCommands;
 import com.pg85.otg.fabric.dimensions.FabricDimensionManager;
+import com.pg85.otg.shared.commands.OTGCommandRegistrar;
 import com.pg85.otg.fabric.portals.FabricPortalBlocks;
 import com.pg85.otg.fabric.portals.PortalIgnitionHandler;
 import com.pg85.otg.fabric.events.WorldSaveCallback;
@@ -60,7 +62,8 @@ public class OTGPlugin implements ModInitializer {
 	void registerDimensionCommands() {
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
 			FabricDimensionCommands.register(dispatcher);
-			OTGLog.info("Registered OTG dimension commands");
+			OTGCommandRegistrar.register(dispatcher, new FabricCommandWorldAccessor());
+			OTGLog.info("Registered OTG commands");
 		});
 	}
 
