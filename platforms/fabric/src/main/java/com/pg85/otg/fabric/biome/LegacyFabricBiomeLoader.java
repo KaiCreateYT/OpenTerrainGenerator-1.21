@@ -409,7 +409,10 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
         //BiomeDefaultFeatures.addDefaultCarversAndLakes(generationSettings);
 
 
-        // Register any Registry() resources to the biome, to be handled by MC.
+        // Collect Registry() resources per generation step, then sort by feature key
+        // to ensure a globally consistent ordering. Without this, biomes with the same
+        // features in different orders cause "Feature order cycle found" in MC 1.18+.
+        Map<GenerationStep.Decoration, List<ResourceKey<PlacedFeature>>> featuresByStep = new TreeMap<>();
         for (ConfigFunction<BiomeSettings> res : biomeConfig.getResourceQueue())
         {
             if (res instanceof RegistryResource registryResource)
@@ -421,13 +424,21 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
                         && placedFeatureReference.get().isBound()
                         && placedFeatureReference.get().unwrapKey().isPresent()
                 ) {
-                    generationSettings.addFeature(stage, placedFeatureReference.get().unwrapKey().get());
+                    featuresByStep.computeIfAbsent(stage, k -> new ArrayList<>()).add(placedFeatureReference.get().unwrapKey().get());
                 } else {
                     if(OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.DECORATION))
                     {
                         OTG.getEngine().getLogger().log(LogLevel.ERROR, LogCategory.DECORATION, "Registry() " + registryResource.getFeatureKey() + " could not be found for biomeconfig " + biomeConfig.getIdentitySettings().getBiomeName());
                     }
                 }
+            }
+        }
+        for (Map.Entry<GenerationStep.Decoration, List<ResourceKey<PlacedFeature>>> entry : featuresByStep.entrySet())
+        {
+            entry.getValue().sort(Comparator.comparing(ResourceKey::location));
+            for (ResourceKey<PlacedFeature> featureKey : entry.getValue())
+            {
+                generationSettings.addFeature(entry.getKey(), featureKey);
             }
         }
 

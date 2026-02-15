@@ -3,10 +3,11 @@ package com.pg85.otg.gen.biome.layers;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.imageio.ImageIO;
 
 import com.pg85.otg.constants.settings.ImageMode;
+import com.pg85.otg.constants.settings.ImageOrientation;
 import com.pg85.otg.gen.biome.layers.type.ParentedLayer;
 import com.pg85.otg.gen.biome.layers.util.LayerSampleContext;
 import com.pg85.otg.interfaces.ILayerSampler;
@@ -17,203 +18,196 @@ import com.pg85.otg.util.logging.LogLevel;
 
 public class FromImageLayer implements ParentedLayer
 {
-	private static final java.util.concurrent.ConcurrentHashMap<File, BufferedImage> fromFile = new java.util.concurrent.ConcurrentHashMap<>();
+	private static final Object cacheLock = new Object();
+	private static final ConcurrentHashMap<File, ProcessedImageData> processedCache = new ConcurrentHashMap<>();
+
+	private static class ProcessedImageData
+	{
+		// short[] halves memory vs int[] — biome IDs fit in short range
+		final short[] biomeMap;
+		final int imageWidth;
+		final int imageHeight;
+		final ImageOrientation orientation;
+
+		ProcessedImageData(short[] biomeMap, int imageWidth, int imageHeight, ImageOrientation orientation)
+		{
+			this.biomeMap = biomeMap;
+			this.imageWidth = imageWidth;
+			this.imageHeight = imageHeight;
+			this.orientation = orientation;
+		}
+
+		// Logical dimensions after rotation
+		int mapWidth()
+		{
+			return (orientation == ImageOrientation.West || orientation == ImageOrientation.East)
+					? imageHeight : imageWidth;
+		}
+
+		int mapHeight()
+		{
+			return (orientation == ImageOrientation.West || orientation == ImageOrientation.East)
+					? imageWidth : imageHeight;
+		}
+
+		// Sample with rotation applied at read time — no rotated copy needed
+		int getBiome(int mapX, int mapZ)
+		{
+			int ix, iz;
+			switch (orientation)
+			{
+				case South:
+					ix = imageWidth - 1 - mapX;
+					iz = imageHeight - 1 - mapZ;
+					break;
+				case West:
+					// CW rotation: logical (mapX, mapZ) -> image (mapZ, imageHeight-1-mapX)
+					ix = mapZ;
+					iz = imageHeight - 1 - mapX;
+					break;
+				case East:
+					// CCW rotation: logical (mapX, mapZ) -> image (imageWidth-1-mapZ, mapX)
+					ix = imageWidth - 1 - mapZ;
+					iz = mapX;
+					break;
+				default: // North
+					ix = mapX;
+					iz = mapZ;
+					break;
+			}
+			return biomeMap[iz * imageWidth + ix];
+		}
+	}
+
 	private final BiomeLayerData data;
 	private final ImageSettings imageSettings;
-	private final int[] biomeMap;
-	private int mapHeight;
-	private int mapWidth;
+	private final ProcessedImageData imageData;
+	private final int mapWidth;
+	private final int mapHeight;
 
 	FromImageLayer(BiomeLayerData data, ILogger logger)
 	{
 		this.data = data;
 		this.imageSettings = data.imageSettings;
 
-		// Read from file
-        final File image = new File(data.presetDir.toFile(), imageSettings.getImageFile());
-        if (!image.exists())
-        {
-            logger.log(LogLevel.FATAL, LogCategory.CONFIGS, String.format("FromImageLayer encountered a critical error: %s does not exist", image.getAbsolutePath()));
-            throw new RuntimeException("FromImageLayer encountered a critical error: File does not exist");
-        }
+		final File image = new File(data.presetDir.toFile(), imageSettings.getImageFile());
+		if (!image.exists())
+		{
+			logger.log(LogLevel.FATAL, LogCategory.CONFIGS, String.format("FromImageLayer encountered a critical error: %s does not exist", image.getAbsolutePath()));
+			throw new RuntimeException("FromImageLayer encountered a critical error: File does not exist");
+		}
 
-        synchronized(fromFile) {
-            if (!fromFile.containsKey(image)) {
-                try {
-                    final BufferedImage map = ImageIO.read(image);
-					fromFile.put(image, map);
-                } catch (IOException e) {
-					logger.log(LogLevel.FATAL, LogCategory.CONFIGS, String.format("FromImageLayer encountered a critical error: %s", e.getMessage()));
-					e.printStackTrace(System.err);
-					throw new RuntimeException("FromImageLayer encountered a critical error", e);
-                }
-            }
-        }
+		ProcessedImageData cached = processedCache.get(image);
+		if (cached == null)
+		{
+			synchronized (cacheLock)
+			{
+				cached = processedCache.get(image);
+				if (cached == null)
+				{
+					cached = processImage(image, data, logger);
+					processedCache.put(image, cached);
+				}
+			}
+		}
 
-        final BufferedImage map = fromFile.get(image);
+		this.imageData = cached;
+		this.mapWidth = cached.mapWidth();
+		this.mapHeight = cached.mapHeight();
+	}
 
-        this.mapWidth = map.getWidth(null);
-        this.mapHeight = map.getHeight(null);
-        int[] colorMap = new int[this.mapHeight * this.mapWidth];
+	private static ProcessedImageData processImage(File image, BiomeLayerData data, ILogger logger)
+	{
+		final BufferedImage map;
+		try
+		{
+			map = ImageIO.read(image);
+		} catch (IOException e)
+		{
+			logger.log(LogLevel.FATAL, LogCategory.CONFIGS, String.format("FromImageLayer encountered a critical error: %s", e.getMessage()));
+			e.printStackTrace(System.err);
+			throw new RuntimeException("FromImageLayer encountered a critical error", e);
+		}
 
-        map.getRGB(0, 0, this.mapWidth, this.mapHeight, colorMap, 0, this.mapWidth);
+		int width = map.getWidth(null);
+		int height = map.getHeight(null);
+		boolean continueNormal = data.imageSettings.getImageMode() == ImageMode.ContinueNormal;
+		short fillBiome = (short) data.imageFillBiome;
 
-        // Rotate RGBs if need
-        switch (imageSettings.getImageOrientation())
-        {
-            case North:
-                // Default behavior - nothing to rotate
-                break;
-            case South:
-                // Rotate picture 180 degrees
-                int[] colorMap180 = new int[colorMap.length];
-                for (int y = 0; y < this.mapHeight; y++)
-                {
-                    for (int x = 0; x < this.mapWidth; x++)
-                    {
-                        colorMap180[(this.mapHeight - 1 - y) * this.mapWidth + this.mapWidth - 1 - x] = colorMap[y * this.mapWidth + x];
-                    }
-                }
-                colorMap = colorMap180;
-                break;
-            case West:
-                // Rotate picture CW
-                int[] colorMapCW = new int[colorMap.length];
-                for (int y = 0; y < this.mapHeight; y++)
-                {
-                    for (int x = 0; x < this.mapWidth; x++)
-                    {
-                        colorMapCW[x * this.mapHeight + this.mapHeight - 1 - y] = colorMap[y * this.mapWidth + x];
-                    }
-                }
-                colorMap = colorMapCW;
-                this.mapWidth = map.getHeight(null);
-                this.mapHeight = map.getWidth(null);
-                break;
-            case East:
-                // Rotate picture CCW
-                int[] colorMapCCW = new int[colorMap.length];
-                for (int y = 0; y < this.mapHeight; y++)
-                {
-                    for (int x = 0; x < this.mapWidth; x++)
-                    {
-                        colorMapCCW[(this.mapWidth - 1 - x) * this.mapHeight + y] = colorMap[y * this.mapWidth + x];
-                    }
-                }
-                colorMap = colorMapCCW;
-                this.mapWidth = map.getHeight(null);
-                this.mapHeight = map.getWidth(null);
-                break;
-        }
+		// Process image row-by-row using bulk getRGB to keep behavior identical
+		// to original code while limiting peak memory to one row buffer (~40KB).
+		// Uses short[] (200MB for 10K×10K) instead of int[] (400MB).
+		// Rotation is handled at sample time, not here.
+		short[] biomeMap = new short[height * width];
+		int[] rowBuffer = new int[width];
+		for (int z = 0; z < height; z++)
+		{
+			map.getRGB(0, z, width, 1, rowBuffer, 0, width);
+			for (int x = 0; x < width; x++)
+			{
+				int color = rowBuffer[x] & 0x00FFFFFF;
+				Integer biomeId = data.biomeColorMap.get(color);
+				if (biomeId != null)
+				{
+					biomeMap[z * width + x] = (short) biomeId.intValue();
+				} else
+				{
+					biomeMap[z * width + x] = continueNormal ? (short) -1 : fillBiome;
+				}
+			}
+		}
 
-        this.biomeMap = new int[colorMap.length];
-
-        for (int nColor = 0; nColor < colorMap.length; nColor++)
-        {
-            int color = colorMap[nColor] & 0x00FFFFFF;
-
-            if (data.biomeColorMap.containsKey(color))
-            {
-                this.biomeMap[nColor] = data.biomeColorMap.get(color);
-            } else {
-                // ContinueNormal interprets a -1 as "Use the childLayer"
-                if (this.data.imageSettings.getImageMode() == ImageMode.ContinueNormal)
-                {
-                    this.biomeMap[nColor] = -1;
-                } else {
-                    this.biomeMap[nColor] = this.data.imageFillBiome;
-                }
-            }
-        }
-    }
+		return new ProcessedImageData(biomeMap, width, height, data.imageSettings.getImageOrientation());
+	}
 
 	@Override
 	public int sample(LayerSampleContext<?> context, ILayerSampler parent, int x, int z)
 	{
-		int Buffer_x;
-		int Buffer_z;
-		int Buffer_xq;
-		int Buffer_zq;
+		int bufX, bufZ;
 		switch (this.imageSettings.getImageMode())
 		{
 			case Repeat:
-				Buffer_x = (x - this.imageSettings.getImageXOffset()) % this.mapWidth;
-				Buffer_z = (z - this.imageSettings.getImageZOffset()) % this.mapHeight;
+				bufX = (x - this.imageSettings.getImageXOffset()) % this.mapWidth;
+				bufZ = (z - this.imageSettings.getImageZOffset()) % this.mapHeight;
+				if (bufX < 0) bufX += this.mapWidth;
+				if (bufZ < 0) bufZ += this.mapHeight;
+				return this.imageData.getBiome(bufX, bufZ);
 
-				// Take care of negatives
-				if (Buffer_x < 0)
-				{
-					Buffer_x += this.mapWidth;
-				}
-				if (Buffer_z < 0)
-				{
-					Buffer_z += this.mapHeight;
-				}
-				return this.biomeMap[Buffer_x + Buffer_z * this.mapWidth];
 			case Mirror:
-				// Improved repeat mode
-				Buffer_xq = (x - this.imageSettings.getImageXOffset()) % (2 * this.mapWidth);
-				Buffer_zq = (z - this.imageSettings.getImageZOffset()) % (2 * this.mapHeight);
-				if (Buffer_xq < 0)
-				{
-					Buffer_xq += 2 * this.mapWidth;
-				}
-				if (Buffer_zq < 0)
-				{
-					Buffer_zq += 2 * this.mapHeight;
-				}
-				Buffer_x = Buffer_xq % this.mapWidth;
-				Buffer_z = Buffer_zq % this.mapHeight;
-				if (Buffer_xq >= this.mapWidth)
-				{
-					Buffer_x = this.mapWidth - 1 - Buffer_x;
-				}
-				if (Buffer_zq >= this.mapHeight)
-				{
-					Buffer_z = this.mapHeight - 1 - Buffer_z;
-				}
-				return this.biomeMap[Buffer_x + Buffer_z * this.mapWidth];
+				int bxq = (x - this.imageSettings.getImageXOffset()) % (2 * this.mapWidth);
+				int bzq = (z - this.imageSettings.getImageZOffset()) % (2 * this.mapHeight);
+				if (bxq < 0) bxq += 2 * this.mapWidth;
+				if (bzq < 0) bzq += 2 * this.mapHeight;
+				bufX = bxq % this.mapWidth;
+				bufZ = bzq % this.mapHeight;
+				if (bxq >= this.mapWidth) bufX = this.mapWidth - 1 - bufX;
+				if (bzq >= this.mapHeight) bufZ = this.mapHeight - 1 - bufZ;
+				return this.imageData.getBiome(bufX, bufZ);
+
 			case ContinueNormal:
-				int childBiome;
-				Buffer_x = x - this.imageSettings.getImageXOffset();
-				Buffer_z = z - this.imageSettings.getImageZOffset();
-				// if X or Z is outside map bounds
-				if (Buffer_x < 0 || Buffer_x >= this.mapWidth || Buffer_z < 0 || Buffer_z >= this.mapHeight)
+				bufX = x - this.imageSettings.getImageXOffset();
+				bufZ = z - this.imageSettings.getImageZOffset();
+				if (bufX < 0 || bufX >= this.mapWidth || bufZ < 0 || bufZ >= this.mapHeight)
 				{
-					if (parent != null)
-					{
-						childBiome = parent.sample(x, z);
-						return childBiome;
-					} else {
-						return this.data.imageFillBiome;
-					}
-				} else {
-					int biome_id_buffer = this.biomeMap[Buffer_x + Buffer_z * this.mapWidth];
-					// If set to -1 in the constructor above, uses the childlayer instead of the fillbiome if it exists.
-					if (biome_id_buffer == -1)
-					{
-						if (parent != null)
-						{
-							childBiome = parent.sample(x, z);
-							return childBiome;
-						} else {
-							return this.data.imageFillBiome;
-						}
-					}
-					return biome_id_buffer;
+					return (parent != null) ? parent.sample(x, z) : this.data.imageFillBiome;
 				}
+				int biomeId = this.imageData.getBiome(bufX, bufZ);
+				if (biomeId == -1)
+				{
+					return (parent != null) ? parent.sample(x, z) : this.data.imageFillBiome;
+				}
+				return biomeId;
+
 			case FillEmpty:
-				// Some fastened version
-				Buffer_x = x - this.data.imageSettings.getImageXOffset();
-				Buffer_z = z - this.data.imageSettings.getImageZOffset();
-				if (Buffer_x < 0 || Buffer_x >= this.mapWidth || Buffer_z < 0 || Buffer_z >= this.mapHeight)
+				bufX = x - this.imageSettings.getImageXOffset();
+				bufZ = z - this.imageSettings.getImageZOffset();
+				if (bufX < 0 || bufX >= this.mapWidth || bufZ < 0 || bufZ >= this.mapHeight)
 				{
 					return this.data.imageFillBiome;
-				} else {
-					return this.biomeMap[Buffer_x + Buffer_z * this.mapWidth];
 				}
+				return this.imageData.getBiome(bufX, bufZ);
 		}
-		
+
 		return parent.sample(x, z);
 	}
 }
