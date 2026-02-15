@@ -13,6 +13,7 @@ public class OTGCommandRegistrar {
         FlushCacheCommand.register(otgCommand);
         SpawnCommand.register(otgCommand);
         StructureCommand.register(otgCommand);
+        ExportCommand.register(otgCommand);
         dispatcher.register(otgCommand);
     }
 

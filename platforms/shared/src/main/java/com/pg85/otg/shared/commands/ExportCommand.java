@@ -1,0 +1,293 @@
+package com.pg85.otg.shared.commands;
+
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.pg85.otg.OTG;
+import com.pg85.otg.constants.Constants;
+import com.pg85.otg.customobject.CustomObjectManager;
+import com.pg85.otg.customobject.bo3.BO3;
+import com.pg85.otg.customobject.bo3.BO3Config;
+import com.pg85.otg.customobject.config.CustomObjectResourcesManager;
+import com.pg85.otg.customobject.config.io.FileSettingsReaderBO4;
+import com.pg85.otg.customobject.creator.ObjectCreator;
+import com.pg85.otg.customobject.creator.ObjectType;
+import com.pg85.otg.customobject.structures.StructuredCustomObject;
+import com.pg85.otg.customobject.util.Corner;
+import com.pg85.otg.exceptions.InvalidConfigException;
+import com.pg85.otg.interfaces.IMaterialReader;
+import com.pg85.otg.interfaces.IModLoadedChecker;
+import com.pg85.otg.presets.Preset;
+import com.pg85.otg.util.OTGLog;
+import com.pg85.otg.util.gen.LocalWorldGenRegion;
+import com.pg85.otg.util.logging.LogCategory;
+import com.pg85.otg.util.logging.LogLevel;
+import com.pg85.otg.util.nbt.LocalNBTHelper;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+
+import java.io.File;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+public class ExportCommand {
+
+    private static final SuggestionProvider<CommandSourceStack> PRESET_SUGGESTIONS = (ctx, builder) -> {
+        List<String> names = new ArrayList<>(OTG.getEngine().getPresetLoader().getAllPresetFolderNames());
+        names.add("global");
+        return SharedSuggestionProvider.suggest(names, builder);
+    };
+
+    private static final SuggestionProvider<CommandSourceStack> FLAG_SUGGESTIONS = (ctx, builder) ->
+        SharedSuggestionProvider.suggest(new String[]{"-a", "-o", "-b", "-bo4", "-a -o", "-a -b", "-o -b", "-a -o -b", "-a -bo4", "-o -bo4", "-b -bo4"}, builder);
+
+    public static void register(LiteralArgumentBuilder<CommandSourceStack> otgCommand) {
+        otgCommand.then(
+            Commands.literal("export")
+                .requires(source -> source.hasPermission(2))
+                .then(
+                    Commands.argument("name", StringArgumentType.string())
+                        .then(
+                            Commands.argument("preset", StringArgumentType.string())
+                                .suggests(PRESET_SUGGESTIONS)
+                                .executes(ctx -> execute(ctx, ""))
+                                .then(
+                                    Commands.argument("flags", StringArgumentType.greedyString())
+                                        .suggests(FLAG_SUGGESTIONS)
+                                        .executes(ctx -> execute(ctx, StringArgumentType.getString(ctx, "flags")))
+                                )
+                        )
+                )
+        );
+    }
+
+    private static int execute(CommandContext<CommandSourceStack> ctx, String flagsStr) {
+        CommandSourceStack source = ctx.getSource();
+
+        // Must be a player (we need WorldEdit selection)
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This command must be run by a player."));
+            return 0;
+        }
+
+        String objectName = StringArgumentType.getString(ctx, "name");
+        String presetName = StringArgumentType.getString(ctx, "preset");
+
+        // Parse flags
+        boolean includeAir = flagsStr.contains("-a");
+        boolean overwrite = flagsStr.contains("-o");
+        boolean isStructure = flagsStr.contains("-b");
+        boolean isBo4 = flagsStr.contains("-bo4");
+        ObjectType type = isBo4 ? ObjectType.BO4 : ObjectType.BO3;
+
+        // Determine if global
+        boolean isGlobal = presetName.equalsIgnoreCase("global");
+        if (isGlobal) {
+            presetName = OTG.getEngine().getPresetLoader().getDefaultPresetFolderName();
+        }
+
+        // Resolve the preset
+        Preset preset = OTG.getEngine().getPresetLoader().getPresetByShortNameOrFolderName(presetName);
+        if (preset == null) {
+            source.sendFailure(Component.literal("Could not find preset '" + presetName + "'."));
+            return 0;
+        }
+
+        // Get WorldEdit selection
+        CommandWorldAccessor accessor = OTGCommandRegistrar.getWorldAccessor();
+        if (accessor == null) {
+            source.sendFailure(Component.literal("Command world accessor not available."));
+            return 0;
+        }
+
+        int[] selection = accessor.getWorldEditSelection(player);
+        if (selection == null) {
+            source.sendFailure(Component.literal("No WorldEdit selection found. Select a region with WorldEdit first (//wand, //pos1, //pos2)."));
+            return 0;
+        }
+
+        Corner lowCorner = new Corner(
+            Math.min(selection[0], selection[3]),
+            Math.min(selection[1], selection[4]),
+            Math.min(selection[2], selection[5])
+        );
+        Corner highCorner = new Corner(
+            Math.max(selection[0], selection[3]),
+            Math.max(selection[1], selection[4]),
+            Math.max(selection[2], selection[5])
+        );
+
+        // Auto-detect if structure is needed based on region size
+        int xLen = highCorner.x() - lowCorner.x();
+        int zLen = highCorner.z() - lowCorner.z();
+        if (type == ObjectType.BO3 && (xLen > 31 || zLen > 31)) {
+            isStructure = true;
+        } else if (type == ObjectType.BO4 && (xLen > 15 || zLen > 15)) {
+            isStructure = true;
+        }
+
+        // Determine object path
+        Path objectPath;
+        if (isGlobal) {
+            objectPath = OTG.getEngine().getGlobalObjectsFolder();
+        } else {
+            objectPath = preset.getPresetFolder().resolve(Constants.OBJECTS_FOLDER);
+        }
+        // Fallback to WorldObjects if Objects doesn't exist
+        if (!objectPath.toFile().exists()) {
+            Path worldObjects = objectPath.resolveSibling("WorldObjects");
+            if (worldObjects.toFile().exists()) {
+                objectPath = worldObjects;
+            } else {
+                // Create the Objects folder
+                objectPath.toFile().mkdirs();
+            }
+        }
+
+        // Check for existing file (unless overwrite flag)
+        if (!overwrite) {
+            File existingFile = type.getObjectFilePathFromName(objectName, objectPath).toFile();
+            if (existingFile.exists()) {
+                source.sendFailure(Component.literal("File '" + objectName + "." + type.getType() + "' already exists. Use -o flag to overwrite."));
+                return 0;
+            }
+        }
+
+        // Create world gen region for reading blocks
+        ServerLevel level = source.getLevel();
+        int centerChunkX = (lowCorner.x() + highCorner.x()) / 2 >> 4;
+        int centerChunkZ = (lowCorner.z() + highCorner.z()) / 2 >> 4;
+
+        LocalWorldGenRegion worldGenRegion = accessor.createCommandRegion(level, centerChunkX, centerChunkZ);
+        if (worldGenRegion == null) {
+            source.sendFailure(Component.literal("Could not create world region. Is this an OTG world?"));
+            return 0;
+        }
+
+        LocalNBTHelper nbtHelper = accessor.createNBTHelper();
+
+        // Center is the midpoint at the lowest Y
+        Corner center = new Corner(
+            (highCorner.x() - lowCorner.x()) / 2 + lowCorner.x(),
+            lowCorner.y(),
+            (highCorner.z() - lowCorner.z()) / 2 + lowCorner.z()
+        );
+
+        // Create a default template config
+        CustomObjectManager customObjectManager = OTG.getEngine().getCustomObjectManager();
+        IMaterialReader materialReader = OTG.getEngine().getPresetLoader().getMaterialReader();
+        CustomObjectResourcesManager resourcesManager = OTG.getEngine().getCustomObjectResourcesManager();
+        IModLoadedChecker modLoadedChecker = OTG.getEngine().getModLoadedChecker();
+        Path otgRootFolder = OTG.getEngine().getOTGRootFolder();
+
+        StructuredCustomObject templateObject;
+        try {
+            templateObject = createDefaultTemplate(type, objectName, objectPath, preset.getFolderName(),
+                otgRootFolder, customObjectManager, materialReader, resourcesManager, modLoadedChecker);
+        } catch (Exception e) {
+            source.sendFailure(Component.literal("Failed to create default template: " + e.getMessage()));
+            OTGLog.log(LogLevel.ERROR, LogCategory.MAIN, "Failed to create default template for export");
+            OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.MAIN, e);
+            return 0;
+        }
+
+        if (templateObject == null || templateObject.getConfig() == null) {
+            source.sendFailure(Component.literal("Failed to initialize default template config."));
+            return 0;
+        }
+
+        // Do the export
+        try {
+            StructuredCustomObject exportedObject = ObjectCreator.create(
+                type,
+                lowCorner,
+                highCorner,
+                center,
+                null, // no center block
+                objectName,
+                includeAir,
+                isStructure,
+                false, // leaveIllegalLeaves
+                objectPath,
+                worldGenRegion,
+                nbtHelper,
+                null, // no extra blocks
+                templateObject.getConfig(),
+                preset.getFolderName(),
+                otgRootFolder,
+                customObjectManager,
+                materialReader,
+                resourcesManager,
+                modLoadedChecker
+            );
+
+            if (exportedObject != null) {
+                // Register the object for immediate use
+                if (isGlobal) {
+                    customObjectManager.registerGlobalObject(exportedObject, exportedObject.getConfig().getFile());
+                } else {
+                    customObjectManager.getGlobalObjects().addObjectToPreset(
+                        preset.getFolderName(),
+                        exportedObject.getName().toLowerCase(Locale.ROOT),
+                        exportedObject.getConfig().getFile(),
+                        exportedObject
+                    );
+                }
+
+                String finalObjectName = objectName;
+                boolean finalIsStructure = isStructure;
+                source.sendSuccess(
+                    () -> Component.literal("Exported " + type.getType() + " '" + finalObjectName + "'"
+                        + (finalIsStructure ? " (as structure with branches)" : "")
+                        + " [" + (xLen + 1) + "x" + (highCorner.y() - lowCorner.y() + 1) + "x" + (zLen + 1) + " blocks]"),
+                    true
+                );
+                return 1;
+            } else {
+                source.sendFailure(Component.literal("Failed to create " + type.getType() + " '" + objectName + "'. Check the logs."));
+                return 0;
+            }
+        } catch (Exception e) {
+            source.sendFailure(Component.literal("Error during export: " + e.getMessage()));
+            OTGLog.log(LogLevel.ERROR, LogCategory.MAIN, "Error during export command: " + e.getClass().getName());
+            OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.MAIN, e);
+            return 0;
+        }
+    }
+
+    /**
+     * Creates a default template BO3/BO4 for use when no template file is specified.
+     * The template provides default config values that ObjectCreator.makeNewConfig will clone.
+     */
+    private static StructuredCustomObject createDefaultTemplate(
+        ObjectType type, String objectName, Path objectPath,
+        String presetFolderName, Path otgRootFolder,
+        CustomObjectManager customObjectManager, IMaterialReader materialReader,
+        CustomObjectResourcesManager resourcesManager, IModLoadedChecker modLoadedChecker
+    ) throws InvalidConfigException {
+        // Create a BO3/BO4 from a non-existent file path — this gives us default settings
+        String dummyName = objectName + "_template_tmp";
+        Path dummyPath = objectPath.resolve(dummyName + "." + type.getType());
+        File dummyFile = dummyPath.toFile();
+
+        // Load a BO3/BO4 from the dummy file (which doesn't exist, so all settings are defaults)
+        StructuredCustomObject template = (StructuredCustomObject) customObjectManager.getObjectLoaders()
+            .get(type.getType().toLowerCase())
+            .loadFromFile(dummyName, dummyFile);
+
+        if (template == null) {
+            return null;
+        }
+
+        // Initialize the template with default settings
+        template.onEnable(presetFolderName, otgRootFolder, customObjectManager, materialReader, resourcesManager, modLoadedChecker);
+        return template;
+    }
+}
