@@ -19,7 +19,6 @@ import com.pg85.otg.config.settings.biome.BiomeSettings;
 import com.pg85.otg.interfaces.IMaterialReader;
 import com.pg85.otg.interfaces.IModLoadedChecker;
 import com.pg85.otg.interfaces.IStructuredCustomObject;
-import com.pg85.otg.interfaces.IWorldGenRegion;
 import com.pg85.otg.presets.Preset;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.bo3.Rotation;
@@ -34,10 +33,11 @@ import net.minecraft.server.level.ServerLevel;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ExportBO4DataCommand {
 
-    private static volatile boolean isRunning = false;
+    private static final AtomicBoolean isRunning = new AtomicBoolean(false);
     private static volatile boolean isDone = false;
     private static volatile int current = 0;
     private static volatile int total = 0;
@@ -65,8 +65,11 @@ public class ExportBO4DataCommand {
             return 0;
         }
 
-        // Get the preset from the structure cache's preset name
-        Preset preset = findPresetForLevel(level);
+        // Get the preset from the chunk generator
+        String presetFolderName = accessor.getPresetFolderName(level);
+        Preset preset = presetFolderName != null
+            ? OTG.getEngine().getPresetLoader().getPresetByShortNameOrFolderName(presetFolderName)
+            : null;
         if (preset == null) {
             source.sendFailure(Component.literal("Could not find OTG preset for this world."));
             return 0;
@@ -80,9 +83,8 @@ public class ExportBO4DataCommand {
             return 0;
         }
 
-        if (!isRunning) {
+        if (isRunning.compareAndSet(false, true)) {
             isDone = false;
-            isRunning = true;
             current = 0;
             total = 0;
             currentBoName = "";
@@ -96,26 +98,30 @@ public class ExportBO4DataCommand {
                 false
             );
 
-            // Capture references for the background thread
+            // Capture values on the main thread to avoid cross-thread ServerLevel access
             final Preset bgPreset = preset;
             final CustomStructureCache bgStructureCache = structureCache;
             final CommandWorldAccessor bgAccessor = accessor;
             final ServerLevel bgLevel = level;
+            final long bgSeed = level.getSeed();
 
             new Thread(() -> {
                 try {
-                    exportOnBackground(bgPreset, bgStructureCache, bgAccessor, bgLevel);
+                    // NOTE: bgLevel is still passed for createCommandRegion which requires it.
+                    // This is a known threading concern - Minecraft's ServerLevel is not thread-safe.
+                    // A proper fix would require queuing chunk access back to the server thread.
+                    exportOnBackground(bgPreset, bgStructureCache, bgAccessor, bgLevel, bgSeed);
                 } catch (Exception e) {
                     OTGLog.log(LogLevel.ERROR, LogCategory.MAIN, "Error during BO4Data export: " + e.getMessage());
                     OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.MAIN, e);
                 } finally {
                     isDone = true;
+                    isRunning.set(false);
                 }
             }, "OTG-ExportBO4Data").start();
 
         } else {
             if (isDone) {
-                isRunning = false;
                 isDone = false;
                 source.sendSuccess(
                     () -> Component.literal("OTG exportbo4data is done."),
@@ -139,7 +145,7 @@ public class ExportBO4DataCommand {
     }
 
     private static void exportOnBackground(Preset preset, CustomStructureCache structureCache,
-                                           CommandWorldAccessor accessor, ServerLevel level) {
+                                           CommandWorldAccessor accessor, ServerLevel level, long seed) {
         CustomObjectManager customObjectManager = OTG.getEngine().getCustomObjectManager();
         IMaterialReader materialReader = OTG.getEngine().getPresetLoader().getMaterialReader();
         CustomObjectResourcesManager resourcesManager = OTG.getEngine().getCustomObjectResourcesManager();
@@ -179,7 +185,7 @@ public class ExportBO4DataCommand {
                         );
 
                         BO4CustomStructure structureStart = new BO4CustomStructure(
-                            level.getSeed(), structureCoord,
+                            seed, structureCoord,
                             otgRootFolder, customObjectManager,
                             materialReader, resourcesManager, modLoadedChecker
                         );
@@ -253,17 +259,4 @@ public class ExportBO4DataCommand {
         OTGLog.log(LogLevel.INFO, LogCategory.MAIN, "Exporting .BO4Data done.");
     }
 
-    /**
-     * Finds the OTG preset for the given server level by checking all loaded presets.
-     */
-    private static Preset findPresetForLevel(ServerLevel level) {
-        // Try all preset folder names and return the first one found
-        for (String presetName : OTG.getEngine().getPresetLoader().getAllPresetFolderNames()) {
-            Preset preset = OTG.getEngine().getPresetLoader().getPresetByShortNameOrFolderName(presetName);
-            if (preset != null) {
-                return preset;
-            }
-        }
-        return null;
-    }
 }

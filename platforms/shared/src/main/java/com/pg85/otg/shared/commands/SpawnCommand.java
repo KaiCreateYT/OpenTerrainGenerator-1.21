@@ -7,6 +7,7 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.pg85.otg.OTG;
 import com.pg85.otg.customobject.CustomObject;
 import com.pg85.otg.customobject.CustomObjectCollection;
+import com.pg85.otg.customobject.bo4.BO4;
 import com.pg85.otg.util.bo3.Rotation;
 import com.pg85.otg.util.gen.LocalWorldGenRegion;
 import net.minecraft.commands.CommandSourceStack;
@@ -108,6 +109,11 @@ public class SpawnCommand {
 
         if (objectToSpawn == null) {
             source.sendFailure(Component.literal("Could not find object '" + objectName + "' in preset '" + presetName + "' or GlobalObjects."));
+            return 0;
+        }
+
+        if (objectToSpawn instanceof BO4) {
+            source.sendFailure(Component.literal("BO4 structure spawning not yet supported. Use BO3 objects or wait for BO4 plot support."));
             return 0;
         }
 

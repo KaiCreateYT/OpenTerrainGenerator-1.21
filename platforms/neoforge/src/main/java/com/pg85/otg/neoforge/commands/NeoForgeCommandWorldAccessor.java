@@ -44,6 +44,14 @@ public class NeoForgeCommandWorldAccessor implements CommandWorldAccessor {
     }
 
     @Override
+    public String getPresetFolderName(ServerLevel level) {
+        if (!(level.getChunkSource().getGenerator() instanceof OTGNeoForgeChunkGenerator otgGen)) {
+            return null;
+        }
+        return otgGen.getPreset().getFolderName();
+    }
+
+    @Override
     public LocalNBTHelper createNBTHelper() {
         return new NeoForgeNBTHelper();
     }
@@ -53,10 +61,16 @@ public class NeoForgeCommandWorldAccessor implements CommandWorldAccessor {
         try {
             // Check if WorldEdit is available
             Class.forName("com.sk89q.worldedit.WorldEdit");
-            return getWorldEditSelectionReflective(player, "com.sk89q.worldedit.neoforge.NeoForgeAdapter");
         } catch (ClassNotFoundException e) {
             return null;
         }
+
+        // WorldEdit on NeoForge may use either ForgeAdapter or NeoForgeAdapter depending on the version
+        int[] result = getWorldEditSelectionReflective(player, "com.sk89q.worldedit.neoforge.ForgeAdapter");
+        if (result != null) {
+            return result;
+        }
+        return getWorldEditSelectionReflective(player, "com.sk89q.worldedit.neoforge.NeoForgeAdapter");
     }
 
     /**

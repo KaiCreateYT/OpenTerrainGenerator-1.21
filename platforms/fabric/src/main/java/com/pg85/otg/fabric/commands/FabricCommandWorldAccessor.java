@@ -44,6 +44,14 @@ public class FabricCommandWorldAccessor implements CommandWorldAccessor {
     }
 
     @Override
+    public String getPresetFolderName(ServerLevel level) {
+        if (!(level.getChunkSource().getGenerator() instanceof OTGFabricChunkGenerator otgGen)) {
+            return null;
+        }
+        return otgGen.getPreset().getFolderName();
+    }
+
+    @Override
     public LocalNBTHelper createNBTHelper() {
         return new FabricNBTHelper();
     }

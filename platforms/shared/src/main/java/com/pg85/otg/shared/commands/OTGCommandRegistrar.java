@@ -5,7 +5,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 
 public class OTGCommandRegistrar {
-    private static CommandWorldAccessor worldAccessor;
+    private static volatile CommandWorldAccessor worldAccessor;
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandWorldAccessor accessor) {
         worldAccessor = accessor;

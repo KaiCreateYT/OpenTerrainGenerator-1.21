@@ -12,6 +12,12 @@ public interface CommandWorldAccessor {
     LocalNBTHelper createNBTHelper();
 
     /**
+     * Gets the OTG preset folder name for the given level.
+     * Returns null if the level does not use an OTG chunk generator.
+     */
+    String getPresetFolderName(ServerLevel level);
+
+    /**
      * Gets the WorldEdit selection for the given player.
      * Returns [minX, minY, minZ, maxX, maxY, maxZ] or null if WorldEdit is
      * not installed or the player has no selection.

@@ -12,6 +12,7 @@ import com.pg85.otg.interfaces.IStructuredCustomObject;
 import com.pg85.otg.util.ChunkCoordinate;
 import com.pg85.otg.util.OTGMaterialReader;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.core.BlockPos;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -41,8 +42,9 @@ public class StructureCommand {
             return 0;
         }
 
-        int blockX = (int) source.getPosition().x;
-        int blockZ = (int) source.getPosition().z;
+        BlockPos pos = BlockPos.containing(source.getPosition());
+        int blockX = pos.getX();
+        int blockZ = pos.getZ();
         ChunkCoordinate playerChunk = ChunkCoordinate.fromBlockCoords(blockX, blockZ);
 
         CustomStructure structure = structureCache.getChunkData(playerChunk);
