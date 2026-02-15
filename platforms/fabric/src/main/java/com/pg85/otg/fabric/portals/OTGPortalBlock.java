@@ -1,8 +1,8 @@
 package com.pg85.otg.fabric.portals;
 
 import com.pg85.otg.fabric.OTGPlugin;
-import com.pg85.otg.fabric.dimensions.DimensionKeys;
-import com.pg85.otg.fabric.dimensions.FabricDimensionManager;
+import com.pg85.otg.shared.dimensions.DimensionKeys;
+import com.pg85.otg.shared.dimensions.DimensionManager;
 import com.pg85.otg.fabric.gen.OTGFabricChunkGenerator;
 import com.pg85.otg.fabric.portals.components.OTGComponents;
 import com.pg85.otg.presets.Preset;
@@ -139,8 +139,7 @@ public class OTGPortalBlock extends NetherPortalBlock {
             return existing;
         }
 
-        // Use FabricDimensionManager for proper persistence (storage + datapack)
-        FabricDimensionManager manager = OTGPlugin.getDimensionManager();
+        DimensionManager manager = OTGPlugin.getDimensionManager();
         if (manager == null) {
             return null;
         }

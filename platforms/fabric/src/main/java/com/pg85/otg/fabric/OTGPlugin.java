@@ -2,9 +2,9 @@ package com.pg85.otg.fabric;
 
 import com.pg85.otg.OTG;
 import com.pg85.otg.fabric.commands.FabricCommandWorldAccessor;
-import com.pg85.otg.fabric.dimensions.FabricDimensionCommands;
-import com.pg85.otg.fabric.dimensions.FabricDimensionManager;
+import com.pg85.otg.fabric.dimensions.FabricDimensionHelper;
 import com.pg85.otg.shared.commands.OTGCommandRegistrar;
+import com.pg85.otg.shared.dimensions.DimensionManager;
 import com.pg85.otg.fabric.portals.FabricPortalBlocks;
 import com.pg85.otg.fabric.portals.PortalIgnitionHandler;
 import com.pg85.otg.fabric.events.WorldSaveCallback;
@@ -22,27 +22,21 @@ import net.minecraft.world.level.chunk.ChunkGenerator;
 
 @SuppressWarnings("unused")
 public class OTGPlugin implements ModInitializer {
-	private static FabricDimensionManager dimensionManager;
+	private static DimensionManager dimensionManager;
 
-	/**
-	 * Returns the dimension manager singleton, or null if server not yet started.
-	 */
-	public static FabricDimensionManager getDimensionManager() {
+	public static DimensionManager getDimensionManager() {
 		return dimensionManager;
 	}
 
 	@Override
 	public void onInitialize() {
-		// This code runs as soon as Minecraft is in a mod-load-ready state.
-		// However, some things (like resources) may still be uninitialized.
-		// Proceed with mild caution.
 		OTGLog.setLogger(new FabricLogger());
 		OTGLog.getLogger().log(LogLevel.INFO, LogCategory.MAIN, "OTG Engine starting");
 		OTGMaterialReader.set(new FabricMaterialReader());
 		OTG.startEngine(new FabricEngine());
 
 		registerWorldSave();
-		registerDimensionCommands();
+		registerCommands();
 		registerServerEvents();
 		registerPortals();
 
@@ -59,9 +53,8 @@ public class OTGPlugin implements ModInitializer {
 		});
 	}
 
-	void registerDimensionCommands() {
+	void registerCommands() {
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-			FabricDimensionCommands.register(dispatcher);
 			OTGCommandRegistrar.register(dispatcher, new FabricCommandWorldAccessor());
 			OTGLog.info("Registered OTG commands");
 		});
@@ -69,9 +62,9 @@ public class OTGPlugin implements ModInitializer {
 
 	void registerServerEvents() {
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-			dimensionManager = new FabricDimensionManager();
+			dimensionManager = new DimensionManager(new FabricDimensionHelper());
 			dimensionManager.initialize(server);
-			FabricDimensionCommands.setManager(dimensionManager);
+			OTGCommandRegistrar.setDimensionManager(dimensionManager);
 			OTGLog.info("OTG Dimension Manager initialized");
 		});
 

@@ -1,4 +1,4 @@
-package com.pg85.otg.fabric.dimensions;
+package com.pg85.otg.shared.dimensions;
 
 import com.pg85.otg.OTG;
 import com.pg85.otg.dimensions.DimensionDatapack;
@@ -14,15 +14,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
-public class FabricDimensionManager {
+public class DimensionManager {
 
-    private final FabricDimensionHelper helper;
+    private final PlatformDimensionHelper helper;
     private DimensionStorage storage;
     private DimensionDatapack datapack;
     private MinecraftServer server;
 
-    public FabricDimensionManager() {
-        this.helper = new FabricDimensionHelper();
+    public DimensionManager(PlatformDimensionHelper helper) {
+        this.helper = helper;
     }
 
     public void initialize(MinecraftServer server) {
@@ -31,7 +31,6 @@ public class FabricDimensionManager {
         this.datapack = new DimensionDatapack(helper.getDatapackPath(server));
         this.storage.load();
 
-        // Verify datapack files exist for all stored dimensions
         for (DimensionInfo info : storage.getAllDimensions()) {
             Preset preset = OTG.getEngine().getPresetLoader().getPresetByFolderName(info.getPreset());
             if (preset != null) {
@@ -47,7 +46,6 @@ public class FabricDimensionManager {
     }
 
     public CreateResult createDimension(String presetName) {
-        // Validate preset exists
         Preset preset = OTG.getEngine().getPresetLoader().getPresetByFolderName(presetName);
         if (preset == null) {
             return CreateResult.error("Unknown preset '" + presetName + "'. Use /otg preset list");
@@ -55,31 +53,20 @@ public class FabricDimensionManager {
 
         String normalizedName = DimensionNameUtils.normalizeName(presetName);
 
-        // Check if dimension already exists
         if (storage.exists(normalizedName)) {
             return CreateResult.error("Dimension otg:" + normalizedName + " already exists");
         }
 
-        // Generate random seed
         long seed = new Random().nextLong();
-
-        // Create dimension info
         DimensionInfo info = DimensionInfo.create(presetName, seed);
 
         try {
-            // Create datapack files
             datapack.createDimensionFiles(info, preset.getPresetConfig().getDimensionSettings());
-
-            // Save to storage
             storage.addDimension(info);
-
-            // Try runtime creation (will log that restart is needed)
             helper.createDimensionRuntime(server, normalizedName, presetName, seed);
-
             return CreateResult.success(info);
         } catch (Exception e) {
             OTGLog.error("Failed to create dimension: %s", e.getMessage());
-            // Rollback
             try {
                 datapack.deleteDimensionFiles(normalizedName);
                 storage.removeDimension(normalizedName);
@@ -91,39 +78,30 @@ public class FabricDimensionManager {
     public DeleteResult deleteDimension(String name, boolean purge, boolean confirmed) {
         String normalizedName = DimensionNameUtils.normalizeName(name);
 
-        // Validate dimension exists
         Optional<DimensionInfo> dimOpt = storage.getDimension(normalizedName);
         if (dimOpt.isEmpty()) {
             return DeleteResult.error("Unknown dimension '" + name + "'. Use /otg dimension list");
         }
 
-        // Check for vanilla dimensions
         if (normalizedName.equals("overworld") || normalizedName.equals("the_nether") || normalizedName.equals("the_end")) {
             return DeleteResult.error("Cannot delete vanilla dimensions");
         }
 
-        // Purge requires confirmation
         if (purge && !confirmed) {
             return DeleteResult.needsConfirmation(normalizedName);
         }
 
         try {
-            // Get players in dimension before deletion
             List<ServerPlayer> players = helper.getPlayersInDimension(server, normalizedName);
             int playerCount = players.size();
 
-            // Delete runtime if loaded
             if (helper.isDimensionLoaded(server, normalizedName)) {
                 helper.deleteDimensionRuntime(server, normalizedName);
             }
 
-            // Delete datapack files
             datapack.deleteDimensionFiles(normalizedName);
-
-            // Remove from storage
             storage.removeDimension(normalizedName);
 
-            // Purge world data if requested
             if (purge) {
                 helper.purgeWorldData(server, normalizedName);
             }
@@ -147,13 +125,6 @@ public class FabricDimensionManager {
         helper.teleportToDimension(player, DimensionNameUtils.normalizeName(dimensionName));
     }
 
-    /**
-     * Load an existing dimension at runtime (without server restart).
-     * Used by portals when entering a dimension that exists in storage but isn't loaded yet.
-     *
-     * @param name The dimension name
-     * @return true if dimension was loaded successfully, false if not found or failed
-     */
     public boolean loadDimensionRuntime(String name) {
         String normalizedName = DimensionNameUtils.normalizeName(name);
         var info = storage.getDimension(normalizedName);
@@ -170,11 +141,10 @@ public class FabricDimensionManager {
         }
     }
 
-    public FabricDimensionHelper getHelper() {
+    public PlatformDimensionHelper getHelper() {
         return helper;
     }
 
-    // Result classes
     public record CreateResult(boolean success, String error, DimensionInfo info) {
         public static CreateResult success(DimensionInfo info) {
             return new CreateResult(true, null, info);

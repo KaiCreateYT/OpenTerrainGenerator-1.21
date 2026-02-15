@@ -1,8 +1,8 @@
 package com.pg85.otg.neoforge.portals;
 
 import com.pg85.otg.neoforge.OTGPlugin;
-import com.pg85.otg.neoforge.dimensions.DimensionKeys;
-import com.pg85.otg.neoforge.dimensions.NeoForgeDimensionManager;
+import com.pg85.otg.shared.dimensions.DimensionKeys;
+import com.pg85.otg.shared.dimensions.DimensionManager;
 import com.pg85.otg.neoforge.gen.OTGNeoForgeChunkGenerator;
 import com.pg85.otg.presets.Preset;
 import com.pg85.otg.util.materials.LocalMaterialData;
@@ -139,8 +139,7 @@ public class OTGPortalBlock extends NetherPortalBlock {
             return existing;
         }
 
-        // Use NeoForgeDimensionManager for proper persistence (storage + datapack)
-        NeoForgeDimensionManager manager = OTGPlugin.getDimensionManager();
+        DimensionManager manager = OTGPlugin.getDimensionManager();
         if (manager == null) {
             return null;
         }

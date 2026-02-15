@@ -10,6 +10,8 @@ import com.pg85.otg.neoforge.gen.OTGNeoForgeChunkGenerator;
 import com.pg85.otg.neoforge.mixin.MappedRegistryAccessor;
 import com.pg85.otg.neoforge.mixin.MinecraftServerAccessor;
 import com.pg85.otg.presets.Preset;
+import com.pg85.otg.shared.dimensions.DimensionKeys;
+import com.pg85.otg.shared.dimensions.PlatformDimensionHelper;
 import com.pg85.otg.util.OTGLog;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -28,8 +30,6 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeManager;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
@@ -38,8 +38,6 @@ import net.minecraft.world.level.storage.DerivedLevelData;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import net.minecraft.world.level.storage.WorldData;
-
-import com.pg85.otg.shared.dimensions.PlatformDimensionHelper;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -50,7 +48,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Executor;
 
-public class NeoForgeDimensionHelper implements PlatformDimensionHelper<MinecraftServer, ServerPlayer, ServerLevel> {
+public class NeoForgeDimensionHelper implements PlatformDimensionHelper {
 
     @Override
     public Path getWorldPath(MinecraftServer server) {
@@ -74,135 +72,11 @@ public class NeoForgeDimensionHelper implements PlatformDimensionHelper<Minecraf
         ResourceKey<Level> dimKey = DimensionKeys.otg(dimensionName);
         ServerLevel level = player.server.getLevel(dimKey);
         if (level != null) {
-            BlockPos safeSpawn = findSafeSpawn(level);
+            BlockPos safeSpawn = PlatformDimensionHelper.findSafeSpawn(level);
             player.teleportTo(level, safeSpawn.getX() + 0.5, safeSpawn.getY(), safeSpawn.getZ() + 0.5, player.getYRot(), player.getXRot());
         } else {
             OTGLog.warn("Cannot teleport to dimension %s - not loaded (server restart may be required)", dimensionName);
         }
-    }
-
-    /**
-     * Finds a safe spawn location in the given level.
-     * Searches in a spiral pattern from world spawn for solid ground with air above.
-     */
-    public static BlockPos findSafeSpawn(ServerLevel level) {
-        // First try the world spawn
-        BlockPos worldSpawn = level.getSharedSpawnPos();
-        BlockPos safe = findSafeY(level, worldSpawn.getX(), worldSpawn.getZ());
-        if (safe != null) {
-            return safe;
-        }
-
-        // Search in spiral pattern from 0,0
-        int maxRadius = 1000;
-        int step = 16; // Check every chunk
-
-        for (int radius = 0; radius <= maxRadius; radius += step) {
-            // Check points at this radius
-            for (int dx = -radius; dx <= radius; dx += step) {
-                for (int dz = -radius; dz <= radius; dz += step) {
-                    // Only check points on the edge of the square
-                    if (Math.abs(dx) != radius && Math.abs(dz) != radius) {
-                        continue;
-                    }
-
-                    safe = findSafeY(level, dx, dz);
-                    if (safe != null) {
-                        OTGLog.info("Found safe spawn at %d, %d, %d", safe.getX(), safe.getY(), safe.getZ());
-                        return safe;
-                    }
-                }
-            }
-        }
-
-        // Fallback: return high Y at 0,0 and hope for the best
-        OTGLog.warn("Could not find safe spawn, using fallback at 0, 256, 0");
-        return new BlockPos(0, 256, 0);
-    }
-
-    /**
-     * Finds a safe spawn location near the given position.
-     * Searches in a spiral pattern for solid ground with air above.
-     * Used by portals to find suitable location for portal placement.
-     *
-     * @param level The server level to search in
-     * @param searchCenter The center position to search around
-     * @param maxRadius Maximum search radius (default 128 for portals)
-     * @return A safe BlockPos or null if none found within radius
-     */
-    public static BlockPos findSafeSpawnNear(ServerLevel level, BlockPos searchCenter, int maxRadius) {
-        // First try the exact position
-        BlockPos safe = findSafeY(level, searchCenter.getX(), searchCenter.getZ());
-        if (safe != null) {
-            return safe;
-        }
-
-        // Search in spiral pattern from search center
-        int step = 8; // Check more frequently than world spawn search
-
-        for (int radius = step; radius <= maxRadius; radius += step) {
-            for (int dx = -radius; dx <= radius; dx += step) {
-                for (int dz = -radius; dz <= radius; dz += step) {
-                    // Only check points on the edge of the square
-                    if (Math.abs(dx) != radius && Math.abs(dz) != radius) {
-                        continue;
-                    }
-
-                    safe = findSafeY(level, searchCenter.getX() + dx, searchCenter.getZ() + dz);
-                    if (safe != null) {
-                        OTGLog.info("Found safe location at %d, %d, %d (near %d, %d)",
-                                safe.getX(), safe.getY(), safe.getZ(),
-                                searchCenter.getX(), searchCenter.getZ());
-                        return safe;
-                    }
-                }
-            }
-        }
-
-        return null; // Caller should handle fallback (e.g., create platform)
-    }
-
-    /**
-     * Finds a safe Y level at the given X,Z coordinates.
-     * Returns null if no safe spot found.
-     */
-    public static BlockPos findSafeY(ServerLevel level, int x, int z) {
-        // Make sure chunk is loaded/generated
-        ChunkAccess chunk = level.getChunk(x >> 4, z >> 4, ChunkStatus.FULL, true);
-        if (chunk == null) {
-            return null;
-        }
-
-        int minY = level.getMinBuildHeight();
-        int maxY = level.getMaxBuildHeight();
-
-        // Scan from top down to find solid ground with air above
-        for (int y = maxY - 2; y > minY; y--) {
-            BlockPos pos = new BlockPos(x, y, z);
-            BlockPos above1 = pos.above();
-            BlockPos above2 = above1.above();
-
-            BlockState ground = level.getBlockState(pos);
-            BlockState air1 = level.getBlockState(above1);
-            BlockState air2 = level.getBlockState(above2);
-
-            // Need solid ground, with 2 blocks of air above for player
-            if (isSolidGround(ground) && isPassable(air1) && isPassable(air2)) {
-                return above1; // Return the position where player feet will be
-            }
-        }
-
-        return null;
-    }
-
-    private static boolean isSolidGround(BlockState state) {
-        // Check if block is solid and not liquid
-        return state.isSolid() && !state.liquid();
-    }
-
-    private static boolean isPassable(BlockState state) {
-        // Air or non-solid blocks player can stand in
-        return state.isAir() || (!state.isSolid() && !state.liquid());
     }
 
     @Override
@@ -231,18 +105,15 @@ public class NeoForgeDimensionHelper implements PlatformDimensionHelper<Minecraf
         DimensionSettings dimSettings = preset.getPresetConfig().getDimensionSettings();
         MinecraftServerAccessor serverAccessor = (MinecraftServerAccessor) server;
 
-        // Create ResourceKeys
         ResourceKey<Level> levelKey = DimensionKeys.otg(name);
         ResourceLocation dimLocation = levelKey.location();
         ResourceKey<DimensionType> dimTypeKey = ResourceKey.create(Registries.DIMENSION_TYPE, dimLocation);
 
-        // Check if already loaded
         if (server.getLevel(levelKey) != null) {
             OTGLog.warn("Dimension %s already loaded", name);
             return;
         }
 
-        // Get dimension type registry and unfreeze
         Registry<DimensionType> dimTypeRegistry = server.registryAccess().registryOrThrow(Registries.DIMENSION_TYPE);
         boolean wasFrozen = false;
         if (dimTypeRegistry instanceof MappedRegistry<DimensionType> mappedRegistry) {
@@ -253,14 +124,11 @@ public class NeoForgeDimensionHelper implements PlatformDimensionHelper<Minecraf
         }
 
         try {
-            // Check if dimension type already exists (e.g., from datapack)
             Holder<DimensionType> dimTypeHolder;
             if (dimTypeRegistry.containsKey(dimTypeKey)) {
-                // Use existing dimension type from datapack
                 dimTypeHolder = dimTypeRegistry.getHolderOrThrow(dimTypeKey);
                 OTGLog.info("Using existing dimension type: %s", dimTypeKey.location());
             } else {
-                // Create and register new DimensionType
                 DimensionType dimensionType = createDimensionType(dimSettings);
                 if (dimTypeRegistry instanceof MappedRegistry<DimensionType> mappedRegistry) {
                     mappedRegistry.register(dimTypeKey, dimensionType, RegistrationInfo.BUILT_IN);
@@ -269,7 +137,6 @@ public class NeoForgeDimensionHelper implements PlatformDimensionHelper<Minecraf
                 dimTypeHolder = dimTypeRegistry.getHolderOrThrow(dimTypeKey);
             }
 
-            // Create ChunkGenerator
             Registry<Biome> biomeRegistry = server.registryAccess().registryOrThrow(Registries.BIOME);
             Registry<NoiseGeneratorSettings> noiseRegistry = server.registryAccess().registryOrThrow(Registries.NOISE_SETTINGS);
             Holder<NoiseGeneratorSettings> noiseHolder = noiseRegistry.getHolderOrThrow(NoiseGeneratorSettings.OVERWORLD);
@@ -280,14 +147,11 @@ public class NeoForgeDimensionHelper implements PlatformDimensionHelper<Minecraf
                     biomeRegistry
             );
 
-            // Create LevelStem
             LevelStem levelStem = new LevelStem(dimTypeHolder, chunkGenerator);
 
-            // Create ServerLevelData
             WorldData worldData = server.getWorldData();
             DerivedLevelData derivedLevelData = new DerivedLevelData(worldData, worldData.overworldData());
 
-            // Create no-op progress listener
             ChunkProgressListener progressListener = new ChunkProgressListener() {
                 @Override public void updateSpawnPos(ChunkPos pos) {}
                 @Override public void onStatusChange(ChunkPos pos, @Nullable ChunkStatus status) {}
@@ -295,11 +159,9 @@ public class NeoForgeDimensionHelper implements PlatformDimensionHelper<Minecraf
                 @Override public void stop() {}
             };
 
-            // Get executor and storage from server
             Executor executor = serverAccessor.getExecutor();
             LevelStorageSource.LevelStorageAccess storageSource = serverAccessor.getStorageSource();
 
-            // Create ServerLevel
             ServerLevel serverLevel = new ServerLevel(
                     server,
                     executor,
@@ -308,20 +170,18 @@ public class NeoForgeDimensionHelper implements PlatformDimensionHelper<Minecraf
                     levelKey,
                     levelStem,
                     progressListener,
-                    false,  // isDebug
+                    false,
                     BiomeManager.obfuscateSeed(seed),
-                    ImmutableList.of(),  // custom spawners
-                    false,  // tickTime
-                    null    // randomSequences
+                    ImmutableList.of(),
+                    false,
+                    null
             );
 
-            // Add to server's level map
             serverAccessor.getLevels().put(levelKey, serverLevel);
 
             OTGLog.info("Created dimension %s at runtime - no restart required!", name);
 
         } finally {
-            // Re-freeze registry if it was frozen before
             if (wasFrozen && dimTypeRegistry instanceof MappedRegistry<DimensionType> mappedRegistry) {
                 ((MappedRegistryAccessor) mappedRegistry).setFrozen(true);
             }
@@ -366,22 +226,18 @@ public class NeoForgeDimensionHelper implements PlatformDimensionHelper<Minecraf
             return;
         }
 
-        // Teleport all players out first
         for (ServerPlayer player : List.copyOf(level.players())) {
             teleportToOverworldSpawn(player);
         }
 
-        // Save the level
         level.save(null, true, false);
 
-        // Close chunk source
         try {
             level.getChunkSource().close();
         } catch (IOException e) {
             OTGLog.error("Error closing chunk source: %s", e.getMessage());
         }
 
-        // Remove from server's level map
         ((MinecraftServerAccessor) server).getLevels().remove(dimKey);
 
         OTGLog.info("Dimension %s unloaded", name);

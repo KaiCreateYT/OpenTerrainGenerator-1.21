@@ -41,7 +41,7 @@ public class OTGPlugin {
         return eventHandler;
     }
 
-    public static com.pg85.otg.neoforge.dimensions.NeoForgeDimensionManager getDimensionManager() {
+    public static com.pg85.otg.shared.dimensions.DimensionManager getDimensionManager() {
         return NeoForgeEventHandler.getDimensionManager();
     }
 }

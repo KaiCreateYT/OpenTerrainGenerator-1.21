@@ -1,9 +1,9 @@
 package com.pg85.otg.neoforge.events;
 
 import com.pg85.otg.neoforge.commands.NeoForgeCommandWorldAccessor;
-import com.pg85.otg.neoforge.dimensions.NeoForgeDimensionCommands;
-import com.pg85.otg.neoforge.dimensions.NeoForgeDimensionManager;
+import com.pg85.otg.neoforge.dimensions.NeoForgeDimensionHelper;
 import com.pg85.otg.shared.commands.OTGCommandRegistrar;
+import com.pg85.otg.shared.dimensions.DimensionManager;
 import com.pg85.otg.neoforge.gen.OTGNeoForgeChunkGenerator;
 import com.pg85.otg.neoforge.portals.OTGAttachments;
 import com.pg85.otg.neoforge.portals.OTGPlayerData;
@@ -20,24 +20,23 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 public class NeoForgeEventHandler {
-    private static NeoForgeDimensionManager dimensionManager;
+    private static DimensionManager dimensionManager;
 
-    public static NeoForgeDimensionManager getDimensionManager() {
+    public static DimensionManager getDimensionManager() {
         return dimensionManager;
     }
 
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
-        NeoForgeDimensionCommands.register(event.getDispatcher());
         OTGCommandRegistrar.register(event.getDispatcher(), new NeoForgeCommandWorldAccessor());
         OTGLog.info("Registered OTG commands");
     }
 
     @SubscribeEvent
     public static void onServerStarted(ServerStartedEvent event) {
-        dimensionManager = new NeoForgeDimensionManager();
+        dimensionManager = new DimensionManager(new NeoForgeDimensionHelper());
         dimensionManager.initialize(event.getServer());
-        NeoForgeDimensionCommands.setManager(dimensionManager);
+        OTGCommandRegistrar.setDimensionManager(dimensionManager);
         OTGLog.info("OTG Dimension Manager initialized");
     }
 

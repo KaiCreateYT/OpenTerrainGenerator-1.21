@@ -1,12 +1,15 @@
-package com.pg85.otg.fabric.dimensions;
+package com.pg85.otg.shared.commands;
 
-import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.pg85.otg.OTG;
 import com.pg85.otg.dimensions.DimensionInfo;
 import com.pg85.otg.presets.Preset;
+import com.pg85.otg.shared.dimensions.DimensionKeys;
+import com.pg85.otg.shared.dimensions.DimensionManager;
+import com.pg85.otg.shared.dimensions.PlatformDimensionHelper;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -21,13 +24,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class FabricDimensionCommands {
-
-    private static FabricDimensionManager manager;
-
-    public static void setManager(FabricDimensionManager mgr) {
-        manager = mgr;
-    }
+public class DimensionCommands {
 
     private static final SuggestionProvider<CommandSourceStack> PRESET_SUGGESTIONS = (context, builder) -> {
         List<String> presets = OTG.getEngine().getPresetLoader().getAllPresets().stream()
@@ -38,58 +35,60 @@ public class FabricDimensionCommands {
 
     private static final SuggestionProvider<CommandSourceStack> DIMENSION_SUGGESTIONS = (context, builder) -> {
         List<String> dimensions = new ArrayList<>();
-        // Add vanilla dimensions
         dimensions.add("overworld");
         dimensions.add("the_nether");
         dimensions.add("the_end");
-        // Add OTG dimensions
-        if (manager != null) {
-            manager.listDimensions().stream()
+        DimensionManager mgr = OTGCommandRegistrar.getDimensionManager();
+        if (mgr != null) {
+            mgr.listDimensions().stream()
                     .map(DimensionInfo::getName)
                     .forEach(dimensions::add);
         }
         return SharedSuggestionProvider.suggest(dimensions, builder);
     };
 
-    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        dispatcher.register(
-            Commands.literal("otg")
-                .then(Commands.literal("dimension")
-                    .then(Commands.literal("create")
-                        .requires(source -> source.hasPermission(2))
-                        .then(Commands.argument("preset", StringArgumentType.string())
-                            .suggests(PRESET_SUGGESTIONS)
-                            .executes(FabricDimensionCommands::createDimension)))
-                    .then(Commands.literal("delete")
-                        .requires(source -> source.hasPermission(2))
-                        .then(Commands.argument("dimension", StringArgumentType.string())
-                            .suggests(DIMENSION_SUGGESTIONS)
-                            .executes(ctx -> deleteDimension(ctx, false, false))
-                            .then(Commands.literal("--purge")
-                                .executes(ctx -> deleteDimension(ctx, true, false))
-                                .then(Commands.literal("--confirm")
-                                    .executes(ctx -> deleteDimension(ctx, true, true))))))
-                    .then(Commands.literal("list")
-                        .executes(FabricDimensionCommands::listDimensions))
-                    .then(Commands.literal("info")
-                        .then(Commands.argument("dimension", StringArgumentType.string())
-                            .suggests(DIMENSION_SUGGESTIONS)
-                            .executes(FabricDimensionCommands::dimensionInfo))))
-                .then(Commands.literal("tp")
+    public static void register(LiteralArgumentBuilder<CommandSourceStack> otgCommand) {
+        otgCommand
+            .then(Commands.literal("dimension")
+                .then(Commands.literal("create")
+                    .requires(source -> source.hasPermission(2))
+                    .then(Commands.argument("preset", StringArgumentType.string())
+                        .suggests(PRESET_SUGGESTIONS)
+                        .executes(DimensionCommands::createDimension)))
+                .then(Commands.literal("delete")
+                    .requires(source -> source.hasPermission(2))
                     .then(Commands.argument("dimension", StringArgumentType.string())
                         .suggests(DIMENSION_SUGGESTIONS)
-                        .executes(FabricDimensionCommands::teleport)))
-        );
+                        .executes(ctx -> deleteDimension(ctx, false, false))
+                        .then(Commands.literal("--purge")
+                            .executes(ctx -> deleteDimension(ctx, true, false))
+                            .then(Commands.literal("--confirm")
+                                .executes(ctx -> deleteDimension(ctx, true, true))))))
+                .then(Commands.literal("list")
+                    .executes(DimensionCommands::listDimensions))
+                .then(Commands.literal("info")
+                    .then(Commands.argument("dimension", StringArgumentType.string())
+                        .suggests(DIMENSION_SUGGESTIONS)
+                        .executes(DimensionCommands::dimensionInfo))))
+            .then(Commands.literal("tp")
+                .then(Commands.argument("dimension", StringArgumentType.string())
+                    .suggests(DIMENSION_SUGGESTIONS)
+                    .executes(DimensionCommands::teleport)));
+    }
+
+    private static DimensionManager getManager(CommandContext<CommandSourceStack> ctx) {
+        DimensionManager mgr = OTGCommandRegistrar.getDimensionManager();
+        if (mgr == null) {
+            ctx.getSource().sendFailure(Component.literal("Dimension manager not initialized"));
+        }
+        return mgr;
     }
 
     private static int createDimension(CommandContext<CommandSourceStack> ctx) {
-        if (manager == null) {
-            ctx.getSource().sendFailure(Component.literal("Dimension manager not initialized"));
-            return 0;
-        }
+        DimensionManager manager = getManager(ctx);
+        if (manager == null) return 0;
 
         String presetName = StringArgumentType.getString(ctx, "preset");
-
         var result = manager.createDimension(presetName);
 
         if (result.success()) {
@@ -105,13 +104,10 @@ public class FabricDimensionCommands {
     }
 
     private static int deleteDimension(CommandContext<CommandSourceStack> ctx, boolean purge, boolean confirmed) {
-        if (manager == null) {
-            ctx.getSource().sendFailure(Component.literal("Dimension manager not initialized"));
-            return 0;
-        }
+        DimensionManager manager = getManager(ctx);
+        if (manager == null) return 0;
 
         String dimensionName = StringArgumentType.getString(ctx, "dimension");
-
         var result = manager.deleteDimension(dimensionName, purge, confirmed);
 
         if (result.needsConfirmation()) {
@@ -140,10 +136,8 @@ public class FabricDimensionCommands {
     }
 
     private static int listDimensions(CommandContext<CommandSourceStack> ctx) {
-        if (manager == null) {
-            ctx.getSource().sendFailure(Component.literal("Dimension manager not initialized"));
-            return 0;
-        }
+        DimensionManager manager = getManager(ctx);
+        if (manager == null) return 0;
 
         List<DimensionInfo> dimensions = manager.listDimensions();
 
@@ -164,13 +158,10 @@ public class FabricDimensionCommands {
     }
 
     private static int dimensionInfo(CommandContext<CommandSourceStack> ctx) {
-        if (manager == null) {
-            ctx.getSource().sendFailure(Component.literal("Dimension manager not initialized"));
-            return 0;
-        }
+        DimensionManager manager = getManager(ctx);
+        if (manager == null) return 0;
 
         String dimensionName = StringArgumentType.getString(ctx, "dimension");
-
         var infoOpt = manager.getDimensionInfo(dimensionName);
 
         if (infoOpt.isEmpty()) {
@@ -211,7 +202,6 @@ public class FabricDimensionCommands {
         if (vanillaKey != null) {
             ServerLevel targetLevel = player.getServer().getLevel(vanillaKey);
             if (targetLevel != null) {
-                // Use world spawn for vanilla dimensions
                 var spawn = targetLevel.getSharedSpawnPos();
                 player.teleportTo(targetLevel, spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5, player.getYRot(), player.getXRot());
                 ctx.getSource().sendSuccess(() -> Component.literal(
@@ -225,10 +215,8 @@ public class FabricDimensionCommands {
         }
 
         // Check for OTG dimensions
-        if (manager == null) {
-            ctx.getSource().sendFailure(Component.literal("Dimension manager not initialized"));
-            return 0;
-        }
+        DimensionManager manager = getManager(ctx);
+        if (manager == null) return 0;
 
         var infoOpt = manager.getDimensionInfo(dimensionName);
         if (infoOpt.isEmpty()) {
@@ -236,7 +224,7 @@ public class FabricDimensionCommands {
             ResourceKey<Level> dimKey = DimensionKeys.otg(dimensionName);
             ServerLevel targetLevel = player.getServer().getLevel(dimKey);
             if (targetLevel != null) {
-                var spawn = manager.getHelper().findSafeSpawn(targetLevel);
+                var spawn = PlatformDimensionHelper.findSafeSpawn(targetLevel);
                 player.teleportTo(targetLevel, spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5, player.getYRot(), player.getXRot());
                 ctx.getSource().sendSuccess(() -> Component.literal(
                         "Teleported to otg:" + dimensionName

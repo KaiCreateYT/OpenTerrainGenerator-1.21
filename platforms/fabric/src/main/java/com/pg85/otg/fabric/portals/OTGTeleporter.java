@@ -1,6 +1,6 @@
 package com.pg85.otg.fabric.portals;
 
-import com.pg85.otg.fabric.dimensions.FabricDimensionHelper;
+import com.pg85.otg.shared.dimensions.PlatformDimensionHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -141,13 +141,13 @@ public class OTGTeleporter {
 
     private static BlockPos findSuitableLocation(ServerLevel level, BlockPos searchPos) {
         // Use the same safe spawn logic as dimension commands - spiral search for solid ground
-        BlockPos safe = FabricDimensionHelper.findSafeSpawnNear(level, searchPos, 128);
+        BlockPos safe = PlatformDimensionHelper.findSafeSpawnNear(level, searchPos, 128);
         if (safe != null) {
             return safe;
         }
 
         // If spiral search failed, try world spawn as fallback
-        safe = FabricDimensionHelper.findSafeSpawn(level);
+        safe = PlatformDimensionHelper.findSafeSpawn(level);
         if (safe != null && safe.getY() < 256) { // Sanity check - not the ultimate fallback
             return safe;
         }
