@@ -36,6 +36,7 @@ import net.minecraft.world.entity.monster.Guardian;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -449,9 +450,26 @@ public class NeoForgeWorldGenRegion extends LocalWorldGenRegion {
             );
         }
         BlockPos pos = new BlockPos(x, y, z);
+        BlockState placedState = ((NeoForgeMaterialData) material).getState();
         // Notify world: (2 | 16) == update client, don't update observers
-        // Assuming false here means don't update observers
-        this.worldGenLevel.setBlock(pos, ((NeoForgeMaterialData) material).getState(), 18);
+        this.worldGenLevel.setBlock(pos, placedState, 18);
+
+        // Update connection states for blocks like panes, bars, fences, walls.
+        // These blocks have directional properties (north/south/east/west) that
+        // depend on adjacent blocks, but flag 18 skips neighbor updates.
+        BlockState updatedState = Block.updateFromNeighbourShapes(placedState, this.worldGenLevel, pos);
+        if (updatedState != placedState) {
+            this.worldGenLevel.setBlock(pos, updatedState, 18);
+            // Also update horizontal neighbors that may need to connect to this block
+            for (Direction dir : Direction.Plane.HORIZONTAL) {
+                BlockPos neighborPos = pos.relative(dir);
+                BlockState neighborState = this.worldGenLevel.getBlockState(neighborPos);
+                BlockState updatedNeighbor = Block.updateFromNeighbourShapes(neighborState, this.worldGenLevel, neighborPos);
+                if (updatedNeighbor != neighborState) {
+                    this.worldGenLevel.setBlock(neighborPos, updatedNeighbor, 18);
+                }
+            }
+        }
 
         if (material.isLiquid()) {
             // TODO: Do fluid ticks
