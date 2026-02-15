@@ -12,6 +12,7 @@ public class OTGCommandRegistrar {
         var otgCommand = Commands.literal("otg");
         FlushCacheCommand.register(otgCommand);
         SpawnCommand.register(otgCommand);
+        StructureCommand.register(otgCommand);
         dispatcher.register(otgCommand);
     }
 
