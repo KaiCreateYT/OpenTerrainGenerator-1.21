@@ -421,9 +421,11 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
                 for (StructurePiece piece : start.getPieces()) {
                     if (piece.isCloseToChunk(pos, 0)) {
                         BoundingBox box = piece.getBoundingBox();
+                        int delta = piece instanceof PoolElementStructurePiece poolPiece
+                                ? poolPiece.getGroundLevelDelta() : 0;
                         structures.add(new JigsawStructureData(
                                 box.minX(), box.minY(), box.minZ(),
-                                box.maxX(), box.maxY(), box.maxZ(),
+                                box.maxX(), delta, box.maxZ(),
                                 true, 0, 0, 0));
                     }
                 }
