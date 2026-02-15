@@ -41,6 +41,7 @@ import net.minecraft.world.level.levelgen.carver.CarvingContext;
 import net.minecraft.world.level.levelgen.synth.SimplexNoise;
 import net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver;
 import net.minecraft.world.level.levelgen.structure.*;
+import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.storage.LevelResource;
@@ -410,20 +411,37 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
         ChunkCoordinate chunkCoord = ChunkCoordinate.fromChunkCoords(
                 chunkAccess.getPos().x, chunkAccess.getPos().z);
 
+        // TODO: Residual floating islands near structures. OTG's legacy noise system
+        //  uses calculateNoiseWeight() * 0.8 for beard contributions, which is the same
+        //  formula as vanilla 1.16. But vanilla 1.18+ switched to DensityFunction-based
+        //  Beardifier with different density scaling. The negative beard contribution
+        //  above RIGID pieces can carve into nearby terrain, leaving disconnected chunks.
+        //  Possible fixes: (1) clamp negative contributions, (2) port vanilla 1.21
+        //  Beardifier math to OTG's noise system, (3) add a post-pass that removes
+        //  small floating terrain clusters near structure bounding boxes.
         ObjectList<JigsawStructureData> structures = new ObjectArrayList<>(10);
         ChunkPos pos = chunkAccess.getPos();
-        for (Map.Entry<Structure, StructureStart> n : chunkAccess.getAllStarts().entrySet()) {
-            Structure structure = n.getKey();
-            StructureStart start = n.getValue();
-            if (structure.terrainAdaptation() != TerrainAdjustment.NONE
-                    && structure.terrainAdaptation() != TerrainAdjustment.BURY
-                    && start.isValid()) {
+        // Use structureManager to find ALL structure starts affecting this chunk,
+        // not just those originating here. Vanilla's Beardifier does the same via
+        // structureManager.startsForStructure(). Without this, terrain adaptation
+        // (beard fill under structures) only works in the origin chunk, causing
+        // buildings in neighboring chunks to float.
+        for (StructureStart start : structureManager.startsForStructure(pos,
+                s -> s.terrainAdaptation() != TerrainAdjustment.NONE
+                        && s.terrainAdaptation() != TerrainAdjustment.BURY)) {
+            if (start.isValid()) {
                 for (StructurePiece piece : start.getPieces()) {
-                    if (piece.isCloseToChunk(pos, 0)) {
+                    // Only process RIGID jigsaw pieces, matching vanilla's Beardifier.
+                    // TERRAIN_MATCHING pieces (village paths) follow terrain naturally
+                    // and must NOT get terrain adaptation — their beard contribution
+                    // carves/fills terrain around paths, creating floating islands.
+                    if (piece instanceof PoolElementStructurePiece poolPiece
+                            && poolPiece.getElement().getProjection() == StructureTemplatePool.Projection.RIGID
+                            && piece.isCloseToChunk(pos, 12)) {
                         BoundingBox box = piece.getBoundingBox();
                         structures.add(new JigsawStructureData(
                                 box.minX(), box.minY(), box.minZ(),
-                                box.maxX(), box.maxY(), box.maxZ(),
+                                box.maxX(), poolPiece.getGroundLevelDelta(), box.maxZ(),
                                 true, 0, 0, 0));
                     }
                 }
@@ -588,6 +606,7 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
     }
 
     private int sampleHeightmap(int x, int z, @Nullable BlockState[] blockStates, @Nullable Predicate<BlockState> predicate) {
+        int minY = this.settings.value().noiseSettings().minY();
         int xStart = Math.floorDiv(x, 4);
         int zStart = Math.floorDiv(z, 4);
         int xProgress = Math.floorMod(x, 4);
@@ -621,18 +640,18 @@ public class OTGFabricChunkGenerator extends ChunkGenerator {
 
                 int y = (noiseY * 8) + pieceY;
 
-                BlockState state = this.getBlockState(density, y);
+                BlockState state = this.getBlockState(density, y + minY);
                 if (blockStates != null) {
                     blockStates[y] = state;
                 }
 
                 if (predicate != null && predicate.test(state)) {
-                    return y + 1;
+                    return y + minY + 1;
                 }
             }
         }
 
-        return 0;
+        return minY;
     }
 
     private BlockState getBlockState(double density, int y) {

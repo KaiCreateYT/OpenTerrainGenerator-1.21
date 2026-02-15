@@ -13,6 +13,7 @@ import com.pg85.otg.config.biome.BiomeGroupFunction;
 import com.pg85.otg.config.biome.BiomeTemplate;
 import com.pg85.otg.config.biome.TemplateBiome;
 import com.pg85.otg.config.preset.PresetConfig;
+import com.pg85.otg.config.settings.biome.BiomeStructureTagConfig;
 import com.pg85.otg.config.settings.biome.BiomeVisualSettings;
 import com.pg85.otg.config.settings.biome.MobSettings;
 import com.pg85.otg.constants.Constants;
@@ -59,6 +60,12 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
     public static HolderGetter<PlacedFeature> PLACED_FEATURE_HOLDER;
     public static HolderGetter<ConfiguredWorldCarver<?>> CONFIGURED_CARVER_HOLDER;
     public static boolean BIOME_DATA_INITIALIZED = false;
+    private static final Map<ResourceKey<Biome>, BiomeStructureTagConfig> structureTagConfigs = new LinkedHashMap<>();
+
+    public static Map<ResourceKey<Biome>, BiomeStructureTagConfig> getStructureTagConfigs() {
+        return structureTagConfigs;
+    }
+
     private Map<String, List<ResourceKey<Biome>>> biomesByPresetFolderName = new LinkedHashMap<>();
     private Map<String, IBiome[]> globalIdMapping = new java.util.concurrent.ConcurrentHashMap<>();
     private Map<String, BiomeLayerData> presetGenerationData = new java.util.concurrent.ConcurrentHashMap<>();
@@ -118,6 +125,7 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
         this.globalIdMapping = new java.util.concurrent.ConcurrentHashMap<>();
         this.presetGenerationData = new java.util.concurrent.ConcurrentHashMap<>();
         this.biomesByPresetFolderName = new LinkedHashMap<>();
+        structureTagConfigs.clear();
     }
 
     public void reRegisterBiomes(String presetFolderName, WritableRegistry<Biome> biomeRegistry)
@@ -275,6 +283,10 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
                 biome = LegacyFabricBiomeLoader.createOTGBiome(preset.getPresetConfig(), biomeConfig, featureHolder, carverHolder);
 
                 ref = biomeRegistry.register(resourceKey, biome, RegistrationInfo.BUILT_IN);
+
+                if (biomeConfig.getBiomeStructureTagConfig() != null) {
+                    structureTagConfigs.put(resourceKey, biomeConfig.getBiomeStructureTagConfig());
+                }
             }
             presetBiomes.add(resourceKey);
 
@@ -419,8 +431,8 @@ public class LegacyFabricBiomeLoader extends LocalPresetLoader {
             }
         }
 
-        // Add default structures
-        // TODO: Find a way to add our biomes to the relevant structure biome tags...
+        // Structure tags are injected via WorldPresetTagsMixin.addBiomesToStructureTags()
+        // during ReloadableServerResources.updateRegistryTags(), after biome registration.
 
 
         float temperature = biomeConfig.getVisualSettings().getBiomeTemperature();
