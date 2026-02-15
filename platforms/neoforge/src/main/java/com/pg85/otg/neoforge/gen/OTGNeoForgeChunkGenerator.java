@@ -39,6 +39,7 @@ import net.minecraft.world.level.levelgen.blending.Blender;
 import net.minecraft.world.level.levelgen.carver.CarvingContext;
 import net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver;
 import net.minecraft.world.level.levelgen.structure.*;
+import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
 import net.minecraft.world.level.levelgen.synth.SimplexNoise;
 import com.pg85.otg.config.settings.preset.NoiseCaveSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
@@ -426,23 +427,37 @@ public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
         ChunkCoordinate chunkCoord = ChunkCoordinate.fromChunkCoords(
                 chunkAccess.getPos().x, chunkAccess.getPos().z);
 
-        // Structure data is already available — STRUCTURE ChunkStatus completed before NOISE.
+        // TODO: Residual floating islands near structures. OTG's legacy noise system
+        //  uses calculateNoiseWeight() * 0.8 for beard contributions, which is the same
+        //  formula as vanilla 1.16. But vanilla 1.18+ switched to DensityFunction-based
+        //  Beardifier with different density scaling. The negative beard contribution
+        //  above RIGID pieces can carve into nearby terrain, leaving disconnected chunks.
+        //  Possible fixes: (1) clamp negative contributions, (2) port vanilla 1.21
+        //  Beardifier math to OTG's noise system, (3) add a post-pass that removes
+        //  small floating terrain clusters near structure bounding boxes.
+        // Use structureManager to find ALL structure starts affecting this chunk,
+        // not just those originating here. Vanilla's Beardifier does the same via
+        // structureManager.startsForStructure(). Without this, terrain adaptation
+        // (beard fill under structures) only works in the origin chunk, causing
+        // buildings in neighboring chunks to float.
         ObjectList<JigsawStructureData> structures = new ObjectArrayList<>(10);
         ChunkPos pos = chunkAccess.getPos();
-        for (Map.Entry<Structure, StructureStart> n : chunkAccess.getAllStarts().entrySet()) {
-            Structure structure = n.getKey();
-            StructureStart start = n.getValue();
-            if (structure.terrainAdaptation() != TerrainAdjustment.NONE
-                    && structure.terrainAdaptation() != TerrainAdjustment.BURY
-                    && start.isValid()) {
+        for (StructureStart start : structureManager.startsForStructure(pos,
+                s -> s.terrainAdaptation() != TerrainAdjustment.NONE
+                        && s.terrainAdaptation() != TerrainAdjustment.BURY)) {
+            if (start.isValid()) {
                 for (StructurePiece piece : start.getPieces()) {
-                    if (piece.isCloseToChunk(pos, 0)) {
+                    // Only process RIGID jigsaw pieces, matching vanilla's Beardifier.
+                    // TERRAIN_MATCHING pieces (village paths) follow terrain naturally
+                    // and must NOT get terrain adaptation — their beard contribution
+                    // carves/fills terrain around paths, creating floating islands.
+                    if (piece instanceof PoolElementStructurePiece poolPiece
+                            && poolPiece.getElement().getProjection() == StructureTemplatePool.Projection.RIGID
+                            && piece.isCloseToChunk(pos, 12)) {
                         BoundingBox box = piece.getBoundingBox();
-                        int delta = piece instanceof PoolElementStructurePiece poolPiece
-                                ? poolPiece.getGroundLevelDelta() : 0;
                         structures.add(new JigsawStructureData(
                                 box.minX(), box.minY(), box.minZ(),
-                                box.maxX(), delta, box.maxZ(),
+                                box.maxX(), poolPiece.getGroundLevelDelta(), box.maxZ(),
                                 true, 0, 0, 0));
                     }
                 }
@@ -596,6 +611,7 @@ public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
 
     private int sampleHeightmap(int x, int z, @Nullable BlockState[] blockStates, @Nullable Predicate<BlockState> predicate)
     {
+        int minY = this.settings.value().noiseSettings().minY();
         // Get all of the coordinate starts and positions
         int xStart = Math.floorDiv(x, 4);
         int zStart = Math.floorDiv(z, 4);
@@ -641,24 +657,24 @@ public class OTGNeoForgeChunkGenerator extends ChunkGenerator {
                 //double density = MathHelper.lerp3(yLerp, xLerp, zLerp, val000, val001, val100, val101, val010, val011, val110, val111);
                 double density = MathHelper.lerp3(xLerp, yLerp, zLerp, val000, val100, val010, val110, val001, val101, val011, val111);
 
-                // Get the real y position (translate noise chunk and noise piece)
+                // y is a 0-based offset from bottom of world; convert to world Y for getBlockState
                 int y = (noiseY * 8) + pieceY;
 
-                BlockState state = this.getBlockState(density, y);
+                BlockState state = this.getBlockState(density, y + minY);
                 if (blockStates != null)
                 {
                     blockStates[y] = state;
                 }
 
-                // return y if it fails the check
+                // return world Y coordinate (offset + minY + 1 for heightmap convention)
                 if (predicate != null && predicate.test(state))
                 {
-                    return y + 1;
+                    return y + minY + 1;
                 }
             }
         }
 
-        return 0;
+        return minY;
     }
 
     // MC's NoiseChunkGenerator returns defaultBlock and defaultFluid here, so callers
