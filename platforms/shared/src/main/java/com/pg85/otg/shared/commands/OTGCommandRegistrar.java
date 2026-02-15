@@ -14,6 +14,7 @@ public class OTGCommandRegistrar {
         SpawnCommand.register(otgCommand);
         StructureCommand.register(otgCommand);
         ExportCommand.register(otgCommand);
+        ExportBO4DataCommand.register(otgCommand);
         dispatcher.register(otgCommand);
     }
 
