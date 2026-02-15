@@ -355,6 +355,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
         double[] chc = new double[this.noiseSizeY + 1];
         float weight = 0;
         BiomeTerrainSettings centerTerrainSettings = center.getTerrainSettings();
+        float centerHeight = centerTerrainSettings.getBiomeHeight();
         int smoothRadius = centerTerrainSettings.getSmoothRadius();
         int chcSmoothRadius = centerTerrainSettings.getCHCSmoothRadius();
         int largestRadius = Math.max(smoothRadius, chcSmoothRadius);
@@ -398,9 +399,13 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                 }
                 biomeTerrainSettings = biome.getTerrainSettings();
                 heightAt = biomeTerrainSettings.getBiomeHeight();
-                // TODO: vanilla reduces the weight by half when the depth here is greater than the center depth, but OTG doesn't do that?
                 weightAt = BIOME_WEIGHT_TABLE[x1 + 32 + (z1 + 32) * 65] / (heightAt + 2.0F);
                 weightAt = Math.abs(weightAt); // This is required to prevent seams when height goes below -2
+                // Vanilla halves the weight of neighbors that are higher than the center biome,
+                // creating softer low-to-high transitions and preventing steep cliffs at biome borders
+                if (heightAt > centerHeight) {
+                    weightAt /= 2.0F;
+                }
 
                 weight += weightAt;
 
@@ -500,11 +505,10 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                 // Add the falloff at this height
                 noise += falloff;
 
-                // Anti-floating terrain: aggressive falloff for heights significantly above expected surface
-                // This prevents isolated pockets of terrain from forming floating islands
+                // TODO: get rid of this - anti-floating terrain should be solved via proper noise settings
+                //  and biome .bc configuration, not a hardcoded penalty
                 double heightDiff = y - height;
                 if (heightDiff > 4) {
-                    // Quadratic penalty for terrain above expected height + 4 layers buffer
                     double floatingPenalty = (heightDiff - 4) * (heightDiff - 4) * 0.5;
                     noise -= floatingPenalty;
                 }
