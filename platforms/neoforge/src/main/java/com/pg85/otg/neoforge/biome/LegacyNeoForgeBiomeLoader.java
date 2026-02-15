@@ -431,8 +431,8 @@ public class LegacyNeoForgeBiomeLoader extends LocalPresetLoader {
             }
         }
 
-        // Add default structures
-        // TODO: Find a way to add our biomes to the relevant structure biome tags...
+        // Structure tags are injected via WorldPresetTagsMixin.addBiomesToStructureTags()
+        // during ReloadableServerResources.updateRegistryTags(), after biome registration.
 
 
         float temperature = biomeConfig.getVisualSettings().getBiomeTemperature();
