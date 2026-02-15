@@ -17,6 +17,7 @@ IsUndergroundBiome: true
 UndergroundMinY: -64
 UndergroundMaxY: 256
 UndergroundPriority: 20
+UndergroundBiomeRarity: 30.0
 
 # Spawns under dry surface biomes
 MinSurfaceTemperature: 0.0

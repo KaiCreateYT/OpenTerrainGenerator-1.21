@@ -74,7 +74,7 @@ public class OTGFabricBiomeProvider extends BiomeSource implements ILayerSource,
         for (int otgBiomeID = 0; otgBiomeID < iBiomes.length; otgBiomeID++) {
             keyLookup.put(otgBiomeID, ((FabricBiome) iBiomes[otgBiomeID]).getBiomeHolder());
         }
-        this.undergroundResolver = new UndergroundBiomeResolver(iBiomes);
+        this.undergroundResolver = new UndergroundBiomeResolver(iBiomes, this.seed);
         return Stream.of(iBiomes).map(iBiome -> ((FabricBiome) iBiome).getBiomeHolder());
     }
 
@@ -116,7 +116,7 @@ public class OTGFabricBiomeProvider extends BiomeSource implements ILayerSource,
                     ? surfaceHeightEstimator.applyAsInt(worldX, worldZ)
                     : 64;
 
-            int undergroundBiomeId = undergroundResolver.resolve(surfaceBiomeId, worldY, estimatedSurfaceY);
+            int undergroundBiomeId = undergroundResolver.resolve(surfaceBiomeId, worldX, worldY, worldZ, estimatedSurfaceY);
             if (undergroundBiomeId >= 0) {
                 // Gate: underground biomes only in cheese cave regions
                 DensityFunction cheese = this.cheeseCaveDensity;

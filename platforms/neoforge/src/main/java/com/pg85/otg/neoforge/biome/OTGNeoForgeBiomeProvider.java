@@ -74,7 +74,7 @@ public class OTGNeoForgeBiomeProvider extends BiomeSource implements ILayerSourc
         for (int otgBiomeID = 0; otgBiomeID < iBiomes.length; otgBiomeID++) {
             keyLookup.put(otgBiomeID, ((NeoForgeBiome) iBiomes[otgBiomeID]).getBiomeHolder());
         }
-        this.undergroundResolver = new UndergroundBiomeResolver(iBiomes);
+        this.undergroundResolver = new UndergroundBiomeResolver(iBiomes, this.seed);
         return Stream.of(iBiomes).map(iBiome -> ((NeoForgeBiome) iBiome).getBiomeHolder());
     }
 
@@ -116,7 +116,7 @@ public class OTGNeoForgeBiomeProvider extends BiomeSource implements ILayerSourc
                     ? surfaceHeightEstimator.applyAsInt(worldX, worldZ)
                     : 64;
 
-            int undergroundBiomeId = undergroundResolver.resolve(surfaceBiomeId, worldY, estimatedSurfaceY);
+            int undergroundBiomeId = undergroundResolver.resolve(surfaceBiomeId, worldX, worldY, worldZ, estimatedSurfaceY);
             if (undergroundBiomeId >= 0) {
                 // Gate: underground biomes only in cheese cave regions
                 DensityFunction cheese = this.cheeseCaveDensity;

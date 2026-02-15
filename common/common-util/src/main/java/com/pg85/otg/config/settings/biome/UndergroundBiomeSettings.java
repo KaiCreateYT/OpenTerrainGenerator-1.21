@@ -17,6 +17,7 @@ public class UndergroundBiomeSettings extends ConfigSection {
     private final int undergroundMinY;
     private final int undergroundMaxY;
     private final int undergroundPriority;
+    private final float undergroundBiomeRarity;
     private final float minSurfaceTemperature;
     private final float maxSurfaceTemperature;
     private final float minSurfaceWetness;
@@ -70,6 +71,14 @@ public class UndergroundBiomeSettings extends ConfigSection {
             t -> ((UndergroundBiomeSettings) t).getUndergroundPriority(),
             "Priority for this underground biome. Lower value = higher priority.",
             "When multiple underground biomes match the same position, the one with lowest priority wins."
+    );
+
+    public static final Setting<Float> UNDERGROUND_BIOME_RARITY = Settings.floatSetting(
+            "UndergroundBiomeRarity", 100.0f, 0.0f, 100.0f,
+            t -> ((UndergroundBiomeSettings) t).getUndergroundBiomeRarity(),
+            "Percentage chance (0-100) that this underground biome spawns in a qualifying region.",
+            "The world is divided into ~64-block regions. Each region independently rolls against this value.",
+            "100 = always spawn (default), 10 = 10% of qualifying regions get this biome, 0 = never spawn."
     );
 
     // === Conditions based on surface biome ===
@@ -131,6 +140,7 @@ public class UndergroundBiomeSettings extends ConfigSection {
         builder.undergroundMinY(reader.getSetting(UNDERGROUND_MIN_Y));
         builder.undergroundMaxY(reader.getSetting(UNDERGROUND_MAX_Y));
         builder.undergroundPriority(reader.getSetting(UNDERGROUND_PRIORITY));
+        builder.undergroundBiomeRarity(reader.getSetting(UNDERGROUND_BIOME_RARITY));
         builder.minSurfaceTemperature(reader.getSetting(MIN_SURFACE_TEMPERATURE));
         builder.maxSurfaceTemperature(reader.getSetting(MAX_SURFACE_TEMPERATURE));
         builder.minSurfaceWetness(reader.getSetting(MIN_SURFACE_WETNESS));

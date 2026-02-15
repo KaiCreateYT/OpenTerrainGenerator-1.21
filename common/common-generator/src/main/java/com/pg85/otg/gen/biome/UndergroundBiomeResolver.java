@@ -22,7 +22,9 @@ public class UndergroundBiomeResolver {
      * Immutable record for a candidate underground biome at runtime.
      * Only minY, maxY, and otgBiomeId are needed — conditions are pre-filtered.
      */
-    public record UndergroundCandidate(int otgBiomeId, int minY, int maxY, int priority) {}
+    public record UndergroundCandidate(int otgBiomeId, int minY, int maxY, int priority, float rarity) {}
+
+    private static final int REGION_SIZE = 64;
 
     /**
      * Pre-computed map: surfaceBiomeOtgId -> sorted list of underground candidates.
@@ -36,14 +38,17 @@ public class UndergroundBiomeResolver {
      */
     private final Int2ObjectOpenHashMap<Integer> startOffsetBySurfaceBiome;
 
+    private final long worldSeed;
+
     /**
      * Builds the resolver from all loaded biomes.
      *
      * @param biomesById Array of all biomes indexed by OTG biome ID.
      */
-    public UndergroundBiomeResolver(IBiome[] biomesById) {
+    public UndergroundBiomeResolver(IBiome[] biomesById, long worldSeed) {
         this.candidatesBySurfaceBiome = new Int2ObjectOpenHashMap<>();
         this.startOffsetBySurfaceBiome = new Int2ObjectOpenHashMap<>();
+        this.worldSeed = worldSeed;
 
         // Collect all underground biomes
         List<UndergroundBiomeInfo> undergroundBiomes = new ArrayList<>();
@@ -59,6 +64,7 @@ public class UndergroundBiomeResolver {
                     ubs.getUndergroundMinY(),
                     ubs.getUndergroundMaxY(),
                     ubs.getUndergroundPriority(),
+                    ubs.getUndergroundBiomeRarity(),
                     ubs.getMinSurfaceTemperature(),
                     ubs.getMaxSurfaceTemperature(),
                     ubs.getMinSurfaceWetness(),
@@ -101,7 +107,7 @@ public class UndergroundBiomeResolver {
                 // Check disallowed list
                 if (hasDisallowedFilter && disallowed.contains(ub.biomeName)) continue;
 
-                candidates.add(new UndergroundCandidate(ub.otgBiomeId, ub.minY, ub.maxY, ub.priority));
+                candidates.add(new UndergroundCandidate(ub.otgBiomeId, ub.minY, ub.maxY, ub.priority, ub.rarity));
             }
 
             // Sort by priority (ascending)
@@ -125,11 +131,13 @@ public class UndergroundBiomeResolver {
      * Resolves the underground biome at the given position.
      *
      * @param surfaceBiomeId OTG biome ID of the surface biome at (x, z)
+     * @param worldX         World X coordinate
      * @param worldY         World Y coordinate (NOT noise Y)
+     * @param worldZ         World Z coordinate
      * @param estimatedSurfaceY Estimated surface height at (x, z)
      * @return OTG biome ID of the underground biome, or -1 if no underground biome applies
      */
-    public int resolve(int surfaceBiomeId, int worldY, int estimatedSurfaceY) {
+    public int resolve(int surfaceBiomeId, int worldX, int worldY, int worldZ, int estimatedSurfaceY) {
         Integer startOffset = startOffsetBySurfaceBiome.get(surfaceBiomeId);
         if (startOffset == null) return -1;
 
@@ -141,11 +149,35 @@ public class UndergroundBiomeResolver {
 
         for (UndergroundCandidate candidate : candidates) {
             if (worldY >= candidate.minY && worldY <= candidate.maxY) {
-                return candidate.otgBiomeId;
+                if (passesRarityCheck(worldX, worldZ, candidate.otgBiomeId, candidate.rarity)) {
+                    return candidate.otgBiomeId;
+                }
             }
         }
 
         return -1;
+    }
+
+    /**
+     * Deterministic rarity check using region-based hashing.
+     * Divides the world into REGION_SIZE x REGION_SIZE blocks (XZ plane).
+     * Each region gets a deterministic roll based on position, world seed, and biome ID.
+     */
+    private boolean passesRarityCheck(int worldX, int worldZ, int biomeId, float rarity) {
+        if (rarity >= 100.0f) return true;
+        if (rarity <= 0.0f) return false;
+
+        int regionX = Math.floorDiv(worldX, REGION_SIZE);
+        int regionZ = Math.floorDiv(worldZ, REGION_SIZE);
+
+        long hash = regionX * 341873128712L + regionZ * 132897987541L
+                + worldSeed + biomeId * 6364136223846793005L;
+        hash ^= (hash >>> 33);
+        hash *= 0xff51afd7ed558ccdL;
+        hash ^= (hash >>> 33);
+
+        float roll = (float) ((hash & 0x7FFFFFFFL) % 10000) / 100.0f;
+        return roll < rarity;
     }
 
     /**
@@ -159,6 +191,7 @@ public class UndergroundBiomeResolver {
             int otgBiomeId,
             String biomeName,
             int minY, int maxY, int priority,
+            float rarity,
             float minTemp, float maxTemp,
             float minWet, float maxWet
     ) {}
