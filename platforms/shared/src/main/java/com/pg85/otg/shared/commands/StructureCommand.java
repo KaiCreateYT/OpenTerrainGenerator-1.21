@@ -10,7 +10,7 @@ import com.pg85.otg.customobject.structures.bo3.BO3CustomStructure;
 import com.pg85.otg.customobject.structures.bo4.BO4CustomStructure;
 import com.pg85.otg.interfaces.IStructuredCustomObject;
 import com.pg85.otg.util.ChunkCoordinate;
-import com.pg85.otg.util.OTGMaterialReader;
+import com.pg85.otg.interfaces.IMaterialReader;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.commands.Commands;
@@ -58,7 +58,7 @@ public class StructureCommand {
 
         Path otgRootFolder = OTG.getEngine().getOTGRootFolder();
         var customObjectManager = OTG.getEngine().getCustomObjectManager();
-        var materialReader = OTGMaterialReader.get();
+        IMaterialReader materialReader = OTG.getEngine().getPresetLoader().getMaterialReader();
         var resourcesManager = OTG.getEngine().getCustomObjectResourcesManager();
         var modLoadedChecker = OTG.getEngine().getModLoadedChecker();
 

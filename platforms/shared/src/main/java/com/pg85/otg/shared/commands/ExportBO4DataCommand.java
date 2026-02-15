@@ -39,6 +39,7 @@ public class ExportBO4DataCommand {
 
     private static final AtomicBoolean isRunning = new AtomicBoolean(false);
     private static volatile boolean isDone = false;
+    private static volatile String errorMessage = null;
     private static volatile int current = 0;
     private static volatile int total = 0;
     private static volatile String currentBoName = "";
@@ -85,6 +86,7 @@ public class ExportBO4DataCommand {
 
         if (isRunning.compareAndSet(false, true)) {
             isDone = false;
+            errorMessage = null;
             current = 0;
             total = 0;
             currentBoName = "";
@@ -112,6 +114,7 @@ public class ExportBO4DataCommand {
                     // A proper fix would require queuing chunk access back to the server thread.
                     exportOnBackground(bgPreset, bgStructureCache, bgAccessor, bgLevel, bgSeed);
                 } catch (Exception e) {
+                    errorMessage = e.getClass().getSimpleName() + ": " + e.getMessage();
                     OTGLog.log(LogLevel.ERROR, LogCategory.MAIN, "Error during BO4Data export: " + e.getMessage());
                     OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.MAIN, e);
                 } finally {
@@ -123,10 +126,16 @@ public class ExportBO4DataCommand {
         } else {
             if (isDone) {
                 isDone = false;
-                source.sendSuccess(
-                    () -> Component.literal("OTG exportbo4data is done."),
-                    false
-                );
+                String error = errorMessage;
+                errorMessage = null;
+                if (error != null) {
+                    source.sendFailure(Component.literal("OTG exportbo4data failed: " + error));
+                } else {
+                    source.sendSuccess(
+                        () -> Component.literal("OTG exportbo4data is done."),
+                        false
+                    );
+                }
             } else {
                 final int progressCurrent = current;
                 final int progressTotal = total;

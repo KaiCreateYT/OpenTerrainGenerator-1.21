@@ -23,6 +23,7 @@ import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.gen.LocalWorldGenRegion;
 import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.logging.LogLevel;
+import com.pg85.otg.util.materials.LocalMaterialData;
 import com.pg85.otg.util.nbt.LocalNBTHelper;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -34,8 +35,12 @@ import net.minecraft.server.level.ServerPlayer;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class ExportCommand {
 
@@ -45,8 +50,32 @@ public class ExportCommand {
         return SharedSuggestionProvider.suggest(names, builder);
     };
 
+    private static final SuggestionProvider<CommandSourceStack> TEMPLATE_SUGGESTIONS = (ctx, builder) -> {
+        String preset = StringArgumentType.getString(ctx, "preset");
+        Path otgRootPath = OTG.getEngine().getOTGRootFolder();
+        List<String> list;
+        if (preset.equalsIgnoreCase("global")) {
+            list = OTG.getEngine().getCustomObjectManager().getGlobalObjects()
+                .getGlobalTemplates(otgRootPath);
+        } else {
+            list = OTG.getEngine().getCustomObjectManager().getGlobalObjects()
+                .getTemplatesForPreset(preset, otgRootPath);
+        }
+        if (list == null) list = new ArrayList<>();
+        list = list.stream()
+            .map(name -> name.contains(" ") ? "\"" + name + "\"" : name)
+            .collect(Collectors.toList());
+        list.add("default");
+        return SharedSuggestionProvider.suggest(list, builder);
+    };
+
     private static final SuggestionProvider<CommandSourceStack> FLAG_SUGGESTIONS = (ctx, builder) ->
-        SharedSuggestionProvider.suggest(new String[]{"-a", "-o", "-b", "-bo4", "-a -o", "-a -b", "-o -b", "-a -o -b", "-a -bo4", "-o -bo4", "-b -bo4"}, builder);
+        SharedSuggestionProvider.suggest(new String[]{
+            "-a", "-o", "-b", "-t", "-bo4",
+            "-a -o", "-a -b", "-o -b", "-a -o -b",
+            "-a -bo4", "-o -bo4", "-b -bo4",
+            "-e stone,dirt,gravel"
+        }, builder);
 
     public static void register(LiteralArgumentBuilder<CommandSourceStack> otgCommand) {
         otgCommand.then(
@@ -57,18 +86,24 @@ public class ExportCommand {
                         .then(
                             Commands.argument("preset", StringArgumentType.string())
                                 .suggests(PRESET_SUGGESTIONS)
-                                .executes(ctx -> execute(ctx, ""))
+                                .executes(ctx -> execute(ctx, "", ""))
                                 .then(
-                                    Commands.argument("flags", StringArgumentType.greedyString())
-                                        .suggests(FLAG_SUGGESTIONS)
-                                        .executes(ctx -> execute(ctx, StringArgumentType.getString(ctx, "flags")))
+                                    Commands.argument("template", StringArgumentType.string())
+                                        .suggests(TEMPLATE_SUGGESTIONS)
+                                        .executes(ctx -> execute(ctx, StringArgumentType.getString(ctx, "template"), ""))
+                                        .then(
+                                            Commands.argument("flags", StringArgumentType.greedyString())
+                                                .suggests(FLAG_SUGGESTIONS)
+                                                .executes(ctx -> execute(ctx, StringArgumentType.getString(ctx, "template"),
+                                                    StringArgumentType.getString(ctx, "flags")))
+                                        )
                                 )
                         )
                 )
         );
     }
 
-    private static int execute(CommandContext<CommandSourceStack> ctx, String flagsStr) {
+    private static int execute(CommandContext<CommandSourceStack> ctx, String templateName, String flagsStr) {
         CommandSourceStack source = ctx.getSource();
 
         // Must be a player (we need WorldEdit selection)
@@ -80,11 +115,29 @@ public class ExportCommand {
         String objectName = StringArgumentType.getString(ctx, "name");
         String presetName = StringArgumentType.getString(ctx, "preset");
 
-        // Parse flags
-        boolean includeAir = flagsStr.contains("-a");
-        boolean overwrite = flagsStr.contains("-o");
-        boolean isStructure = flagsStr.contains("-b");
-        boolean isBo4 = flagsStr.contains("-bo4");
+        // Parse flags — split on whitespace, check each token individually
+        Set<String> flags = new HashSet<>();
+        String excludeBlocksStr = null;
+        if (flagsStr != null && !flagsStr.isEmpty()) {
+            String[] tokens = flagsStr.split("\\s+");
+            for (int i = 0; i < tokens.length; i++) {
+                String token = tokens[i];
+                if (token.startsWith("-")) {
+                    if (token.equalsIgnoreCase("-e") && i + 1 < tokens.length) {
+                        // Next token is the comma-separated exclude list
+                        excludeBlocksStr = tokens[++i];
+                    } else {
+                        flags.add(token.toLowerCase());
+                    }
+                }
+            }
+        }
+
+        boolean includeAir = flags.contains("-a");
+        boolean overwrite = flags.contains("-o");
+        boolean isStructure = flags.contains("-b");
+        boolean isBo4 = flags.contains("-bo4");
+        boolean includeTiles = flags.contains("-t");
         ObjectType type = isBo4 ? ObjectType.BO4 : ObjectType.BO3;
 
         // Determine if global
@@ -180,7 +233,7 @@ public class ExportCommand {
             (highCorner.z() - lowCorner.z()) / 2 + lowCorner.z()
         );
 
-        // Create a default template config
+        // Resolve template and services
         CustomObjectManager customObjectManager = OTG.getEngine().getCustomObjectManager();
         IMaterialReader materialReader = OTG.getEngine().getPresetLoader().getMaterialReader();
         CustomObjectResourcesManager resourcesManager = OTG.getEngine().getCustomObjectResourcesManager();
@@ -189,18 +242,49 @@ public class ExportCommand {
 
         StructuredCustomObject templateObject;
         try {
-            templateObject = createDefaultTemplate(type, objectName, objectPath, preset.getFolderName(),
-                otgRootFolder, customObjectManager, materialReader, resourcesManager, modLoadedChecker);
+            if (templateName != null && !templateName.isEmpty() && !templateName.equalsIgnoreCase("default")) {
+                // Load a named template file
+                templateObject = loadNamedTemplate(type, templateName, presetName, isGlobal,
+                    otgRootFolder, customObjectManager, materialReader, resourcesManager, modLoadedChecker);
+            } else {
+                // Create a default template with default settings
+                templateObject = createDefaultTemplate(type, objectName, objectPath, preset.getFolderName(),
+                    otgRootFolder, customObjectManager, materialReader, resourcesManager, modLoadedChecker);
+            }
         } catch (Exception e) {
-            source.sendFailure(Component.literal("Failed to create default template: " + e.getMessage()));
-            OTGLog.log(LogLevel.ERROR, LogCategory.MAIN, "Failed to create default template for export");
+            source.sendFailure(Component.literal("Failed to load template: " + e.getMessage()));
+            OTGLog.log(LogLevel.ERROR, LogCategory.MAIN, "Failed to load template for export");
             OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.MAIN, e);
             return 0;
         }
 
         if (templateObject == null || templateObject.getConfig() == null) {
-            source.sendFailure(Component.literal("Failed to initialize default template config."));
+            source.sendFailure(Component.literal("Failed to initialize template config"
+                + (templateName != null && !templateName.isEmpty() ? " '" + templateName + "'" : "")
+                + "."));
             return 0;
+        }
+
+        // Parse exclude blocks
+        List<LocalMaterialData> excludes = new ArrayList<>();
+        if (excludeBlocksStr != null && !excludeBlocksStr.isEmpty()) {
+            String[] blockNames = excludeBlocksStr.split(",");
+            for (String blockName : blockNames) {
+                String trimmed = blockName.trim();
+                if (trimmed.isEmpty()) continue;
+                try {
+                    LocalMaterialData material = materialReader.readMaterial(trimmed);
+                    if (material != null) {
+                        excludes.add(material);
+                    } else {
+                        source.sendFailure(Component.literal("Unknown block in excludes: '" + trimmed + "'"));
+                        return 0;
+                    }
+                } catch (InvalidConfigException e) {
+                    source.sendFailure(Component.literal("Invalid block in excludes: '" + trimmed + "' — " + e.getMessage()));
+                    return 0;
+                }
+            }
         }
 
         // Do the export
@@ -225,7 +309,8 @@ public class ExportCommand {
                 customObjectManager,
                 materialReader,
                 resourcesManager,
-                modLoadedChecker
+                modLoadedChecker,
+                excludes
             );
 
             if (exportedObject != null) {
@@ -243,9 +328,13 @@ public class ExportCommand {
 
                 String finalObjectName = objectName;
                 boolean finalIsStructure = isStructure;
+                String usedTemplateName = (templateName != null && !templateName.isEmpty() && !templateName.equalsIgnoreCase("default"))
+                    ? templateName : null;
                 source.sendSuccess(
                     () -> Component.literal("Exported " + type.getType() + " '" + finalObjectName + "'"
+                        + (usedTemplateName != null ? " (template: " + usedTemplateName + ")" : "")
                         + (finalIsStructure ? " (as structure with branches)" : "")
+                        + (!excludes.isEmpty() ? " (excluded " + excludes.size() + " block type(s))" : "")
                         + " [" + (xLen + 1) + "x" + (highCorner.y() - lowCorner.y() + 1) + "x" + (zLen + 1) + " blocks]"),
                     true
                 );
@@ -260,6 +349,37 @@ public class ExportCommand {
             OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.MAIN, e);
             return 0;
         }
+    }
+
+    /**
+     * Loads a named template (.BO3Template / .BO4Template) from preset or global templates.
+     * Mirrors the old Forge ExportCommand behavior.
+     */
+    private static StructuredCustomObject loadNamedTemplate(
+        ObjectType type, String templateName, String presetFolderName, boolean isGlobal,
+        Path otgRootFolder, CustomObjectManager customObjectManager, IMaterialReader materialReader,
+        CustomObjectResourcesManager resourcesManager, IModLoadedChecker modLoadedChecker
+    ) throws InvalidConfigException {
+        // Try to find the template file in the preset's objects folder, or globally
+        File templateFile = customObjectManager.getGlobalObjects().getTemplateFileForPreset(
+            presetFolderName, templateName, otgRootFolder);
+
+        // Load the template from the found file, or fall back to a dummy file with the template filename pattern
+        File fileToLoad = templateFile != null ? templateFile : new File(type.getFileNameForTemplate(templateName));
+
+        StructuredCustomObject template = (StructuredCustomObject) customObjectManager.getObjectLoaders()
+            .get(type.getType().toLowerCase())
+            .loadFromFile(templateName, fileToLoad);
+
+        if (template == null) {
+            return null;
+        }
+
+        if (!template.onEnable(presetFolderName, otgRootFolder, customObjectManager, materialReader, resourcesManager, modLoadedChecker)) {
+            return null;
+        }
+
+        return template;
     }
 
     /**
