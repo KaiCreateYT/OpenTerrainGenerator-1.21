@@ -11,6 +11,7 @@ public class OTGCommandRegistrar {
         worldAccessor = accessor;
         var otgCommand = Commands.literal("otg");
         FlushCacheCommand.register(otgCommand);
+        SpawnCommand.register(otgCommand);
         dispatcher.register(otgCommand);
     }
 
