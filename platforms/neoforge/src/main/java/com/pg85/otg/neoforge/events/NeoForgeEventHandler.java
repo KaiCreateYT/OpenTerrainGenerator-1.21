@@ -1,7 +1,9 @@
 package com.pg85.otg.neoforge.events;
 
+import com.pg85.otg.neoforge.commands.NeoForgeCommandWorldAccessor;
 import com.pg85.otg.neoforge.dimensions.NeoForgeDimensionCommands;
 import com.pg85.otg.neoforge.dimensions.NeoForgeDimensionManager;
+import com.pg85.otg.shared.commands.OTGCommandRegistrar;
 import com.pg85.otg.neoforge.gen.OTGNeoForgeChunkGenerator;
 import com.pg85.otg.neoforge.portals.OTGAttachments;
 import com.pg85.otg.neoforge.portals.OTGPlayerData;
@@ -27,7 +29,8 @@ public class NeoForgeEventHandler {
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         NeoForgeDimensionCommands.register(event.getDispatcher());
-        OTGLog.info("Registered OTG dimension commands");
+        OTGCommandRegistrar.register(event.getDispatcher(), new NeoForgeCommandWorldAccessor());
+        OTGLog.info("Registered OTG commands");
     }
 
     @SubscribeEvent

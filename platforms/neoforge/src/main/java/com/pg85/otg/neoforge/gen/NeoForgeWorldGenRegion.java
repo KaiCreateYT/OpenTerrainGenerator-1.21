@@ -62,7 +62,7 @@ public class NeoForgeWorldGenRegion extends LocalWorldGenRegion {
     private final int EMPTY;
 
 
-    protected NeoForgeWorldGenRegion(
+    public NeoForgeWorldGenRegion(
         String presetFolderName,
         IPluginConfig pluginConfig,
         PresetConfig presetConfig,
