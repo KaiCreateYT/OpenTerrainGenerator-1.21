@@ -8,7 +8,6 @@ import com.pg85.otg.config.biome.BiomeTemplate;
 import com.pg85.otg.config.preset.PresetConfig;
 import com.pg85.otg.config.settings.biome.BiomeSettings;
 import com.pg85.otg.constants.Constants;
-import com.pg85.otg.util.Color;
 import com.pg85.otg.util.biome.OTGBiomeID;
 import lombok.Getter;
 
@@ -43,8 +42,6 @@ public class Preset {
     private String author;
     @Getter
     private String description;
-    @Getter
-    private HashMap<OTGBiomeID, Color> biomeColorMap = new HashMap<>();
 
     public Preset(Path presetFolder, PresetConfig presetConfig, List<BiomeConfig> biomeConfigList, List<BiomeTemplate> biomeTemplateList) {
         this.presetFolder = presetFolder;
@@ -61,7 +58,6 @@ public class Preset {
             OTGBiomeID biomeID = bc.getOTGBiomeID();
             biomeIDS.add(biomeID);
             biomeConfigs.put(biomeID, bc);
-            biomeColorMap.put(biomeID, bc.getGenerationSettings().getBiomeMapColor());
         });
 
         this.biomeTemplateList.forEach(bt -> {
@@ -84,10 +80,6 @@ public class Preset {
         return this.biomeConfigs.get(biomeID);
     }
 
-    public BiomeTemplate getBiomeTemplate(String templateName) {
-        return biomeTemplates.get(templateName);
-    }
-
     public OTGBiomeID getBiomeID(String biomeName) {
         for (OTGBiomeID biomeID : this.biomeIDS) {
             if (biomeID.biomeName().equals(biomeName)) {
@@ -97,23 +89,6 @@ public class Preset {
         return null;
     }
 
-    public OTGBiomeID getBiomeID(int biomeId) {
-        for (OTGBiomeID biomeID : this.biomeIDS) {
-            if (biomeID.id() == biomeId) {
-                return biomeID;
-            }
-        }
-        return null;
-    }
-
-    public OTGBiomeID getBiomeIDByRegistryName(String registryName) {
-        for (OTGBiomeID biomeID : this.biomeIDS) {
-            if (biomeID.registryName().toResourceLocationString().equals(registryName)) {
-                return biomeID;
-            }
-        }
-        return null;
-    }
 
     public ArrayList<BiomeConfig> getBiomeConfigList() {
         return new ArrayList<>(this.biomeConfigList);
