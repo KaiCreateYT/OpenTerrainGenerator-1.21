@@ -3,7 +3,8 @@ package com.pg85.otg.fabric;
 import com.pg85.otg.OTG;
 import com.pg85.otg.OTGEngine;
 import com.pg85.otg.constants.Constants;
-import com.pg85.otg.fabric.biome.LegacyFabricBiomeLoader;
+import com.pg85.otg.fabric.biome.FabricBiomePlatformAdapter;
+import com.pg85.otg.shared.biome.SharedPresetBiomeLoader;
 import com.pg85.otg.shared.materials.SharedMaterials;
 import com.pg85.otg.fabric.util.FabricModLoadedChecker;
 import com.pg85.otg.util.OTGLog;
@@ -21,7 +22,7 @@ public class FabricEngine extends OTGEngine {
                 OTGLog.getLogger(),
                 FabricLoader.getInstance().getConfigDir().resolve(Constants.MOD_ID),
                 new FabricModLoadedChecker(),
-                new LegacyFabricBiomeLoader(FabricLoader.getInstance().getConfigDir().resolve(Constants.MOD_ID))
+                new SharedPresetBiomeLoader(FabricLoader.getInstance().getConfigDir().resolve(Constants.MOD_ID), new FabricBiomePlatformAdapter())
         );
     }
 

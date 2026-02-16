@@ -36,52 +36,39 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 
-
-public abstract class SharedLegacyBiomeLoader extends LocalPresetLoader {
-    // Static fields to store the references
+/**
+ * Shared biome loader that uses composition (BiomePlatformAdapter) instead of
+ * abstract methods. Both Fabric and NeoForge use this class directly, passing
+ * their platform-specific adapter at construction time.
+ */
+public class SharedPresetBiomeLoader extends LocalPresetLoader {
+    // Static fields for bootstrap context holders (set by BiomeDataMixin, overridden by OTGRegistryHelper)
     public static HolderGetter<PlacedFeature> PLACED_FEATURE_HOLDER;
     public static HolderGetter<ConfiguredWorldCarver<?>> CONFIGURED_CARVER_HOLDER;
     public static boolean BIOME_DATA_INITIALIZED = false;
+
     private static final Map<ResourceKey<Biome>, BiomeStructureTagConfig> structureTagConfigs = new LinkedHashMap<>();
 
     public static Map<ResourceKey<Biome>, BiomeStructureTagConfig> getStructureTagConfigs() {
         return structureTagConfigs;
     }
 
+    private final BiomePlatformAdapter platformAdapter;
     private Map<String, List<ResourceKey<Biome>>> biomesByPresetFolderName = new LinkedHashMap<>();
-    private Map<String, IBiome[]> globalIdMapping = new java.util.concurrent.ConcurrentHashMap<>();
-    private Map<String, BiomeLayerData> presetGenerationData = new java.util.concurrent.ConcurrentHashMap<>();
 
-    protected SharedLegacyBiomeLoader(Path otgRootFolder) {
+    public SharedPresetBiomeLoader(Path otgRootFolder, BiomePlatformAdapter platformAdapter) {
         super(otgRootFolder);
+        this.platformAdapter = platformAdapter;
     }
-
-    // --- Abstract methods: platform-specific ---
-
-    protected abstract IBiome createPlatformBiome(BiomeSettings settings, Biome biome, Holder.Reference<Biome> ref);
-
-    protected abstract boolean biomeHasTag(Registry<Biome> registry, ResourceKey<Biome> key, String tag);
-
-    // --- Shared implementation ---
 
     public List<ResourceKey<Biome>> getBiomeResourceKeys(String presetFolderName) {
         return this.biomesByPresetFolderName.get(presetFolderName);
     }
 
-    @Override
-    public IBiome[] getGlobalIdMapping(String presetFolderName) {
-        return globalIdMapping.get(presetFolderName);
-    }
-
-    @Override
-    public Map<String, BiomeLayerData> getPresetGenerationData() {
-        // Return directly - ConcurrentHashMap is thread-safe
-        return this.presetGenerationData;
-    }
-
-    // Note: BiomeGen and ChunkGen cache some settings during a session, so they'll only update on world exit/rejoin.
     public void reloadPresetFromDisk(String presetFolderName, WritableRegistry<Biome> biomeRegistry) {
-        clearCaches();
+        clearBiomeData();
+        this.biomesByPresetFolderName = new LinkedHashMap<>();
+        structureTagConfigs.clear();
 
         if (this.presetsDir.exists() && this.presetsDir.isDirectory()) {
             for (File presetDir : Objects.requireNonNull(this.presetsDir.listFiles())) {
@@ -100,18 +87,9 @@ public abstract class SharedLegacyBiomeLoader extends LocalPresetLoader {
         registerBiomes(biomeRegistry);
     }
 
-    protected void clearCaches() {
-        this.globalIdMapping = new java.util.concurrent.ConcurrentHashMap<>();
-        this.presetGenerationData = new java.util.concurrent.ConcurrentHashMap<>();
-        this.biomesByPresetFolderName = new LinkedHashMap<>();
-        structureTagConfigs.clear();
-    }
-
     public void reRegisterBiomes(String presetFolderName, WritableRegistry<Biome> biomeRegistry) {
-        this.globalIdMapping.remove(presetFolderName);
-        this.presetGenerationData.remove(presetFolderName);
+        removeBiomeData(presetFolderName);
         this.biomesByPresetFolderName.remove(presetFolderName);
-
         registerBiomes(biomeRegistry);
     }
 
@@ -127,7 +105,6 @@ public abstract class SharedLegacyBiomeLoader extends LocalPresetLoader {
 
     private void registerBiomesForPreset(Preset preset, WritableRegistry<Biome> biomeRegistry) {
         if (!BIOME_DATA_INITIALIZED) {
-            // Should always be initialized, but better safe than sorry. Would rather have a sensical error message than nonsensical
             throw new IllegalStateException("BiomeDataMixin not initialized");
         }
         HolderGetter<PlacedFeature> featureHolder = PLACED_FEATURE_HOLDER;
@@ -142,9 +119,6 @@ public abstract class SharedLegacyBiomeLoader extends LocalPresetLoader {
         List<BiomeTemplate> biomeTemplates = preset.getBiomeTemplateList();
 
         Map<String, BiomeSettings> biomeConfigsByName = new HashMap<>();
-
-        // Create registry keys for each biomeconfig, create template
-        // biome configs for any non-otg biomes targeted via TemplateForBiome.
         Map<IBiomeResourceLocation, BiomeSettings> biomeConfigsByResourceLocation = new LinkedHashMap<>();
         List<String> blackListedBiomes = presetConfig.getGenerationSettings().getBlackListedBiomes();
 
@@ -152,7 +126,6 @@ public abstract class SharedLegacyBiomeLoader extends LocalPresetLoader {
 
         for (BiomeConfig biomeConfig : biomeConfigs) {
             if (!biomeConfig.getIdentitySettings().isTemplateForBiome()) {
-                // Normal OTG biome, not a template biome.
                 IBiomeResourceLocation otgLocation = new OTGBiomeResourceLocation(preset.getPresetFolder(), preset.getPresetRegistryName(), biomeConfig.getIdentitySettings().getBiomeName());
                 biomeConfig.setRegistryKey(otgLocation);
                 biomeConfigsByResourceLocation.put(otgLocation, biomeConfig);
@@ -162,20 +135,17 @@ public abstract class SharedLegacyBiomeLoader extends LocalPresetLoader {
 
         MobInheritanceHandler.handleMobInheritance(biomeRegistry, biomeConfigs);
 
-        // Resolve the biome plan: ID assignment, ocean temps, isle/border, colors, groups
         BiomePlan plan = BiomePlanResolver.resolve(presetConfig, biomeConfigsByResourceLocation, biomeConfigsByName);
 
-        // MC-dependent: register biomes with MC registry
         BiomeFactory biomeFactory = new BiomeFactory(featureHolder, carverHolder);
         BiomeRegistrar.RegistrationResult result = BiomeRegistrar.register(
                 plan, biomeConfigsByResourceLocation, biomeFactory,
-                presetConfig, biomeRegistry, this::createPlatformBiome);
+                presetConfig, biomeRegistry, platformAdapter::createPlatformBiome);
 
         presetBiomes.addAll(result.presetBiomes());
         structureTagConfigs.putAll(result.structureTagConfigs());
-        this.globalIdMapping.put(preset.getFolderName(), result.globalIdMapping());
+        putGlobalIdMapping(preset.getFolderName(), result.globalIdMapping());
 
-        // Set the base data — all plan data used directly
         BiomeLayerData data = new BiomeLayerData(
                 preset.getPresetFolder(), presetConfig, plan.oceanBiomeConfig(), plan.oceanTemperatures(),
                 plan.groupRegistry(), plan.biomeDepths(), plan.groupDepths(),
@@ -183,8 +153,7 @@ public abstract class SharedLegacyBiomeLoader extends LocalPresetLoader {
                 plan.biomeColorMap(), result.globalIdMapping()
         );
 
-        // Set data for this preset
-        this.presetGenerationData.put(preset.getFolderName(), data);
+        putPresetGenerationData(preset.getFolderName(), data);
     }
 
     private void processTemplateBiomes(
@@ -205,7 +174,6 @@ public abstract class SharedLegacyBiomeLoader extends LocalPresetLoader {
                 OTG.getEngine().getLogger().log(LogLevel.INFO, LogCategory.BIOME_REGISTRY, "Processing template biome: " + templateBiome.toString());
             }
 
-            // Find the OTG biome template that defines this template biome
             BiomeTemplate biomeTemplate = biomeTemplates.stream()
                 .filter(bt -> bt.getIdentitySettings().getBiomeName().equalsIgnoreCase(templateBiome.getName()))
                 .findFirst()
@@ -217,7 +185,6 @@ public abstract class SharedLegacyBiomeLoader extends LocalPresetLoader {
                 continue;
             }
 
-            // Parse tag criteria
             List<String> includeTags = new ArrayList<>();
             List<String> excludeTags = new ArrayList<>();
             List<String> includeMods = new ArrayList<>();
@@ -259,20 +226,16 @@ public abstract class SharedLegacyBiomeLoader extends LocalPresetLoader {
                 } else if (tag.startsWith(Constants.MOD_LABEL)) {
                     includeMods.add(tag.replace(Constants.MOD_LABEL, ""));
                 } else if (tag.contains(":")) {
-                    // Direct biome reference like minecraft:plains
                     processDirectBiomeReference(tag, presetFolderName, biomeTemplate, biomeConfigsByResourceLocation, biomeConfigsByName, biomeRegistry);
                 }
             }
 
-            // If we have tag criteria, iterate all biomes and find matches
             if (!includeTags.isEmpty()) {
                 for (ResourceKey<Biome> biomeKey : biomeRegistry.registryKeySet()) {
-                    // Check blacklist
                     if (blackListedBiomes.contains(biomeKey.location().toString())) {
                         continue;
                     }
 
-                    // Check mod namespace filter
                     String namespace = biomeKey.location().getNamespace();
                     if (!includeMods.isEmpty() && !includeMods.contains(namespace)) {
                         continue;
@@ -281,10 +244,9 @@ public abstract class SharedLegacyBiomeLoader extends LocalPresetLoader {
                         continue;
                     }
 
-                    // Check include tags (all must match)
                     boolean matchesAllInclude = true;
                     for (String includeTag : includeTags) {
-                        if (!biomeHasTag(biomeRegistry, biomeKey, includeTag)) {
+                        if (!platformAdapter.biomeHasTag(biomeRegistry, biomeKey, includeTag)) {
                             matchesAllInclude = false;
                             break;
                         }
@@ -293,10 +255,9 @@ public abstract class SharedLegacyBiomeLoader extends LocalPresetLoader {
                         continue;
                     }
 
-                    // Check exclude tags (none must match)
                     boolean matchesAnyExclude = false;
                     for (String excludeTag : excludeTags) {
-                        if (biomeHasTag(biomeRegistry, biomeKey, excludeTag)) {
+                        if (platformAdapter.biomeHasTag(biomeRegistry, biomeKey, excludeTag)) {
                             matchesAnyExclude = true;
                             break;
                         }
@@ -305,13 +266,11 @@ public abstract class SharedLegacyBiomeLoader extends LocalPresetLoader {
                         continue;
                     }
 
-                    // Check temperature filter
                     Biome biome = biomeRegistry.get(biomeKey);
                     if (biome != null && !templateBiome.temperatureAllowed(biome.getBaseTemperature())) {
                         continue;
                     }
 
-                    // Biome matches! Add to maps using MCBiomeResourceLocation for template biomes
                     IBiomeResourceLocation location = new MCBiomeResourceLocation(
                         biomeKey.location().getNamespace(),
                         biomeKey.location().getPath(),

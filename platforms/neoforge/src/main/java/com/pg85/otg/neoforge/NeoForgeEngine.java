@@ -3,7 +3,8 @@ package com.pg85.otg.neoforge;
 import com.pg85.otg.OTG;
 import com.pg85.otg.OTGEngine;
 import com.pg85.otg.constants.Constants;
-import com.pg85.otg.neoforge.biome.LegacyNeoForgeBiomeLoader;
+import com.pg85.otg.neoforge.biome.NeoForgeBiomePlatformAdapter;
+import com.pg85.otg.shared.biome.SharedPresetBiomeLoader;
 import com.pg85.otg.shared.materials.SharedMaterials;
 import com.pg85.otg.neoforge.util.NeoForgeModLoadedChecker;
 import com.pg85.otg.util.OTGLog;
@@ -22,7 +23,7 @@ public class NeoForgeEngine extends OTGEngine {
                 OTGLog.getLogger(),
                 FMLPaths.CONFIGDIR.get().resolve(Constants.MOD_ID),
                 new NeoForgeModLoadedChecker(),
-                new LegacyNeoForgeBiomeLoader(FMLPaths.CONFIGDIR.get().resolve(Constants.MOD_ID))
+                new SharedPresetBiomeLoader(FMLPaths.CONFIGDIR.get().resolve(Constants.MOD_ID), new NeoForgeBiomePlatformAdapter())
         );
     }
 

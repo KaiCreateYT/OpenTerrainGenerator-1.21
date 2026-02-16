@@ -22,15 +22,19 @@ import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.logging.LogLevel;
 
 /**
- * A base class for a platform-specific preset loader, which loads
- * all presets from disk when the OTG Engine is started at app start,
- * and registers all biomes with their worldconfig/biomeconfig settings.
+ * Base class for preset loading. Loads presets from disk and provides
+ * global ID mapping and generation data. Subclassed by SharedPresetBiomeLoader
+ * in the shared platform module for MC-dependent biome registration.
+ *
+ * Not abstract — can be used directly for testing or headless operation.
  */
-public abstract class LocalPresetLoader {
+public class LocalPresetLoader {
     private static final int MAX_INHERITANCE_DEPTH = 15;
     protected final File presetsDir;
     protected final HashMap<String, Preset> presets = new HashMap<>();
     protected final HashMap<String, String> aliasMap = new HashMap<>();
+    private Map<String, IBiome[]> globalIdMapping = new java.util.concurrent.ConcurrentHashMap<>();
+    private Map<String, BiomeLayerData> presetGenerationData = new java.util.concurrent.ConcurrentHashMap<>();
 
     public LocalPresetLoader(Path otgRootFolder) {
         this.presetsDir = getPresetsDir(otgRootFolder).toFile();
@@ -144,8 +148,30 @@ public abstract class LocalPresetLoader {
         return presets;
     }
 
-    public abstract IBiome[] getGlobalIdMapping(String presetFolderName);
+    public IBiome[] getGlobalIdMapping(String presetFolderName) {
+        return globalIdMapping.get(presetFolderName);
+    }
 
-    public abstract Map<String, BiomeLayerData> getPresetGenerationData();
+    public Map<String, BiomeLayerData> getPresetGenerationData() {
+        return this.presetGenerationData;
+    }
+
+    protected void putGlobalIdMapping(String presetFolderName, IBiome[] mapping) {
+        this.globalIdMapping.put(presetFolderName, mapping);
+    }
+
+    protected void putPresetGenerationData(String presetFolderName, BiomeLayerData data) {
+        this.presetGenerationData.put(presetFolderName, data);
+    }
+
+    protected void clearBiomeData() {
+        this.globalIdMapping = new java.util.concurrent.ConcurrentHashMap<>();
+        this.presetGenerationData = new java.util.concurrent.ConcurrentHashMap<>();
+    }
+
+    protected void removeBiomeData(String presetFolderName) {
+        this.globalIdMapping.remove(presetFolderName);
+        this.presetGenerationData.remove(presetFolderName);
+    }
 
 }

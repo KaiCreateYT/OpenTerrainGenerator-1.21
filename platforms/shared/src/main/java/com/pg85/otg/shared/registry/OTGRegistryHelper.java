@@ -6,7 +6,7 @@ import com.pg85.otg.constants.Constants;
 import com.pg85.otg.platform.noise.OTGNoiseParamRegistry;
 import com.pg85.otg.platform.noise.OTGNoiseRouterBuilder;
 import com.pg85.otg.presets.Preset;
-import com.pg85.otg.shared.biome.SharedLegacyBiomeLoader;
+import com.pg85.otg.shared.biome.SharedPresetBiomeLoader;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.materials.LocalMaterialData;
 import com.pg85.otg.util.minecraft.OTGDimensionType;
@@ -175,15 +175,15 @@ public final class OTGRegistryHelper {
         WritableRegistry<net.minecraft.world.level.levelgen.placement.PlacedFeature> pfRegistry =
                 getRegistry(loaders, Registries.PLACED_FEATURE);
         if (pfRegistry != null) {
-            SharedLegacyBiomeLoader.PLACED_FEATURE_HOLDER = pfRegistry.asLookup();
+            SharedPresetBiomeLoader.PLACED_FEATURE_HOLDER = pfRegistry.asLookup();
         }
         WritableRegistry<net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver<?>> carverRegistry =
                 getRegistry(loaders, Registries.CONFIGURED_CARVER);
         if (carverRegistry != null) {
-            SharedLegacyBiomeLoader.CONFIGURED_CARVER_HOLDER = carverRegistry.asLookup();
+            SharedPresetBiomeLoader.CONFIGURED_CARVER_HOLDER = carverRegistry.asLookup();
         }
 
-        SharedLegacyBiomeLoader loader = (SharedLegacyBiomeLoader) OTG.getEngine().getPresetLoader();
+        SharedPresetBiomeLoader loader = (SharedPresetBiomeLoader) OTG.getEngine().getPresetLoader();
         WritableRegistry<Biome> biomeWritableRegistry = getRegistry(loaders, Registries.BIOME);
         if (biomeWritableRegistry == null) {
             OTGLog.getLogger().error("Could not find biome registry");

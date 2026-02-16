@@ -2,7 +2,7 @@ package com.pg85.otg.neoforge.mixin;
 
 import com.pg85.otg.config.settings.biome.BiomeStructureTagConfig;
 import com.pg85.otg.constants.Constants;
-import com.pg85.otg.neoforge.biome.LegacyNeoForgeBiomeLoader;
+import com.pg85.otg.shared.biome.SharedPresetBiomeLoader;
 import com.pg85.otg.neoforge.mixin.util.RegistryUtil;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.biome.StructureTagMapper;
@@ -76,7 +76,7 @@ public class WorldPresetTagsMixin {
 
     private void addBiomesToStructureTags(RegistryAccess registryAccess) {
         Map<ResourceKey<Biome>, BiomeStructureTagConfig> structureConfigs =
-                LegacyNeoForgeBiomeLoader.getStructureTagConfigs();
+                SharedPresetBiomeLoader.getStructureTagConfigs();
 
         if (structureConfigs.isEmpty()) return;
 
