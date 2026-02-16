@@ -13,6 +13,7 @@ import com.pg85.otg.constants.Constants;
 import com.pg85.otg.util.biome.*;
 import com.pg85.otg.util.materials.LocalMaterialData;
 import com.pg85.otg.util.materials.MaterialSet;
+import com.pg85.otg.util.OTGLog;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -60,7 +61,7 @@ public class SettingsSchemaGenerator {
             for (Map.Entry<String, Setting<?>> entry : settings.entrySet()) {
                 Setting<?> setting = entry.getValue();
                 if (setting == null) {
-                    System.out.println("Setting is null: " + entry.getKey());
+                    OTGLog.warn("Setting is null: %s", entry.getKey());
                     continue;
                 }
                 jsonSchema.append("        \"").append(setting.getName()).append("\": {\n");
@@ -226,7 +227,7 @@ public class SettingsSchemaGenerator {
         File file = new File("biome-schema.json");
         try (FileWriter fileWriter = new FileWriter(file)) {
             fileWriter.write(jsonSchema);
-            System.out.println("JSON Schema written to file schema.json");
+            System.out.println("JSON Schema written to file biome-schema.json");
         }
 
         settings = new HashMap<>();
@@ -250,7 +251,7 @@ public class SettingsSchemaGenerator {
         file = new File("preset-schema.json");
         try (FileWriter fileWriter = new FileWriter(file)) {
             fileWriter.write(jsonSchema);
-            System.out.println("JSON Schema written to file schema.json");
+            System.out.println("JSON Schema written to file preset-schema.json");
         }
     }
 }

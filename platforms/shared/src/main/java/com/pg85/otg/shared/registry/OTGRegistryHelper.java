@@ -159,16 +159,6 @@ public final class OTGRegistryHelper {
         OTGLog.getLogger().info("Registered world preset: " + key.location());
     }
 
-    // --- Debug ---
-
-    public static void printAllRegistriesForDebug(List<RegistryDataLoader.Loader<?>> loaders) {
-        System.out.println("--*--");
-        for (RegistryDataLoader.Loader<?> entry : loaders) {
-            OTGLog.info("Registry: %s", entry.registry().key());
-        }
-        System.out.println("--*--");
-    }
-
     // --- Biome registration ---
 
     public static void registerBiomes(List<RegistryDataLoader.Loader<?>> loaders) {
@@ -414,8 +404,6 @@ public final class OTGRegistryHelper {
         }
 
         OTGLog.getLogger().info("Registering the following OTG presets: %s", OTG.getEngine().getPresetLoader().getAllPresets());
-
-        //printAllRegistriesForDebug(loaders);
 
         registerBiomes(loaders);
 
