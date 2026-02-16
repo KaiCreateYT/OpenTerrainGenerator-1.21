@@ -66,6 +66,7 @@ public class ImageSettings extends ConfigSection {
 
         imageSettingsBuilder.imageOrientation(reader.getSetting(IMAGE_ORIENTATION));
         imageSettingsBuilder.imageFile(reader.getSetting(IMAGE_FILE));
+        // Previously also checked BiomeRegistryNames.Contain() — removed (frozen at 1.16.5).
         imageSettingsBuilder.imageFillBiome(biomes.contains(imageFillBiome) ? imageFillBiome : IMAGE_FILL_BIOME.getDefaultValue());
         imageSettingsBuilder.imageMode(reader.getSetting(IMAGE_MODE));
         imageSettingsBuilder.imageXOffset(reader.getSetting(IMAGE_X_OFFSET));

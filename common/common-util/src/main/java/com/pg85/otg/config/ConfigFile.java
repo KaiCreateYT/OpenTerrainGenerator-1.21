@@ -64,7 +64,9 @@ public interface ConfigFile
 				continue;
 			}
 
-			// Biome name not in custom biomes list — skip it
+			// Previously also checked BiomeRegistryNames.Contain(key) — a 430-line switch
+			// of vanilla biome names frozen at 1.16.5. Removed because it was incomplete
+			// (missing 1.17+ biomes) and biomes without .bc files have no OTG ID anyway.
 		}
 		return output;
 	}

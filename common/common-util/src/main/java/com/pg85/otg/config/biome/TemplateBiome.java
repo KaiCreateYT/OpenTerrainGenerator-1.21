@@ -80,6 +80,8 @@ public final class TemplateBiome extends ConfigFunction<PresetSettings>
 			String biomeName = it.next();
 			if(biomeName != null && biomeName.trim().length() > 0)
 			{
+				// Previously also checked BiomeRegistryNames.Contain() — removed,
+				// was a 430-line switch frozen at 1.16.5 (missing 1.17+ biomes).
 				if (
 					customBiomeNames.contains(biomeName) ||
 					biomeName.contains(":") || // Non-otg biome registry name
