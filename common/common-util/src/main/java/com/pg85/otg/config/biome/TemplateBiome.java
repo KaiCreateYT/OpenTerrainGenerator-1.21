@@ -8,7 +8,7 @@ import com.pg85.otg.config.settings.preset.PresetSettings;
 import com.pg85.otg.util.helpers.StringHelper;
 import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.logging.LogLevel;
-import com.pg85.otg.util.minecraft.BiomeRegistryNames;
+
 
 import java.text.MessageFormat;
 import java.util.*;
@@ -81,7 +81,6 @@ public final class TemplateBiome extends ConfigFunction<PresetSettings>
 			if(biomeName != null && biomeName.trim().length() > 0)
 			{
 				if (
-					BiomeRegistryNames.Contain(biomeName) || 
 					customBiomeNames.contains(biomeName) ||
 					biomeName.contains(":") || // Non-otg biome registry name
 					biomeName.toLowerCase().startsWith(Constants.MOD_LABEL) ||

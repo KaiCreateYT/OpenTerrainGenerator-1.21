@@ -8,7 +8,7 @@ import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.helpers.StringHelper;
 import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.logging.LogLevel;
-import com.pg85.otg.util.minecraft.BiomeRegistryNames;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -148,7 +148,6 @@ public final class BiomeGroupFunction extends ConfigFunction<PresetSettings>
 			if(biomeName != null && !biomeName.trim().isEmpty())
 			{
 				if (
-					BiomeRegistryNames.Contain(biomeName) || 
 					customBiomeNames.contains(biomeName) ||
 					biomeName.contains(":") || // Non-otg biome registry name
 					biomeName.toLowerCase().startsWith(Constants.MOD_LABEL) ||

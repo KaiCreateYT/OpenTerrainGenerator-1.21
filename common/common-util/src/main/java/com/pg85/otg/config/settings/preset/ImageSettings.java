@@ -6,7 +6,7 @@ import com.pg85.otg.config.settingtype.Settings;
 import com.pg85.otg.config.settings.ConfigSection;
 import com.pg85.otg.constants.settings.ImageMode;
 import com.pg85.otg.constants.settings.ImageOrientation;
-import com.pg85.otg.util.minecraft.BiomeRegistryNames;
+
 import lombok.Builder;
 import lombok.Getter;
 
@@ -66,7 +66,7 @@ public class ImageSettings extends ConfigSection {
 
         imageSettingsBuilder.imageOrientation(reader.getSetting(IMAGE_ORIENTATION));
         imageSettingsBuilder.imageFile(reader.getSetting(IMAGE_FILE));
-        imageSettingsBuilder.imageFillBiome((BiomeRegistryNames.Contain(imageFillBiome) || biomes.contains(imageFillBiome)) ? imageFillBiome : IMAGE_FILL_BIOME.getDefaultValue());
+        imageSettingsBuilder.imageFillBiome(biomes.contains(imageFillBiome) ? imageFillBiome : IMAGE_FILL_BIOME.getDefaultValue());
         imageSettingsBuilder.imageMode(reader.getSetting(IMAGE_MODE));
         imageSettingsBuilder.imageXOffset(reader.getSetting(IMAGE_X_OFFSET));
         imageSettingsBuilder.imageZOffset(reader.getSetting(IMAGE_Z_OFFSET));

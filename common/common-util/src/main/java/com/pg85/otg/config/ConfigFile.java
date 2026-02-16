@@ -2,7 +2,6 @@ package com.pg85.otg.config;
 
 import com.pg85.otg.config.io.SettingsMap;
 import com.pg85.otg.config.io.SimpleSettingsMap;
-import com.pg85.otg.util.minecraft.BiomeRegistryNames;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -65,10 +64,7 @@ public interface ConfigFile
 				continue;
 			}
 
-			if (BiomeRegistryNames.Contain(key))
-			{
-				output.add(key);
-			}
+			// Biome name not in custom biomes list — skip it
 		}
 		return output;
 	}
