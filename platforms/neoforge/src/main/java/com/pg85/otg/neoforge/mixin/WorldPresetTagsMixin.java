@@ -62,7 +62,16 @@ public class WorldPresetTagsMixin {
 
         presets.bindTags(collected);
 
-        addBiomesToStructureTags(registryAccess);
+        // PERF BUG: addBiomesToStructureTags() calls biomeRegistry.bindTags() which
+        // invalidates HolderSet.Named instances cached in BiomeGenerationSettings.
+        // This forces MC to rebuild feature ordering per-chunk instead of reusing cache.
+        // DefaultPreset is hit hard because it has 64 Registry() placed features +
+        // 15 TemplateBiomes with full vanilla feature lists — expensive feature sort.
+        // Biome Bundle is unaffected because it has 0 Registry() entries → nothing to sort.
+        // TODO: fix by either (a) not using bindTags() — inject via Holder manipulation,
+        // or (b) re-bake the feature ordering cache after bindTags().
+        // See: docs/plans/2026-02-16-bindtags-perf-bug.md
+        // addBiomesToStructureTags(registryAccess);
     }
 
     private void addBiomesToStructureTags(RegistryAccess registryAccess) {
