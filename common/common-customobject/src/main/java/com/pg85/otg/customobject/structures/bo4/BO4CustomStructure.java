@@ -623,12 +623,12 @@ public class BO4CustomStructure extends CustomStructure
 
 							if(branchDataItem3.wasDeleted)
 							{
-								throw new RuntimeException(); // TODO: Remove after testing
+								OTGLog.error(LogCategory.STRUCTURE_PLOTTING, "BO4 branch unexpectedly deleted during override resolution (parent branch)");
 							}
 
 							if(childBranch.wasDeleted)
 							{
-								throw new RuntimeException(); // TODO: Remove after testing
+								OTGLog.error(LogCategory.STRUCTURE_PLOTTING, "BO4 branch unexpectedly deleted during override resolution (child branch)");
 							}
 						}
 					}
@@ -662,7 +662,8 @@ public class BO4CustomStructure extends CustomStructure
 			{
 				if(branchToAdd.branch == null)
 				{
-					throw new RuntimeException(); // TODO: Remove after testing
+					OTGLog.error(LogCategory.STRUCTURE_PLOTTING, "BO4 branch data has null branch, skipping");
+					continue;
 				}
 				addToChunk(branchToAdd.branch, branchToAdd.chunkCoordinate, this.objectsToSpawn);
 			}
@@ -1076,7 +1077,7 @@ public class BO4CustomStructure extends CustomStructure
 								branchDataItem.doneSpawning = false;
 								if(branchDataItem.wasDeleted)
 								{
-									throw new RuntimeException(); // TODO: Remove after testing
+									OTGLog.error(LogCategory.STRUCTURE_PLOTTING, "BO4 branch unexpectedly deleted during retry cycle");
 								}
 							}
 
