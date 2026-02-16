@@ -4,7 +4,6 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.*;
 
-import net.minecraft.core.RegistrationInfo;
 import com.pg85.otg.OTG;
 import com.pg85.otg.biome.BiomePlan;
 import com.pg85.otg.biome.BiomePlanResolver;
@@ -166,85 +165,22 @@ public abstract class SharedLegacyBiomeLoader extends LocalPresetLoader {
         // Resolve the biome plan: ID assignment, ocean temps, isle/border, colors, groups
         BiomePlan plan = BiomePlanResolver.resolve(presetConfig, biomeConfigsByResourceLocation, biomeConfigsByName);
 
-        // MC-dependent loop: template handling, biome creation, registry registration, platform biome
+        // MC-dependent: register biomes with MC registry
         BiomeFactory biomeFactory = new BiomeFactory(featureHolder, carverHolder);
-        IBiome[] presetIdMapping = new IBiome[plan.totalBiomeSlots()];
-        // We need to iterate biomeEntries in lockstep with biomeConfigsByResourceLocation keys
-        // to get the IBiomeResourceLocation for each entry.
-        Iterator<IBiomeResourceLocation> locationIterator = biomeConfigsByResourceLocation.keySet().iterator();
+        BiomeRegistrar.RegistrationResult result = BiomeRegistrar.register(
+                plan, biomeConfigsByResourceLocation, biomeFactory,
+                presetConfig, biomeRegistry, this::createPlatformBiome);
 
-        for (BiomePlan.BiomeEntry entry : plan.biomeEntries()) {
-            IBiomeResourceLocation iBiomeResourceLocation = locationIterator.next();
-            BiomeSettings biomeSettings = entry.settings();
-            int otgBiomeId = entry.otgBiomeId();
-
-            // When using TemplateForBiome, we'll fetch the non-OTG biome from the registry, including any settings registered to it.
-            // For normal biomes we create our own new OTG biome and apply settings from the biome config.
-            ResourceLocation resourceLocation = ResourceLocation.parse(iBiomeResourceLocation.toResourceLocationString());
-            ResourceKey<Biome> resourceKey;
-            Biome biome;
-            Holder.Reference<Biome> ref;
-            // templates, and non-developer refresh, both just get the biome from the registry
-            if (
-                biomeSettings.getIdentitySettings().isTemplateForBiome()
-            ) {
-                biome = biomeRegistry.get(resourceLocation);
-                if (biome == null) {
-                    if (OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.BIOME_REGISTRY)) {
-                        OTG.log(LogLevel.ERROR, LogCategory.BIOME_REGISTRY, "Could not find biome " + resourceLocation + " for biomeconfig " + biomeSettings.getIdentitySettings().getBiomeName());
-                    }
-                    continue;
-                }
-                Optional<ResourceKey<Biome>> key = biomeRegistry.getResourceKey(biome);
-                resourceKey = key.orElse(null);
-                if (resourceKey == null) {
-                    if (OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.BIOME_REGISTRY)) {
-                        OTG.getEngine().getLogger().log(LogLevel.ERROR, LogCategory.BIOME_REGISTRY, "Could not find resource key for biome " + resourceLocation + " for biomeconfig " + biomeSettings.getIdentitySettings().getBiomeName());
-                    }
-                    continue;
-                }
-                ref = biomeRegistry.getHolder(resourceKey).orElseThrow();
-
-            } else {
-                if (!(iBiomeResourceLocation instanceof OTGBiomeResourceLocation)) {
-                    if (OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.BIOME_REGISTRY)) {
-                        OTG.getEngine().getLogger().log(LogLevel.ERROR, LogCategory.BIOME_REGISTRY, "Could not process template biomeconfig " + biomeSettings.getIdentitySettings().getBiomeName() + ", did you set TemplateForBiome:true in the BiomeConfig?");
-                    }
-                    continue;
-                }
-                resourceKey = ResourceKey.create(Registries.BIOME, resourceLocation);
-                BiomeConfig biomeConfig = (BiomeConfig) biomeSettings;
-                biome = biomeFactory.createOTGBiome(preset.getPresetConfig(), biomeConfig);
-
-                ref = biomeRegistry.register(resourceKey, biome, RegistrationInfo.BUILT_IN);
-
-                if (biomeConfig.getBiomeStructureTagConfig() != null) {
-                    structureTagConfigs.put(resourceKey, biomeConfig.getBiomeStructureTagConfig());
-                }
-            }
-            presetBiomes.add(resourceKey);
-
-            IBiome otgBiome = createPlatformBiome(biomeSettings, biome, ref);
-            presetIdMapping[otgBiomeId] = otgBiome;
-
-            if (OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.BIOME_REGISTRY)) {
-                OTG.getEngine().getLogger().log(LogLevel.INFO, LogCategory.BIOME_REGISTRY, "Registered biome " + resourceLocation.toString() + " | " + biomeSettings.getIdentitySettings().getBiomeName() + " with OTG id " + otgBiomeId);
-            }
-        }
-
-        // If the ocean config is null, shift the array downwards to fill id 0
-        if (plan.oceanBiomeConfig() == null) {
-            System.arraycopy(presetIdMapping, 1, presetIdMapping, 0, presetIdMapping.length - 1);
-        }
-
-        this.globalIdMapping.put(preset.getFolderName(), presetIdMapping);
+        presetBiomes.addAll(result.presetBiomes());
+        structureTagConfigs.putAll(result.structureTagConfigs());
+        this.globalIdMapping.put(preset.getFolderName(), result.globalIdMapping());
 
         // Set the base data — all plan data used directly
         BiomeLayerData data = new BiomeLayerData(
                 preset.getPresetFolder(), presetConfig, plan.oceanBiomeConfig(), plan.oceanTemperatures(),
                 plan.groupRegistry(), plan.biomeDepths(), plan.groupDepths(),
                 plan.isleBiomesAtDepth(), plan.borderBiomesAtDepth(), plan.biomeIdsByName(),
-                plan.biomeColorMap(), presetIdMapping
+                plan.biomeColorMap(), result.globalIdMapping()
         );
 
         // Set data for this preset
