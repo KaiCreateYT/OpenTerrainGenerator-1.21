@@ -98,7 +98,6 @@ public class BiomeLayerData
 				int cumulativeRarity = 0;
 				for(BiomeGroup group : entry.getValue())
 				{
-					group.init(biomeIdsByName);
 					cumulativeRarity += group.rarity;
 					oldMaxRarities[entry.getKey()]++;
 				}
@@ -118,27 +117,8 @@ public class BiomeLayerData
 			oldMaxRarities[i] *= 100;
 		}
 
-		for(Entry<Integer, List<BiomeData>> entry : this.isleBiomesAtDepth.entrySet())
-		{
-			if(entry.getValue() != null)
-			{
-				for(BiomeData biome : entry.getValue())
-				{
-					biome.init(biomeIdsByName);
-				}
-			}
-		}
-
-		for(Entry<Integer, List<BiomeData>> entry : this.borderBiomesAtDepth.entrySet())
-		{
-			if(entry.getValue() != null)
-			{
-				for(BiomeData biome : entry.getValue())
-				{
-					biome.init(biomeIdsByName);
-				}
-			}
-		}
+		// BiomeData name->ID resolution is now done in BiomePlanResolver.resolve()
+		// before BiomeLayerData is constructed.
 
 		this.biomeColorMap = biomeColorMap;
 		this.riverBiomes = new int[biomes.length];

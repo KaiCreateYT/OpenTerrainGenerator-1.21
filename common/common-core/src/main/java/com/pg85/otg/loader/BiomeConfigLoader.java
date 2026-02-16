@@ -234,7 +234,10 @@ public final class BiomeConfigLoader {
         Map<String, SettingsMap> biomeConfigStore = readAllBiomeFiles(biomesDirectory, type);
 
 		// Read all settings
-		List<BiomeSettings> biomeSettings = readAndWriteSettings(presetConfig, biomeConfigStore, type);
+		List<BiomeSettings> biomeSettings = readSettings(presetConfig, biomeConfigStore, type);
+
+		// Write normalized settings back to disk (adds new settings to old configs)
+		writeSettings(biomeSettings, presetConfig);
 
 		// Update settings dynamically, these changes don't get written back to the file
 		processSettings(presetConfig, biomeSettings);
@@ -268,7 +271,7 @@ public final class BiomeConfigLoader {
 	}
 
 
-	private static ArrayList<BiomeSettings> readAndWriteSettings(
+	private static ArrayList<BiomeSettings> readSettings(
 			PresetConfig presetConfig,
 			Map<String, SettingsMap> biomeSettingStore,
 			BiomeSettingType type
@@ -277,7 +280,6 @@ public final class BiomeConfigLoader {
 
 		for (SettingsMap settingsMap : biomeSettingStore.values())
 		{
-			SettingsMap updatedMap;
 			switch (type) {
                 case CONFIG -> {
 					BiomeSettings biomeSettings;
@@ -287,25 +289,29 @@ public final class BiomeConfigLoader {
 						biomeSettings = new BiomeConfig(settingsMap, presetConfig);
 					}
 					biomeSettingList.add(biomeSettings);
-					updatedMap = biomeSettings.getSettingsAsMap();
                 }
                 case TEMPLATE -> {
 					BiomeTemplate biomeTemplate = new BiomeTemplate(settingsMap, presetConfig);
 					biomeSettingList.add(biomeTemplate);
-					updatedMap = biomeTemplate.getSettingsAsMap();
                 }
-                default -> {
-					OTGLog.warn("Could not read; unknown setting type: "+settingsMap.getName());
-                    continue;
-                }
+                default -> OTGLog.warn("Could not read; unknown setting type: "+settingsMap.getName());
             }
-
-			// Settings writing
-            Path writeFile = settingsMap.getPath();
-            FileSettingsWriter.writeToFile(updatedMap, writeFile.toFile(), presetConfig.getPresetInfo().getSettingsMode());
         }
 
 		return biomeSettingList;
+	}
+
+	private static void writeSettings(
+			List<BiomeSettings> biomeSettings,
+			PresetConfig presetConfig
+	) {
+		for (BiomeSettings settings : biomeSettings) {
+			SettingsMap updatedMap = settings.getSettingsAsMap();
+			Path writeFile = updatedMap.getPath();
+			if (writeFile != null) {
+				FileSettingsWriter.writeToFile(updatedMap, writeFile.toFile(), presetConfig.getPresetInfo().getSettingsMode());
+			}
+		}
 	}
 
 	private static void processSettings(PresetConfig presetConfig, List<BiomeSettings> biomeSettingMaps)

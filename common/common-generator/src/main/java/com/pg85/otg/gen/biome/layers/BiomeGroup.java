@@ -1,7 +1,6 @@
 package com.pg85.otg.gen.biome.layers;
 
 import java.util.List;
-import java.util.Map;
 
 import com.pg85.otg.gen.biome.BiomeData;
 
@@ -32,12 +31,4 @@ public class BiomeGroup
 	// max rarity is a sum of the total rarity of this depth and all subsequent depths
 	public final int[] maxRarityPerDepth;
 	
-	public void init(Map<String, List<Integer>> worldIsleBiomes)
-	{
-		for(BiomeData biomeData : this.biomes)
-		{
-			biomeData.init(worldIsleBiomes);
-		}
-	}
-
 }

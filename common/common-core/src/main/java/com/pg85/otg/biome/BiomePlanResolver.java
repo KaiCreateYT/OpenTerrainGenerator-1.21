@@ -101,6 +101,19 @@ public final class BiomePlanResolver {
         Map<Integer, BiomeGroup> groupRegistry = processBiomeGroups(
                 presetConfig, biomeConfigsByName, biomeDepths, groupDepths);
 
+        // Resolve all BiomeData string name references to int IDs.
+        // Must happen here (after the full biomeIdsByName map is built), not
+        // scattered in BiomeLayerData constructor where it used to live.
+        resolveAllBiomeData(isleBiomesAtDepth, biomeIdsByName);
+        resolveAllBiomeData(borderBiomesAtDepth, biomeIdsByName);
+        for (List<BiomeGroup> groups : groupDepths.values()) {
+            for (BiomeGroup group : groups) {
+                for (BiomeData biome : group.biomes) {
+                    biome.init(biomeIdsByName);
+                }
+            }
+        }
+
         // Bit packing validation: BiomeLayers uses GROUP_SHIFT=20, GROUP_BITS=7
         // Biome IDs must fit in 20 bits, group IDs must fit in 7 bits
         int maxBiomeId = (1 << 20) - 1; // 1,048,575
@@ -239,5 +252,15 @@ public final class BiomePlanResolver {
         }
 
         return groupRegistry;
+    }
+
+    private static void resolveAllBiomeData(
+            Map<Integer, List<BiomeData>> biomeDataByDepth,
+            Map<String, List<Integer>> biomeIdsByName) {
+        for (List<BiomeData> biomes : biomeDataByDepth.values()) {
+            for (BiomeData biome : biomes) {
+                biome.init(biomeIdsByName);
+            }
+        }
     }
 }
