@@ -32,7 +32,7 @@ dependencies {
     mappings(loom.officialMojangMappings())
 
     otg(project(":common:common-core"))
-    otg(project(":platforms:shared"))
+    otg(project(path = ":platforms:shared", configuration = "namedElements")) { isTransitive = false }
 
     // High-performance cache - bundled in JAR
     otg("com.github.ben-manes.caffeine:caffeine:3.1.8")
