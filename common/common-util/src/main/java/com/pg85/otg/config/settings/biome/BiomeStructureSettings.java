@@ -18,6 +18,9 @@ public class BiomeStructureSettings extends ConfigSection {
     private final boolean woodlandMansionsEnabled;
     private final boolean netherFortressesEnabled;
     private final VillageType villageType;
+    // TODO: Dead on Fabric/NeoForge - parsed and stored but never passed to MC.
+    // The tag system (BiomeStructureTagConfig) is binary on/off, sizes are ignored.
+    // Wiring these would require custom ConfiguredStructure per biome.
     private final int villageSize;
     private final MineshaftType mineshaftType;
     private final RareBuildingType rareBuildingType;
@@ -28,9 +31,11 @@ public class BiomeStructureSettings extends ConfigSection {
     private final boolean bastionRemnantEnabled;
     private final boolean netherFossilEnabled;
     private final boolean endCityEnabled;
+    // TODO: Dead on Fabric/NeoForge - see villageSize comment above.
     private final float mineshaftProbability;
     private final RuinedPortalType ruinedPortalType;
     private final OceanRuinsType oceanRuinsType;
+    // TODO: Dead on Fabric/NeoForge - see villageSize comment above.
     private final float oceanRuinsLargeProbability;
     private final float oceanRuinsClusterProbability;
     private final float buriedTreasureProbability;

@@ -12,6 +12,9 @@ import com.pg85.otg.customobject.CustomObjectManager;
 import com.pg85.otg.customobject.config.CustomObjectResourcesManager;
 import com.pg85.otg.interfaces.IMaterialReader;
 import com.pg85.otg.interfaces.IModLoadedChecker;
+import com.pg85.otg.util.OTGLog;
+import com.pg85.otg.util.logging.LogCategory;
+import com.pg85.otg.util.logging.LogLevel;
 
 public class BO4Data
 {
@@ -54,7 +57,7 @@ public class BO4Data
 			}
 			catch (IOException e)
 			{
-				e.printStackTrace();
+				OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Failed to write BO4 data file: %s", e.getMessage()); OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e);
 			}
 		}
 	}

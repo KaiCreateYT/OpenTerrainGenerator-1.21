@@ -93,7 +93,7 @@ public class CustomStructureFileManager
 						}
 					}
 				} catch (IOException e1) {
-					e1.printStackTrace();
+					OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e1);
 					return;
 				}
 
@@ -114,24 +114,24 @@ public class CustomStructureFileManager
 				}
 				catch (IOException e)
 				{
-					e.printStackTrace();
+					OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e);
 					OTGLog.log(LogLevel.ERROR, LogCategory.MAIN, "OTG encountered an error writing " + occupiedChunksFile.getAbsolutePath() + ", skipping.");
 				} finally {
 					try {
                         dos.close();
-                    } catch (Exception ignored) { }
+                    } catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", ignored.getMessage()); }
 					try {
 						if(dos2 != null)
 						{
 							dos2.close();
 						}
-					} catch (Exception ignored) { }
+					} catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", ignored.getMessage()); }
 					try {
 						if(fos != null)
 						{
 							fos.close();
 						}
-					} catch (Exception ignored) { }
+					} catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", ignored.getMessage()); }
 				}
 			}
 		}
@@ -235,7 +235,7 @@ public class CustomStructureFileManager
 				}
 				catch (Exception ex)
 				{
-					ex.printStackTrace();
+					OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, ex);
 					OTGLog.log(LogLevel.WARN, LogCategory.MAIN, "Failed to load " + occupiedChunksFile.getAbsolutePath() + ", trying to load backup.");
 				} finally {
 					if(fis != null)
@@ -243,12 +243,12 @@ public class CustomStructureFileManager
 						try {
 							fis.getChannel().close();
 						} catch (IOException e) {
-							e.printStackTrace();
+							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
 						}
 						try {
 							fis.close();
 						} catch (IOException e) {
-							e.printStackTrace();
+							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
 						}
 					}
 				}
@@ -280,19 +280,19 @@ public class CustomStructureFileManager
 				}
 				catch (Exception ex)
 				{
-					ex.printStackTrace();
+					OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, ex);
 				} finally {
 					if(fis != null)
 					{
 						try {
 							fis.getChannel().close();
 						} catch (IOException e) {
-							e.printStackTrace();
+							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
 						}
 						try {
 							fis.close();
 						} catch (IOException e) {
-							e.printStackTrace();
+							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
 						}
 					}
 				}
@@ -572,7 +572,7 @@ public class CustomStructureFileManager
 				}
 			}
 		} catch (IOException e1) {
-			e1.printStackTrace();
+			OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e1);
 			return;
 		}
 			
@@ -594,23 +594,23 @@ public class CustomStructureFileManager
 		catch (IOException e)
 		{
 			OTGLog.log(LogLevel.ERROR, LogCategory.MAIN, "OTG encountered an error writing " + structuresRegionFile.getAbsolutePath() + ", skipping. Exception:");
-			e.printStackTrace();			
+			OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e);
 		} finally {
 			try {
                 dos.close();
-            } catch (Exception ignored) { }
+            } catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", ignored.getMessage()); }
 			try {
 				if(dos2 != null)
 				{
 					dos2.close();
 				}
-			} catch (Exception ignored) { }
+			} catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", ignored.getMessage()); }
 			try {
 				if(fos != null)
 				{
 					fos.close();
 				}
-			} catch (Exception ignored) { }
+			} catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", ignored.getMessage()); }
 		}
 	}
 	
@@ -708,7 +708,7 @@ public class CustomStructureFileManager
 				}
 				catch (Exception ex)
 				{
-					ex.printStackTrace();
+					OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, ex);
 					OTGLog.log(LogLevel.WARN, LogCategory.MAIN, "Failed to load " + structureDataFile.getAbsolutePath() + ", trying to load backup.");
 				} finally {
 					if(fis != null)
@@ -716,12 +716,12 @@ public class CustomStructureFileManager
 						try {
 							fis.getChannel().close();
 						} catch (IOException e) {
-							e.printStackTrace();
+							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
 						}
 						try {
 							fis.close();
 						} catch (IOException e) {
-							e.printStackTrace();
+							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
 						}
 					}
 				}
@@ -753,19 +753,19 @@ public class CustomStructureFileManager
 				}
 				catch (Exception ex)
 				{
-					ex.printStackTrace();
+					OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, ex);
 				} finally {
 					if(fis != null)
 					{
 						try {
 							fis.getChannel().close();
 						} catch (IOException e) {
-							e.printStackTrace();
+							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
 						}
 						try {
 							fis.close();
 						} catch (IOException e) {
-							e.printStackTrace();
+							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
 						}
 					}
 				}
@@ -992,7 +992,7 @@ public class CustomStructureFileManager
 					}
 				}
 			} catch (IOException e1) {
-				e1.printStackTrace();
+				OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e1);
 				return;
 			}			
 			
@@ -1012,23 +1012,23 @@ public class CustomStructureFileManager
 				dos2.write(compressedBytes, 0, compressedBytes.length);
 			} catch (IOException e) {
 				OTGLog.log(LogLevel.ERROR, LogCategory.MAIN, "OTG encountered an error writing " + occupiedChunksFile.getAbsolutePath() + ", skipping. Exception: ");
-				e.printStackTrace();				
+				OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e);
 			} finally {
 				try {
                     dos.close();
-                } catch (Exception ignored) { }
+                } catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", ignored.getMessage()); }
 				try {
 					if(dos2 != null)
 					{
 						dos2.close();
 					}
-				} catch (Exception ignored) { }
+				} catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", ignored.getMessage()); }
 				try {
 					if(fos != null)
 					{
 						fos.close();
 					}
-				} catch (Exception ignored) { }
+				} catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", ignored.getMessage()); }
 			}
 		}
 	}
@@ -1059,7 +1059,7 @@ public class CustomStructureFileManager
 			}
 			catch (Exception ex)
 			{
-				ex.printStackTrace();
+				OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, ex);
 				OTGLog.log(LogLevel.WARN, LogCategory.MAIN, "Failed to load " + occupiedChunksFile.getAbsolutePath() + ", trying to load backup.");
 			} finally {
 				if(fis != null)
@@ -1067,12 +1067,12 @@ public class CustomStructureFileManager
 					try {
 						fis.getChannel().close();
 					} catch (IOException e) {
-						e.printStackTrace();
+						OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
 					}
 					try {
 						fis.close();
 					} catch (IOException e) {
-						e.printStackTrace();
+						OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
 					}
 				}
 			}
@@ -1094,19 +1094,19 @@ public class CustomStructureFileManager
 			}
 			catch (Exception ex)
 			{
-				ex.printStackTrace();
+				OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, ex);
 			} finally {
 				if(fis != null)
 				{
 					try {
 						fis.getChannel().close();
 					} catch (IOException e) {
-						e.printStackTrace();
+						OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
 					}
 					try {
 						fis.close();
 					} catch (IOException e) {
-						e.printStackTrace();
+						OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
 					}
 				}
 			}

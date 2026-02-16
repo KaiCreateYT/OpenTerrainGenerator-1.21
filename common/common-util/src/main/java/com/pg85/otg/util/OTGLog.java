@@ -120,10 +120,10 @@ public final class OTGLog {
         @Override
         public void log(LogLevel level, LogCategory category, String message) {
             if (this.level.ordinal() <= level.ordinal()) {
-                if (this.level.ordinal() >= LogLevel.WARN.ordinal()) {
-                    System.out.println(level.name() + " " + category.name() + " " + message);
-                } else {
+                if (level.ordinal() >= LogLevel.WARN.ordinal()) {
                     System.err.println(level.name() + " " + category.name() + " " + message);
+                } else {
+                    System.out.println(level.name() + " " + category.name() + " " + message);
                 }
             }
         }

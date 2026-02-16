@@ -4,6 +4,9 @@ import com.pg85.otg.customobject.bo3.bo3function.BO3BlockFunction;
 import com.pg85.otg.customobject.bo4.bo4function.BO4BlockFunction;
 import com.pg85.otg.customobject.util.Corner;
 import com.pg85.otg.customobject.bofunctions.BlockFunction;
+import com.pg85.otg.util.OTGLog;
+import com.pg85.otg.util.logging.LogCategory;
+import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.nbt.LocalNBTHelper;
 import com.pg85.otg.util.nbt.NamedBinaryTag;
 import com.pg85.otg.util.gen.LocalWorldGenRegion;
@@ -85,7 +88,7 @@ public class Extractor
 						}
 						catch (IOException e)
 						{
-							e.printStackTrace();
+							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to read block entity NBT: %s", e.getMessage());
 						}
 					}
 					blocks.add(block);
