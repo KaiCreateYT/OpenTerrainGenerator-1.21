@@ -19,8 +19,6 @@ version = project.property("otg_version").toString()
 group = project.property("otg_group").toString()
 
 listOf(
-    //project(":platforms:paper"),
-    //project(":platforms:forge"),
     project(":platforms:fabric"),
     project(":platforms:neoforge"),
 ).forEach { proj ->
