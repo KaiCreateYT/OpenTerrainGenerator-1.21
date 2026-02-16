@@ -3,7 +3,7 @@ package com.pg85.otg.neoforge.gen;
 import java.util.*;
 
 import com.pg85.otg.neoforge.biome.NeoForgeBiome;
-import com.pg85.otg.neoforge.materials.NeoForgeMaterialData;
+import com.pg85.otg.shared.materials.SharedMaterialData;
 import com.pg85.otg.interfaces.IBiome;
 import com.pg85.otg.interfaces.ICachedBiomeProvider;
 import com.pg85.otg.util.BlockPos2D;
@@ -362,7 +362,7 @@ public class ShadowChunkGenerator {
         for (short y = 0; y < 256; y++) {
             blockInChunk = chunk.getBlockState(new BlockPos(blockX, y, blockZ));
             if (blockInChunk != null) {
-                blocksInColumn[y] = NeoForgeMaterialData.ofBlockState(blockInChunk);
+                blocksInColumn[y] = SharedMaterialData.ofBlockState(blockInChunk);
             } else {
                 break;
             }
@@ -392,12 +392,12 @@ public class ShadowChunkGenerator {
         LocalMaterialData[] blockColumn = getBlockColumnInUnloadedChunk(serverLevel, otgChunkGenerator, otgWorldInfo, x,
                                                                         z
         );
-        NeoForgeMaterialData material;
+        SharedMaterialData material;
         boolean isLiquid;
         boolean isSolid;
 
         for (int y = 255; y >= 0; y--) {
-            material = (NeoForgeMaterialData) blockColumn[y];
+            material = (SharedMaterialData) blockColumn[y];
             isLiquid = material.isLiquid();
             isSolid = material.isSolid() || (!ignoreSnow && material.isMaterial(LocalMaterials.SNOW));
             if (!(isLiquid && ignoreLiquid)) {

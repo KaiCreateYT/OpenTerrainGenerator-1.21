@@ -4,7 +4,7 @@ import com.pg85.otg.OTG;
 import com.pg85.otg.OTGEngine;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.neoforge.biome.LegacyNeoForgeBiomeLoader;
-import com.pg85.otg.neoforge.materials.NeoForgeMaterials;
+import com.pg85.otg.shared.materials.SharedMaterials;
 import com.pg85.otg.neoforge.util.NeoForgeModLoadedChecker;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
@@ -28,7 +28,7 @@ public class NeoForgeEngine extends OTGEngine {
 
     @Override
     public void onStart() {
-        NeoForgeMaterials.init();
+        SharedMaterials.init();
         super.onStart();
     }
 

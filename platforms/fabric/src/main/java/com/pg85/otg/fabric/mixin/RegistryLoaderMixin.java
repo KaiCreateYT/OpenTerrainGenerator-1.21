@@ -3,7 +3,7 @@ package com.pg85.otg.fabric.mixin;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.pg85.otg.fabric.biome.OTGFabricBiomeProvider;
 import com.pg85.otg.fabric.gen.OTGFabricChunkGenerator;
-import com.pg85.otg.fabric.materials.FabricMaterialData;
+import com.pg85.otg.shared.materials.SharedMaterialData;
 import com.pg85.otg.shared.registry.OTGRegistryHelper;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.RegistryDataLoader;
@@ -46,7 +46,7 @@ public class RegistryLoaderMixin {
                                 noiseRef,
                                 biomeReg
                         ),
-                mat -> ((FabricMaterialData) mat).getState()
+                mat -> ((SharedMaterialData) mat).getState()
         );
     }
 }

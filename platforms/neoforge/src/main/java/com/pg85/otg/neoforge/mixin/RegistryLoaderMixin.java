@@ -3,7 +3,7 @@ package com.pg85.otg.neoforge.mixin;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.pg85.otg.neoforge.biome.OTGNeoForgeBiomeProvider;
 import com.pg85.otg.neoforge.gen.OTGNeoForgeChunkGenerator;
-import com.pg85.otg.neoforge.materials.NeoForgeMaterialData;
+import com.pg85.otg.shared.materials.SharedMaterialData;
 import com.pg85.otg.shared.registry.OTGRegistryHelper;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.RegistryDataLoader;
@@ -46,7 +46,7 @@ public class RegistryLoaderMixin {
                                 noiseRef,
                                 biomeReg
                         ),
-                mat -> ((NeoForgeMaterialData) mat).getState()
+                mat -> ((SharedMaterialData) mat).getState()
         );
     }
 }

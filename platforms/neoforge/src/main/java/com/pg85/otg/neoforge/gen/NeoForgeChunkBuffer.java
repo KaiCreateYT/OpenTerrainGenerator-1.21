@@ -1,6 +1,6 @@
 package com.pg85.otg.neoforge.gen;
 
-import com.pg85.otg.neoforge.materials.NeoForgeMaterialData;
+import com.pg85.otg.shared.materials.SharedMaterialData;
 import com.pg85.otg.util.ChunkCoordinate;
 import com.pg85.otg.util.gen.ChunkBuffer;
 import com.pg85.otg.util.materials.LocalMaterialData;
@@ -23,12 +23,12 @@ public class NeoForgeChunkBuffer extends ChunkBuffer {
 
     @Override
     public void setBlock(int blockX, int blockY, int blockZ, LocalMaterialData material) {
-        NeoForgeMaterialData fabricMaterialData = (NeoForgeMaterialData) material;
+        SharedMaterialData fabricMaterialData = (SharedMaterialData) material;
         chunkAccess.setBlockState(new BlockPos(blockX, blockY, blockZ), fabricMaterialData.getState(), false);
     }
 
     @Override
     public LocalMaterialData getBlock(int blockX, int blockY, int blockZ) {
-        return NeoForgeMaterialData.ofBlockState(chunkAccess.getBlockState(new BlockPos(blockX, blockY, blockZ)));
+        return SharedMaterialData.ofBlockState(chunkAccess.getBlockState(new BlockPos(blockX, blockY, blockZ)));
     }
 }

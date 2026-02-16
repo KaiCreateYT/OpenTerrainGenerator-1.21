@@ -1,7 +1,7 @@
 package com.pg85.otg.fabric.gen;
 
 import com.pg85.otg.config.preset.PresetConfig;
-import com.pg85.otg.fabric.materials.FabricMaterialData;
+import com.pg85.otg.shared.materials.SharedMaterialData;
 import com.pg85.otg.fabric.util.FabricNBTHelper;
 import com.pg85.otg.gen.OTGChunkGenerator;
 import com.pg85.otg.interfaces.IPluginConfig;
@@ -41,12 +41,12 @@ public class FabricWorldGenRegion extends SharedWorldGenRegion {
 
     @Override
     protected LocalMaterialData fromBlockState(BlockState blockState) {
-        return FabricMaterialData.ofBlockState(blockState);
+        return SharedMaterialData.ofBlockState(blockState);
     }
 
     @Override
     protected BlockState toBlockState(LocalMaterialData material) {
-        return ((FabricMaterialData) material).getState();
+        return ((SharedMaterialData) material).getState();
     }
 
     @Override

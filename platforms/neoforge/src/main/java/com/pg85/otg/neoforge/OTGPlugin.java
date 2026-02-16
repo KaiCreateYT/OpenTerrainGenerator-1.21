@@ -2,7 +2,7 @@ package com.pg85.otg.neoforge;
 
 import com.pg85.otg.OTG;
 import com.pg85.otg.neoforge.events.NeoForgeEventHandler;
-import com.pg85.otg.neoforge.materials.NeoForgeMaterialReader;
+import com.pg85.otg.shared.materials.SharedMaterialReader;
 import com.pg85.otg.neoforge.portals.NeoForgePortalBlocks;
 import com.pg85.otg.neoforge.portals.OTGAttachments;
 import com.pg85.otg.neoforge.portals.PortalIgnitionHandler;
@@ -21,7 +21,7 @@ public class OTGPlugin {
     public OTGPlugin(IEventBus modBus) {
         OTGLog.setLogger(new com.pg85.otg.neoforge.util.NeoForgeLogger());
         OTGLog.getLogger().log(LogLevel.INFO, LogCategory.MAIN, "OTG Engine starting");
-        OTGMaterialReader.set(new NeoForgeMaterialReader());
+        OTGMaterialReader.set(new SharedMaterialReader());
         OTG.startEngine(new NeoForgeEngine());
 
         // Register Data Attachments

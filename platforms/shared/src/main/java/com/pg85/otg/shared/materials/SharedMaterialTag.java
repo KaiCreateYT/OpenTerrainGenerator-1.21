@@ -1,4 +1,4 @@
-package com.pg85.otg.fabric.materials;
+package com.pg85.otg.shared.materials;
 
 import com.pg85.otg.util.materials.LocalMaterialTag;
 import lombok.Getter;
@@ -8,9 +8,9 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 
 @Getter
-public class FabricMaterialTag extends LocalMaterialTag {
+public class SharedMaterialTag extends LocalMaterialTag {
     private final TagKey<Block> key;
-    public FabricMaterialTag(TagKey<Block> key, String name) {
+    public SharedMaterialTag(TagKey<Block> key, String name) {
         super(name);
         this.key = key;
     }
@@ -22,7 +22,7 @@ public class FabricMaterialTag extends LocalMaterialTag {
             return null;
         }
         TagKey<Block> tagKey = TagKey.create(Registries.BLOCK, ResourceLocation.parse(tag));
-        return new FabricMaterialTag(tagKey, tag);
+        return new SharedMaterialTag(tagKey, tag);
     }
 
 }

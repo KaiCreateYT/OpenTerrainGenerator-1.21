@@ -1,4 +1,4 @@
-package com.pg85.otg.fabric.materials;
+package com.pg85.otg.shared.materials;
 
 import com.pg85.otg.OTG;
 import com.pg85.otg.util.logging.LogCategory;
@@ -15,7 +15,7 @@ import net.minecraft.world.level.block.state.properties.*;
 // TODO: Can probably use some Forge method to convert data to the new format, don't do it all manually?
 // ^ At least this way we have full control and can accommodate for any legacy OTG names/data/aliases etc.
 // Block.getStateById() says //Forge: Do not use, use GameRegistry. GameRegistry doesn't appear to provide what we need though(?)
-class FabricLegacyMaterials
+class SharedLegacyMaterials
 {
 	// TODO: Don't need any names here that match 1.16's
 	static BlockState fromLegacyBlockName(String oldBlockName)
@@ -125,7 +125,7 @@ class FabricLegacyMaterials
 	}
 
 	static BlockState fromLegacyBlockNameOrIdWithData(String blockName, int data)
-	{		
+	{
 		if(blockName == null || blockName.trim().isEmpty())
 		{
 			return null;
@@ -134,13 +134,13 @@ class FabricLegacyMaterials
 		try
 		{
 			int blockId = Integer.parseInt(blockName);
-			blockName = BlockNames.blockNameFromLegacyBlockId(blockId);			
+			blockName = BlockNames.blockNameFromLegacyBlockId(blockId);
 			if(blockName == null)
 			{
 				return null;
 			}
 		} catch(NumberFormatException ignored) { /* Not a numeric ID, trying as name */ }
-		
+
 		try
 		{
 			switch(blockName)
@@ -151,7 +151,7 @@ class FabricLegacyMaterials
 					{
 						return Blocks.GRASS_BLOCK.defaultBlockState();
 					}
-			
+
 				// Legacy blocks with block data that are now their own block
 				case "banner":
 				case "white_banner":
@@ -349,7 +349,7 @@ class FabricLegacyMaterials
 					return Blocks.PURPUR_SLAB.defaultBlockState()
 						.setValue(SlabBlock.TYPE, data == 0 ? SlabType.BOTTOM : data == 8 ? SlabType.TOP : SlabType.BOTTOM);
 				case "purpur_double_slab":
-					return Blocks.PURPUR_SLAB.defaultBlockState().setValue(SlabBlock.TYPE, SlabType.DOUBLE);					
+					return Blocks.PURPUR_SLAB.defaultBlockState().setValue(SlabBlock.TYPE, SlabType.DOUBLE);
 				case "red_flower":
 				case "red_rose":
                     return switch (data) {
@@ -377,7 +377,7 @@ class FabricLegacyMaterials
                         return Blocks.RED_SANDSTONE_SLAB.defaultBlockState().setValue(SlabBlock.TYPE, SlabType.BOTTOM);
                     }
 				case "double_red_sandstone_slab":
-				case "double_stone_slab2": 
+				case "double_stone_slab2":
 					return Blocks.RED_SANDSTONE_SLAB.defaultBlockState().setValue(SlabBlock.TYPE, SlabType.DOUBLE);
 				case "sand":
                     if (data == 1) {
@@ -567,13 +567,13 @@ class FabricLegacyMaterials
                         case 14 -> Blocks.RED_WOOL.defaultBlockState();
                         case 15 -> Blocks.BLACK_WOOL.defaultBlockState();
                     };
-	
+
 				// Blocks with data
 				case "fire":
 					return Blocks.FIRE.defaultBlockState().setValue(FireBlock.AGE, data);
 				case "cake":
 				case "cake_block":
-					return Blocks.CAKE.defaultBlockState().setValue(CakeBlock.BITES, data); 
+					return Blocks.CAKE.defaultBlockState().setValue(CakeBlock.BITES, data);
 				case "stone_pressure_plate":
 				case "stone_plate":
 					return Blocks.STONE_PRESSURE_PLATE.defaultBlockState().setValue(PressurePlateBlock.POWERED, getBit(data, 0) == 1);
@@ -582,7 +582,7 @@ class FabricLegacyMaterials
 				case "oak_pressure_plate":
 					return Blocks.OAK_PRESSURE_PLATE.defaultBlockState().setValue(PressurePlateBlock.POWERED, getBit(data, 0) == 1);
 				case "light_weighted_pressure_plate":
-				case "gold_plate":				
+				case "gold_plate":
 					return Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE.defaultBlockState().setValue(WeightedPressurePlateBlock.POWER, data);
 				case "heavy_weighted_pressure_plate":
 				case "iron_plate":
@@ -626,7 +626,7 @@ class FabricLegacyMaterials
 				case "redstone_torch":
 					return getTorchWithData(1, data);
 				case "redstone_torch_on":
-					return getTorchWithData(2, data);			
+					return getTorchWithData(2, data);
 				case "rails":
 					return Blocks.RAIL.defaultBlockState().setValue(RailBlock.SHAPE, getRailShape(data));
 				case "powered_rail":
@@ -635,11 +635,11 @@ class FabricLegacyMaterials
 				case "detector_rail":
 					return getRailsWithData(1, data);
 				case "activator_rail":
-					return getRailsWithData(2, data);				
+					return getRailsWithData(2, data);
 				case "hay_block":
 					return Blocks.HAY_BLOCK.defaultBlockState().setValue(HayBlock.AXIS, getPillarAxisXYZ(data));
 				case "bone_block":
-					return Blocks.BONE_BLOCK.defaultBlockState().setValue(RotatedPillarBlock.AXIS, getAxisXYZ(data));			
+					return Blocks.BONE_BLOCK.defaultBlockState().setValue(RotatedPillarBlock.AXIS, getAxisXYZ(data));
 				case "wood_stairs":
 				case "oak_stairs":
 					return getStairsWithData(0, data);
@@ -673,7 +673,7 @@ class FabricLegacyMaterials
 					return getStairsWithData(13, data);
 				case "stone_brick_stairs":
 				case "smooth_stairs":
-					return getStairsWithData(14, data);					
+					return getStairsWithData(14, data);
 				case "lever":
 					return getLeverOrButtonWithData(0, data);
 				case "stone_button":
@@ -753,7 +753,7 @@ class FabricLegacyMaterials
 				case "black_shulker_box":
 					return getShulkerBoxWithData(15, data);
 				case "shulker_box":
-					return  getShulkerBoxWithData(16, data);		
+					return  getShulkerBoxWithData(16, data);
 				case "ladder":
 					return getLadderChestOrFurnaceWithData(0, data);
 				case "chest":
@@ -765,20 +765,20 @@ class FabricLegacyMaterials
 				case "furnace":
 					return getLadderChestOrFurnaceWithData(4, data);
 				case "burning_furnace":
-					return getLadderChestOrFurnaceWithData(5, data);				
+					return getLadderChestOrFurnaceWithData(5, data);
 				case "wall_sign":
 				case "oak_wall_sign":
-					return getWallSignWithData(data);			
+					return getWallSignWithData(data);
 				case "observer":
 					return getObserverWithData(data);
 				case "dispenser":
-					return getDispenserHopperDropperWithData(0, data); 
+					return getDispenserHopperDropperWithData(0, data);
 				case "dropper":
 					return getDispenserHopperDropperWithData(1, data);
 				case "hopper":
 					return getDispenserHopperDropperWithData(2, data);
 				case "pumpkin_stem":
-					return Blocks.PUMPKIN_STEM.defaultBlockState().setValue(StemBlock.AGE, data); 
+					return Blocks.PUMPKIN_STEM.defaultBlockState().setValue(StemBlock.AGE, data);
 				case "melon_stem":
 					return Blocks.MELON_STEM.defaultBlockState().setValue(StemBlock.AGE, data);
 				case "carved_pumpkin":
@@ -809,12 +809,12 @@ class FabricLegacyMaterials
 				case "oak_trapdoor":
 					return getTrapDoorBlockWithData(0, data);
 				case "iron_trapdoor":
-					return getTrapDoorBlockWithData(1, data);			
+					return getTrapDoorBlockWithData(1, data);
 				case "piston_base":
 				case "piston":
-					return getPistonWithData(0, data);				
+					return getPistonWithData(0, data);
 				case "piston_sticky_base":
-				case "sticky_piston":				
+				case "sticky_piston":
 					return getPistonWithData(1, data);
 				case "piston_extension":
 				case "piston_head":
@@ -919,14 +919,14 @@ class FabricLegacyMaterials
 	}
 
 	//
-	
+
 	private static BlockState getAnvilWithData(int material, int data)
 	{
 		Direction orientation = getBit(data, 0) == 0 ? Direction.NORTH : Direction.WEST;
 		switch(material)
 		{
 			case 0:
-				// 0x4 0x8 state: regular (0x4 & 0x8 = 0), slightly damaged (0x4 = 1), very damaged (0x8 = 1)				
+				// 0x4 0x8 state: regular (0x4 & 0x8 = 0), slightly damaged (0x4 = 1), very damaged (0x8 = 1)
 				if((getBit(data, 2) & getBit(data, 3)) == 0)
 				{
 					return Blocks.ANVIL.defaultBlockState().setValue(AnvilBlock.FACING, orientation);
@@ -974,7 +974,7 @@ class FabricLegacyMaterials
             default -> Blocks.OAK_LOG.defaultBlockState();
         };
 	}
-	
+
 	private static BlockState getLog2WithData(int data)
 	{
 		int material = getBits(data, 0, 2);
@@ -1056,7 +1056,7 @@ class FabricLegacyMaterials
             default -> null;
         };
 	}
-	
+
 	private static BlockState getStairsWithData(int material, int data)
 	{
 		int facing = getBits(data, 0, 2);
@@ -1083,7 +1083,7 @@ class FabricLegacyMaterials
 			.setValue(StairBlock.FACING, getFacingEastWestSouthNorth(facing))
 			.setValue(StairBlock.HALF, half == 0 ? Half.BOTTOM : Half.TOP);
 	}
-	
+
 	private static BlockState getLeverOrButtonWithData(int material, int data)
 	{
 		int facing = getBits(data, 0, 3);
@@ -1103,7 +1103,7 @@ class FabricLegacyMaterials
             default -> null;
         };
 	}
-	
+
 	private static BlockState getDoorWithData(int material, int data)
 	{
 		// 0x8 Half
@@ -1117,7 +1117,7 @@ class FabricLegacyMaterials
 		int hinge = getBit(data, 0);
 		int powered = getBit(data, 1);
 		int facing = getBits(data, 0, 2);
-		int open = getBit(data, 2);		
+		int open = getBit(data, 2);
 		BlockState blockState;
 		switch(material)
 		{
@@ -1145,22 +1145,22 @@ class FabricLegacyMaterials
 			default:
 				return null;
 		}
-		return half == 0 ? 
+		return half == 0 ?
 			blockState
-			.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER)			
+			.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER)
 			.setValue(DoorBlock.FACING, getFacingEastSouthWestNorth(facing))
-			.setValue(DoorBlock.OPEN, open == 1) 
+			.setValue(DoorBlock.OPEN, open == 1)
 			: blockState
 			.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER)
 			.setValue(DoorBlock.HINGE, hinge == 0 ? DoorHingeSide.LEFT : DoorHingeSide.RIGHT)
 			.setValue(DoorBlock.POWERED, powered == 1)
 		;
 	}
-	
+
 	private static BlockState getSignPostWithData(int data)
-	{	
+	{
 		int rotation = getBits(data, 0, 4);
-		return Blocks.OAK_SIGN.defaultBlockState().setValue(StandingSignBlock.ROTATION, rotation); 
+		return Blocks.OAK_SIGN.defaultBlockState().setValue(StandingSignBlock.ROTATION, rotation);
 	}
 
 	private static BlockState getWallSignWithData(int data)
@@ -1247,10 +1247,10 @@ class FabricLegacyMaterials
 				break;
 			default:
 				return null;
-		}		
+		}
 		return blockState.setValue(ShulkerBoxBlock.FACING, getFacingDownEastNorthSouthUpWest(data));
 	}
-	
+
 	private static BlockState getLadderChestOrFurnaceWithData(int material, int data)
 	{
 		int facing = getBits(data, 0, 3);
@@ -1266,7 +1266,7 @@ class FabricLegacyMaterials
             default -> null;
         };
 	}
-	
+
 	private static BlockState getDispenserHopperDropperWithData(int material, int data)
 	{
 		int facing = getBits(data, 0, 3);
@@ -1291,14 +1291,14 @@ class FabricLegacyMaterials
             default -> null;
         };
 	}
-	
+
 	private static BlockState getObserverWithData(int data)
 	{
 		int facing = getBits(data, 0, 3);
 		int powered = getBit(data, 3);
 		return Blocks.OBSERVER.defaultBlockState().setValue(ObserverBlock.FACING, getFacingDownUpNorthSouthWestEast(facing)).setValue(ObserverBlock.POWERED, powered == 1);
 	}
-	
+
 	private static BlockState getRepeaterWithData(int material, int data)
 	{
 		int facing = getBits(data, 0, 2);
@@ -1312,7 +1312,7 @@ class FabricLegacyMaterials
 			.setValue(RepeaterBlock.FACING, getFacingSouthWestNorthEast(facing))
 		;
 	}
-	
+
 	private static BlockState getComparatorWithData(int material, int data)
 	{
 		int facing = getBits(data, 0, 2);
@@ -1324,7 +1324,7 @@ class FabricLegacyMaterials
 			.setValue(ComparatorBlock.POWERED, powered == 1)
 		;
 	}
-	
+
 	private static BlockState getBedBlockWithData(int data)
 	{
 		int facing = getBits(data, 0, 2);
@@ -1336,12 +1336,12 @@ class FabricLegacyMaterials
 			.setValue(BedBlock.PART, part == 0 ? BedPart.FOOT : BedPart.HEAD)
 		;
 	}
-	
+
 	private static BlockState getTrapDoorBlockWithData(int material, int data)
 	{
 		int facing = getBits(data, 0, 2);
 		int open = getBit(data, 2);
-		int half = getBit(data, 3);		
+		int half = getBit(data, 3);
 		BlockState blockState;
 		switch(material)
 		{
@@ -1360,7 +1360,7 @@ class FabricLegacyMaterials
 			.setValue(TrapDoorBlock.OPEN, open == 1)
 		;
 	}
-	
+
 	private static BlockState getPistonWithData(int material, int data)
 	{
 		int facing = getBits(data, 0, 3);
@@ -1373,14 +1373,14 @@ class FabricLegacyMaterials
             default -> null;
         };
 	}
-	
+
 	private static BlockState getPistonHeadWithData(int data)
 	{
 		int facing = getBits(data, 0, 3);
 		int type = getBit(data, 3);
 		return Blocks.PISTON_HEAD.defaultBlockState()
 			.setValue(PistonHeadBlock.FACING, getFacingDownUpNorthSouthWestEast(facing))
-			.setValue(PistonHeadBlock.TYPE, type == 0 ? PistonType.DEFAULT : PistonType.STICKY)			
+			.setValue(PistonHeadBlock.TYPE, type == 0 ? PistonType.DEFAULT : PistonType.STICKY)
 		;
 	}
 
@@ -1418,7 +1418,7 @@ class FabricLegacyMaterials
 			.setValue(HugeMushroomBlock.WEST, west)
 		;
 	}
-	
+
 	private static BlockState getVineWithData(int data)
 	{
 		int south = getBit(data, 0);
@@ -1434,7 +1434,7 @@ class FabricLegacyMaterials
 			.setValue(VineBlock.UP, up == 1)
 		;
 	}
-	
+
 	private static BlockState getFenceGateWithData(int material, int data)
 	{
 		int facing = getBits(data, 0, 2);
@@ -1468,14 +1468,14 @@ class FabricLegacyMaterials
 			.setValue(FenceGateBlock.OPEN, open == 1)
 		;
 	}
-	
+
 	private static BlockState getCocoaWithData(int data)
 	{
 		int facing = getBits(data, 0, 2);
 		int age = getBits(data, 2, 2);
 		return Blocks.COCOA.defaultBlockState().setValue(CocoaBlock.FACING, getFacingSouthWestNorthEast(facing)).setValue(CocoaBlock.AGE, age);
 	}
-	
+
 	private static BlockState getTripWireHookWithData(int data)
 	{
 		int facing = getBits(data, 0, 2);
@@ -1487,20 +1487,20 @@ class FabricLegacyMaterials
 			.setValue(TripWireHookBlock.POWERED, powered == 1)
 		;
 	}
-	
+
 	private static BlockState getEndPortalFrameWithData(int data)
 	{
 		int facing = getBits(data, 0, 2);
 		int eye = getBit(data, 2);
 		return Blocks.END_PORTAL_FRAME.defaultBlockState().setValue(EndPortalFrameBlock.HAS_EYE, eye == 1).setValue(EndPortalFrameBlock.FACING, getFacingSouthWestNorthEast(facing));
-	}	
-	
+	}
+
 	private static BlockState getStructureBlockWithData(int data)
 	{
 		StructureMode structureBlockMode = data == 0 ? StructureMode.DATA : data == 1 ? StructureMode.SAVE : data == 2 ? StructureMode.LOAD : data == 3 ? StructureMode.LOAD : StructureMode.DATA;
 		return Blocks.STRUCTURE_BLOCK.defaultBlockState().setValue(StructureBlock.MODE, structureBlockMode);
 	}
-	
+
 	private static BlockState getGlazedTerracottaWithData(int material, int data)
 	{
 		int facing = getBits(data, 0, 2);
@@ -1560,7 +1560,7 @@ class FabricLegacyMaterials
 		}
 		return blockState.setValue(GlazedTerracottaBlock.FACING, getFacingSouthWestNorthEast(facing));
 	}
-	
+
 	private static BlockState getTripWireWithData(int data)
 	{
 		int active = getBit(data, 0);
@@ -1572,8 +1572,8 @@ class FabricLegacyMaterials
 			.setValue(TripWireBlock.DISARMED, disarmed == 1)
 		;
 	}
-	
-	//	
+
+	//
 
 	private static Direction.Axis getAxisXYZ(int data)
 	{
@@ -1583,12 +1583,12 @@ class FabricLegacyMaterials
             default -> Direction.Axis.Y;
         };
 	}
-	
+
 	private static Direction.Axis getAxisXZ(int data)
 	{
         return data == 2 ?  Direction.Axis.Z : Direction.Axis.X;
 	}
-	
+
 	private static Direction getFacingSouthWestNorthEast(int data)
 	{
         return switch (data) {
@@ -1598,7 +1598,7 @@ class FabricLegacyMaterials
             default -> Direction.SOUTH;
         };
 	}
-	
+
 	private static Direction getFacingNorthSouthWestEast(int data)
 	{
         return switch (data) {
@@ -1608,7 +1608,7 @@ class FabricLegacyMaterials
             default -> Direction.NORTH;
         };
 	}
-	
+
 	private static Direction getFacingDownUpNorthSouthWestEast(int data)
 	{
         return switch (data) {
@@ -1619,8 +1619,8 @@ class FabricLegacyMaterials
             case 5 -> Direction.EAST;
             default -> Direction.DOWN;
         };
-	}	
-	
+	}
+
 	private static Direction getFacingSouthNorthEastWest(int data)
 	{
         return switch (data) {
@@ -1629,8 +1629,8 @@ class FabricLegacyMaterials
             case 3 -> Direction.WEST;
             default -> Direction.SOUTH;
         };
-	}	
-	
+	}
+
 	private static Direction getFacingEastSouthWestNorth(int data)
 	{
         return switch (data) {
@@ -1639,8 +1639,8 @@ class FabricLegacyMaterials
             case 3 -> Direction.NORTH;
             default -> Direction.EAST;
         };
-	}			
-	
+	}
+
 	private static Direction getFacingEastWestSouthNorth(int data)
 	{
         return switch (data) {
@@ -1662,7 +1662,7 @@ class FabricLegacyMaterials
             default -> Direction.UP;
         };
 	}
-		
+
 	private static Direction.Axis getPillarAxisXYZ(int data)
 	{
         return switch (data) {
@@ -1681,7 +1681,7 @@ class FabricLegacyMaterials
             default -> Direction.EAST;
         };
 	}
-	
+
 	private static Direction getFacingButton(int data)
 	{
         return switch (data) {
@@ -1691,7 +1691,7 @@ class FabricLegacyMaterials
             default -> Direction.EAST;
         };
 	}
-	
+
 	private static RailShape getRailShape(int shape)
 	{
         return switch (shape) {
@@ -1706,8 +1706,8 @@ class FabricLegacyMaterials
             case 9 -> RailShape.NORTH_EAST;
             default -> RailShape.NORTH_SOUTH;
         };
-	}	
-	
+	}
+
 	private static int getBits(int source, int index, int length)
 	{
 		int bits = 0;
@@ -1717,7 +1717,7 @@ class FabricLegacyMaterials
 		}
 		return bits;
 	}
-	
+
 	private static int getBit(int source, int index)
 	{
 		return ((source & (1 << index)) >> index);

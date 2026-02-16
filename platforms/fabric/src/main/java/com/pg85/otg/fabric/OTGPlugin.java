@@ -9,7 +9,7 @@ import com.pg85.otg.fabric.portals.FabricPortalBlocks;
 import com.pg85.otg.fabric.portals.PortalIgnitionHandler;
 import com.pg85.otg.fabric.events.WorldSaveCallback;
 import com.pg85.otg.fabric.gen.OTGFabricChunkGenerator;
-import com.pg85.otg.fabric.materials.FabricMaterialReader;
+import com.pg85.otg.shared.materials.SharedMaterialReader;
 import com.pg85.otg.fabric.util.FabricLogger;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.OTGMaterialReader;
@@ -32,7 +32,7 @@ public class OTGPlugin implements ModInitializer {
 	public void onInitialize() {
 		OTGLog.setLogger(new FabricLogger());
 		OTGLog.getLogger().log(LogLevel.INFO, LogCategory.MAIN, "OTG Engine starting");
-		OTGMaterialReader.set(new FabricMaterialReader());
+		OTGMaterialReader.set(new SharedMaterialReader());
 		OTG.startEngine(new FabricEngine());
 
 		registerWorldSave();

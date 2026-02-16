@@ -1,4 +1,4 @@
-package com.pg85.otg.fabric.materials;
+package com.pg85.otg.shared.materials;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -26,7 +26,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.Optional;
 
-public class FabricMaterialReader implements IMaterialReader {
+public class SharedMaterialReader implements IMaterialReader {
     private final LRUCache<String, LocalMaterialData> cachedMaterials = new LRUCache<>(4096);
     private final LRUCache<String, LocalMaterialTag> cachedTags = new LRUCache<>(4096);
     private static final HolderLookup.Provider vanillaRegistries = VanillaRegistries.createLookup();
@@ -80,7 +80,7 @@ public class FabricMaterialReader implements IMaterialReader {
             return localTag;
         }
 
-        localTag = FabricMaterialTag.ofString(tag);
+        localTag = SharedMaterialTag.ofString(tag);
         this.cachedTags.put(tag, localTag);
         return localTag;
     }
@@ -103,7 +103,7 @@ public class FabricMaterialReader implements IMaterialReader {
         // Used in BO4's as placeholder/detector block.
         if(input.equalsIgnoreCase("blank"))
         {
-            return FabricMaterialData.getBlank();
+            return SharedMaterialData.getBlank();
         }
 
         BlockState blockState;
@@ -111,10 +111,10 @@ public class FabricMaterialReader implements IMaterialReader {
         // Try parsing as legacy block name / id
         if(!blockNameCorrected.contains(":"))
         {
-            blockState = FabricLegacyMaterials.fromLegacyBlockName(blockNameCorrected);
+            blockState = SharedLegacyMaterials.fromLegacyBlockName(blockNameCorrected);
             if(blockState != null)
             {
-                return FabricMaterialData.ofBlockState(blockState, input);
+                return SharedMaterialData.ofBlockState(blockState, input);
             }
             try
             {
@@ -128,10 +128,10 @@ public class FabricMaterialReader implements IMaterialReader {
                 if(fromLegacyIdName != null)
                 {
                     blockNameCorrected = fromLegacyIdName;
-                    blockState = FabricLegacyMaterials.fromLegacyBlockName(blockNameCorrected);
+                    blockState = SharedLegacyMaterials.fromLegacyBlockName(blockNameCorrected);
                     if(blockState != null)
                     {
-                        return FabricMaterialData.ofBlockState(blockState, input);
+                        return SharedMaterialData.ofBlockState(blockState, input);
                     }
                 }
             } catch(NumberFormatException ignored) { /* Not a numeric ID, trying next parse method */ }
@@ -158,9 +158,9 @@ public class FabricMaterialReader implements IMaterialReader {
             // TODO: Maybe only do this for leaves that don't already have distance set to a different value? -auth
             if(state.getBlock() instanceof LeavesBlock)
             {
-                return FabricMaterialData.ofBlockState(state.setValue(LeavesBlock.DISTANCE, 1), input);
+                return SharedMaterialData.ofBlockState(state.setValue(LeavesBlock.DISTANCE, 1), input);
             }
-            return FabricMaterialData.ofBlockState(state, input);
+            return SharedMaterialData.ofBlockState(state, input);
         }
 
         // Try legacy block with data (fe SAND:1 or 12:1)
@@ -177,10 +177,10 @@ public class FabricMaterialReader implements IMaterialReader {
             try
             {
                 int data = Integer.parseInt(blockNameCorrected.substring(blockNameCorrected.indexOf(":") + 1));
-                blockState = FabricLegacyMaterials.fromLegacyBlockNameOrIdWithData(blockNameOrId, data);
+                blockState = SharedLegacyMaterials.fromLegacyBlockNameOrIdWithData(blockNameOrId, data);
                 if(blockState != null)
                 {
-                    return FabricMaterialData.ofBlockState(blockState, input);
+                    return SharedMaterialData.ofBlockState(blockState, input);
                 }
                 // Failed to parse data, remove. fe STONE:0 or STONE:1 -> STONE
                 blockNameCorrected = blockNameCorrected.substring(0, blockNameCorrected.indexOf(":"));
@@ -201,17 +201,17 @@ public class FabricMaterialReader implements IMaterialReader {
                 // For leaves, add DISTANCE 1 to make them not decay.
                 if(block instanceof LeavesBlock)
                 {
-                    return FabricMaterialData.ofBlockState(block.defaultBlockState().setValue(LeavesBlock.DISTANCE, 1), input);
+                    return SharedMaterialData.ofBlockState(block.defaultBlockState().setValue(LeavesBlock.DISTANCE, 1), input);
                 }
-                return FabricMaterialData.ofBlock(block, input);
+                return SharedMaterialData.ofBlock(block, input);
             }
         } catch(ResourceLocationException ignored) { /* Invalid resource location, trying legacy fallback */ }
 
         // Try legacy name again, without data.
-        blockState = FabricLegacyMaterials.fromLegacyBlockName(blockNameCorrected.replace("minecraft:", ""));
+        blockState = SharedLegacyMaterials.fromLegacyBlockName(blockNameCorrected.replace("minecraft:", ""));
         if(blockState != null)
         {
-            return FabricMaterialData.ofBlockState(blockState, input);
+            return SharedMaterialData.ofBlockState(blockState, input);
         }
 
         if(OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.CONFIGS))
@@ -219,6 +219,6 @@ public class FabricMaterialReader implements IMaterialReader {
             OTG.getEngine().getLogger().log(LogLevel.ERROR, LogCategory.CONFIGS, "Could not parse block: " + input + ", substituting AIR.");
         }
 
-        return FabricMaterialData.ofBlock(Blocks.AIR, input);
+        return SharedMaterialData.ofBlock(Blocks.AIR, input);
     }
 }

@@ -1,4 +1,4 @@
-package com.pg85.otg.fabric.materials;
+package com.pg85.otg.shared.materials;
 
 import com.pg85.otg.util.OTGDirection;
 import com.pg85.otg.util.materials.LocalMaterialData;
@@ -19,17 +19,17 @@ import net.minecraft.world.level.block.state.properties.Property;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class FabricMaterialData extends LocalMaterialData implements com.pg85.otg.shared.materials.IBlockStateMaterial {
+public class SharedMaterialData extends LocalMaterialData {
     @Getter
-    static final LocalMaterialData blank = new FabricMaterialData(null, null);
+    static final LocalMaterialData blank = new SharedMaterialData(null, null);
     @Getter
     private final BlockState state;
     @Getter
     private final String registryName;
     private final String name;
-    private static final ConcurrentHashMap<BlockState, FabricMaterialData> stateToMaterialDataMap = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<BlockState, SharedMaterialData> stateToMaterialDataMap = new ConcurrentHashMap<>();
 
-    public FabricMaterialData(BlockState state, String raw) {
+    public SharedMaterialData(BlockState state, String raw) {
         super(raw);
         this.state = state;
         if (state == null && raw == null) {
@@ -47,8 +47,8 @@ public class FabricMaterialData extends LocalMaterialData implements com.pg85.ot
         if (stateToMaterialDataMap.containsKey(blockState)) {
             return stateToMaterialDataMap.get(blockState);
         }
-        FabricMaterialData materialData = new FabricMaterialData(blockState, input);
-        FabricMaterialData previous = stateToMaterialDataMap.putIfAbsent(blockState, materialData);
+        SharedMaterialData materialData = new SharedMaterialData(blockState, input);
+        SharedMaterialData previous = stateToMaterialDataMap.putIfAbsent(blockState, materialData);
         return previous == null ? materialData : previous;
     }
 
@@ -82,12 +82,12 @@ public class FabricMaterialData extends LocalMaterialData implements com.pg85.ot
             // Extremely ugly hack for directions
             DirectionProperty directionProperty = BlockStateProperties.HORIZONTAL_FACING;
             Direction direction = Direction.values()[((OTGDirection)value).ordinal()];
-            return FabricMaterialData.ofBlockState(this.state.setValue(directionProperty, direction));
+            return SharedMaterialData.ofBlockState(this.state.setValue(directionProperty, direction));
         } else {
             throw new IllegalArgumentException("Unknown property: " + materialProperty);
         }
 
-        return FabricMaterialData.ofBlockState(this.state.setValue(property, value));
+        return SharedMaterialData.ofBlockState(this.state.setValue(property, value));
     }
 
     public <T extends Comparable<T>> LocalMaterialData withProperty(String property, T value) {
@@ -95,7 +95,7 @@ public class FabricMaterialData extends LocalMaterialData implements com.pg85.ot
         if (value instanceof OTGDirection) {
             DirectionProperty directionProperty = BlockStateProperties.HORIZONTAL_FACING;
             Direction direction = Direction.values()[((OTGDirection)value).ordinal()];
-            return FabricMaterialData.ofBlockState(this.state.setValue(directionProperty, direction));
+            return SharedMaterialData.ofBlockState(this.state.setValue(directionProperty, direction));
         }
         for (Property<?> prop : this.state.getProperties()) {
             if (prop.getName().equals(property)) {
@@ -104,7 +104,7 @@ public class FabricMaterialData extends LocalMaterialData implements com.pg85.ot
                 if (!allowedValues.contains(value)) {
                     throw new IllegalArgumentException("Value " + value + " is not allowed for property " + property + " for block "+this.name);
                 }
-                return FabricMaterialData.ofBlockState(this.state.setValue(matchedProp, value));
+                return SharedMaterialData.ofBlockState(this.state.setValue(matchedProp, value));
             }
         }
         throw new IllegalArgumentException("Unknown property: " + property + " for block "+this.name);
@@ -151,12 +151,12 @@ public class FabricMaterialData extends LocalMaterialData implements com.pg85.ot
             return false;
         }
         return this.isBlank && material.isBlank() ||
-               this.state == ((FabricMaterialData) material).state;
+               this.state == ((SharedMaterialData) material).state;
     }
 
     @Override
     public boolean isBlockTag(LocalMaterialTag tag) {
-        return this.state.is(((FabricMaterialTag) tag).getKey());
+        return this.state.is(((SharedMaterialTag) tag).getKey());
     }
 
     @Override
@@ -198,7 +198,7 @@ public class FabricMaterialData extends LocalMaterialData implements com.pg85.ot
 
         // Get the rotation if we haven't stored the rotation yet
         if (rotated == null) {
-            this.rotated = FabricMaterialData.ofBlockState(state.rotate(Rotation.CLOCKWISE_90));
+            this.rotated = SharedMaterialData.ofBlockState(state.rotate(Rotation.CLOCKWISE_90));
         }
 
         if (rotateTimes > 1) {
@@ -210,7 +210,7 @@ public class FabricMaterialData extends LocalMaterialData implements com.pg85.ot
 
     @Override
     public boolean equals(Object other) {
-        if (other instanceof FabricMaterialData otherData) {
+        if (other instanceof SharedMaterialData otherData) {
             if (this.isBlank) {
                 return otherData.isBlank;
             }
@@ -237,13 +237,13 @@ public class FabricMaterialData extends LocalMaterialData implements com.pg85.ot
         if (i > 6)
         {
             if (leaveIllegalLeaves)
-                return FabricMaterialData.ofBlockState(
+                return SharedMaterialData.ofBlockState(
                         state.setValue(LeavesBlock.DISTANCE, 1)
                                 .setValue(LeavesBlock.PERSISTENT, false));
-            return FabricMaterialData.ofBlockState(
+            return SharedMaterialData.ofBlockState(
                     state.setValue(LeavesBlock.PERSISTENT, true));
         } else {
-            return FabricMaterialData.ofBlockState(
+            return SharedMaterialData.ofBlockState(
                     state.setValue(LeavesBlock.PERSISTENT, false));
         }
     }

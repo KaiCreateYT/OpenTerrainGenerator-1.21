@@ -1,7 +1,7 @@
 package com.pg85.otg.neoforge.gen;
 
 import com.pg85.otg.config.preset.PresetConfig;
-import com.pg85.otg.neoforge.materials.NeoForgeMaterialData;
+import com.pg85.otg.shared.materials.SharedMaterialData;
 import com.pg85.otg.neoforge.util.NeoForgeNBTHelper;
 import com.pg85.otg.gen.OTGChunkGenerator;
 import com.pg85.otg.interfaces.IPluginConfig;
@@ -41,12 +41,12 @@ public class NeoForgeWorldGenRegion extends SharedWorldGenRegion {
 
     @Override
     protected LocalMaterialData fromBlockState(BlockState blockState) {
-        return NeoForgeMaterialData.ofBlockState(blockState);
+        return SharedMaterialData.ofBlockState(blockState);
     }
 
     @Override
     protected BlockState toBlockState(LocalMaterialData material) {
-        return ((NeoForgeMaterialData) material).getState();
+        return ((SharedMaterialData) material).getState();
     }
 
     @Override

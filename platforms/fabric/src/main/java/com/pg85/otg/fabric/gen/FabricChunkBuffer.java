@@ -1,6 +1,6 @@
 package com.pg85.otg.fabric.gen;
 
-import com.pg85.otg.fabric.materials.FabricMaterialData;
+import com.pg85.otg.shared.materials.SharedMaterialData;
 import com.pg85.otg.util.ChunkCoordinate;
 import com.pg85.otg.util.gen.ChunkBuffer;
 import com.pg85.otg.util.materials.LocalMaterialData;
@@ -23,12 +23,12 @@ public class FabricChunkBuffer extends ChunkBuffer {
 
     @Override
     public void setBlock(int blockX, int blockY, int blockZ, LocalMaterialData material) {
-        FabricMaterialData fabricMaterialData = (FabricMaterialData) material;
+        SharedMaterialData fabricMaterialData = (SharedMaterialData) material;
         chunkAccess.setBlockState(new BlockPos(blockX, blockY, blockZ), fabricMaterialData.getState(), false);
     }
 
     @Override
     public LocalMaterialData getBlock(int blockX, int blockY, int blockZ) {
-        return FabricMaterialData.ofBlockState(chunkAccess.getBlockState(new BlockPos(blockX, blockY, blockZ)));
+        return SharedMaterialData.ofBlockState(chunkAccess.getBlockState(new BlockPos(blockX, blockY, blockZ)));
     }
 }

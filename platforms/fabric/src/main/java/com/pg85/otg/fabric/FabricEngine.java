@@ -4,7 +4,7 @@ import com.pg85.otg.OTG;
 import com.pg85.otg.OTGEngine;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.fabric.biome.LegacyFabricBiomeLoader;
-import com.pg85.otg.fabric.materials.FabricMaterials;
+import com.pg85.otg.shared.materials.SharedMaterials;
 import com.pg85.otg.fabric.util.FabricModLoadedChecker;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
@@ -27,7 +27,7 @@ public class FabricEngine extends OTGEngine {
 
     @Override
     public void onStart() {
-        FabricMaterials.init();
+        SharedMaterials.init();
         super.onStart();
     }
 
