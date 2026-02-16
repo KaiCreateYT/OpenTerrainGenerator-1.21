@@ -34,6 +34,8 @@ public class BiomeLayerData
 	public final Map<Integer, List<BiomeData>> borderBiomesAtDepth = new HashMap<>();
 	public final int[] riverBiomes;
 
+	public final int biomeCount;
+
 	// FromImageMode
 	public HashMap<Integer, Integer> biomeColorMap;
 
@@ -55,6 +57,7 @@ public class BiomeLayerData
 						  IBiome[] biomes)
 	{
 		this.presetDir = presetDir;
+		this.biomeCount = biomes.length;
 		this.biomeSettings = presetConfig.getGenerationSettings();
 		this.imageSettings = presetConfig.getImageSettings();
 		this.presetInfo = presetConfig.getPresetInfo();

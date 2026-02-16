@@ -101,6 +101,18 @@ public final class BiomePlanResolver {
         Map<Integer, BiomeGroup> groupRegistry = processBiomeGroups(
                 presetConfig, biomeConfigsByName, biomeDepths, groupDepths);
 
+        // Bit packing validation: BiomeLayers uses GROUP_SHIFT=20, GROUP_BITS=7
+        // Biome IDs must fit in 20 bits, group IDs must fit in 7 bits
+        int maxBiomeId = (1 << 20) - 1; // 1,048,575
+        if (totalSlots > maxBiomeId) {
+            throw new IllegalStateException(
+                    "Preset has " + totalSlots + " biomes, exceeding the 20-bit maximum of " + maxBiomeId);
+        }
+        if (groupRegistry.size() > 127) {
+            OTGLog.fatal(LogCategory.CONFIGS,
+                    "Preset has " + groupRegistry.size() + " biome groups, exceeding the 7-bit maximum of 127. Terrain will be corrupted.");
+        }
+
         return new BiomePlan(
                 Collections.unmodifiableList(biomeEntries),
                 oceanBiomeConfig,
@@ -121,8 +133,9 @@ public final class BiomePlanResolver {
         String name = settings.getIdentitySettings().getBiomeName();
         if (name.equals(presetConfig.getGenerationSettings().getDefaultWarmOceanBiome())) temps[0] = id;
         if (name.equals(presetConfig.getGenerationSettings().getDefaultLukewarmOceanBiome())) temps[1] = id;
-        if (name.equals(presetConfig.getGenerationSettings().getDefaultColdOceanBiome())) temps[2] = id;
-        if (name.equals(presetConfig.getGenerationSettings().getDefaultFrozenOceanBiome())) temps[3] = id;
+        // OceanTemperatureLayer reads [2]=frozen (noise < -0.4), [3]=cold (noise < -0.2)
+        if (name.equals(presetConfig.getGenerationSettings().getDefaultFrozenOceanBiome())) temps[2] = id;
+        if (name.equals(presetConfig.getGenerationSettings().getDefaultColdOceanBiome())) temps[3] = id;
     }
 
     private static void collectIsleBorderData(

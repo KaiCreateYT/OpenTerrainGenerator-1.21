@@ -38,7 +38,7 @@ public class BiomeIsleLayer implements DiagonalCrossSamplingLayer
 	{
 		int biomeId;
 		int chance = 10;
-		boolean[] canSpawnIn = new boolean[1024];
+		boolean[] canSpawnIn;
 		boolean inOcean = false;
 	}
 

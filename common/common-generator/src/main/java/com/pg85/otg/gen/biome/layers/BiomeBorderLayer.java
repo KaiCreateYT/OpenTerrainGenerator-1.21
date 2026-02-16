@@ -36,7 +36,11 @@ public class BiomeBorderLayer implements ParentedLayer
 	
 	public static class BordersList
 	{
-		private final BorderedBiome[] borderedBiomes = new BorderedBiome[1024]; 
+		private final BorderedBiome[] borderedBiomes;
+
+		public BordersList(int biomeCount) {
+			this.borderedBiomes = new BorderedBiome[biomeCount];
+		}
 
 		public void addBorder(int biomeId, int borderedBiomeId, List<Integer> onlyBorderNearBiomes, List<Integer> notBorderNearBiomes)
 		{
@@ -46,10 +50,10 @@ public class BiomeBorderLayer implements ParentedLayer
 				borderedBiome = new BorderedBiome();
 				this.borderedBiomes[borderedBiomeId] = borderedBiome;
 			}
-			
+
 			// If allowedNearBiomes whitelist is present,
 			// ignore notAllowedNearBiomes blacklist.
-			boolean[] allowedNearBiomes = new boolean[1024];
+			boolean[] allowedNearBiomes = new boolean[this.borderedBiomes.length];
 			if(onlyBorderNearBiomes != null && onlyBorderNearBiomes.size() > 0)
 			{
 				Arrays.fill(allowedNearBiomes, false);

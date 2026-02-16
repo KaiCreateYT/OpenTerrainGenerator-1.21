@@ -154,7 +154,7 @@ public class BiomeLayers
 					BiomeIsleLayer.IslesList islesAtCurrentDepth = new BiomeIsleLayer.IslesList();
 					for (BiomeData biome : isleBiomes)
 					{
-						boolean[] biomeCanSpawnIn = new boolean[1024];
+						boolean[] biomeCanSpawnIn = new boolean[data.biomeCount];
 						boolean inOcean = false;
 						for (int islandInBiome : biome.isleInBiomes)
 						{
@@ -174,7 +174,7 @@ public class BiomeLayers
 				List<BiomeData> borderBiomes = data.borderBiomesAtDepth.get(depth);
 				if(borderBiomes != null && !borderBiomes.isEmpty())
 				{
-					BiomeBorderLayer.BordersList bordersAtCurrentDepth = new BiomeBorderLayer.BordersList();
+					BiomeBorderLayer.BordersList bordersAtCurrentDepth = new BiomeBorderLayer.BordersList(data.biomeCount);
 					for (BiomeData biome : borderBiomes)
 					{
 						for(int targetBiomeId : biome.borderInBiomes)
