@@ -51,12 +51,12 @@ public class SurfaceSettings extends ConfigSection {
     }
 
     public static final Setting<Integer> WATER_LEVEL_MAX = Settings.intSetting(
-            "WaterLevelMax", 63, Constants.WORLD_DEPTH, Constants.WORLD_HEIGHT - 1,
+            "WaterLevelMax", 63, Constants.WORLD_START_MIN_Y, Constants.WORLD_END_MAX_Y,
             t -> ((SurfaceSettings) t).getWaterLevelMax(),
             "Set water level. Every empty block under this level down to min will be fill water or another block from WaterBlock."
     );
     public static final Setting<Integer> WATER_LEVEL_MIN = Settings.intSetting(
-            "WaterLevelMin", 0, Constants.WORLD_DEPTH, Constants.WORLD_HEIGHT - 1,
+            "WaterLevelMin", 0, Constants.WORLD_START_MIN_Y, Constants.WORLD_END_MAX_Y,
             t -> ((SurfaceSettings) t).getWaterLevelMin(),
             "Set water level. Every empty block over this level up to max will be fill water or another block from WaterBlock."
     );

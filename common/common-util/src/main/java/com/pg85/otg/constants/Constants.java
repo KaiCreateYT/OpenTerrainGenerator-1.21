@@ -45,23 +45,9 @@ public class Constants
 	public static final String MOD_ID_LOWER_CASE = "openterraingenerator";
 	public static final String MOD_ID_SHORT = "otg";
 	
-	/**
-	 * The world depth that the engine supports. Not the actual depth the
-	 * world is capped at. 0 in Minecraft.
-	 */
-	@Deprecated
-	public static final int WORLD_DEPTH = 0;
-
 	public static final int WORLD_START_MIN_Y = -2032; // Minimum possible Y value the world can start at
 	public static final int WORLD_END_MAX_Y = 2031; // Maximum possible Y value the world can end at
 	public static final int WORLD_MAX_HEIGHT = WORLD_END_MAX_Y - WORLD_START_MIN_Y + 1; // Maximum possible height of the world, based on min and max Y values - 4064
-
-	/**
-	 * The world height that the engine supports. Not the actual height the
-	 * world is capped at. 256 in Minecraft.
-	 */
-	@Deprecated
-	public static final int WORLD_HEIGHT = 256;
 
 	// used for places that need 256 where it isn't related to world height
 	public static final int OTHER_256 = 256;

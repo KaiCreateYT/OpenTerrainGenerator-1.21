@@ -403,7 +403,7 @@ public class BO4CustomStructure extends CustomStructure
 				startY += config.heightOffset;
 			}
 
-			if(startY < Constants.WORLD_DEPTH || startY >= Constants.WORLD_HEIGHT)
+			if(startY < worldGenRegion.getWorldInfo().minY() || startY > worldGenRegion.getWorldInfo().maxY())
 			{
 				return false;
 			}

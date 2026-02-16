@@ -234,7 +234,7 @@ public class BO2 extends CustomObjectConfigFile implements CustomObject
 	{
 		// Basic checks
 		
-		if (y < Constants.WORLD_DEPTH || y >= Constants.WORLD_HEIGHT)  // Isn't this already done before this method is called?
+		if (y < worldGenRegion.getWorldInfo().minY() || y > worldGenRegion.getWorldInfo().maxY())
 		{
 			return false;
 		}
@@ -304,8 +304,8 @@ public class BO2 extends CustomObjectConfigFile implements CustomObject
 		for (ObjectCoordinate point : objData)
 		{
 			if (
-				y + point.y < Constants.WORLD_DEPTH || 
-				y + point.y >= Constants.WORLD_HEIGHT
+				y + point.y < worldGenRegion.getWorldInfo().minY() ||
+				y + point.y > worldGenRegion.getWorldInfo().maxY()
 			)
 			{
 				return false;

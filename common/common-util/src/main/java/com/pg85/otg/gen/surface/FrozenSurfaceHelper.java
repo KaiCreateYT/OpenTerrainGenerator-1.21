@@ -135,7 +135,7 @@ public class FrozenSurfaceHelper
 			snowHeight = 0;
 		}
 		while (
-			y > Constants.WORLD_DEPTH + 1 && 
+			y > worldGenRegion.getWorldInfo().minY() + 1 &&
 			decreaseFactor < 8 &&
 			snowHeight - decreaseFactor >= 0
 		)

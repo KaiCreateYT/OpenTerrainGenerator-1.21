@@ -1,6 +1,5 @@
 package com.pg85.otg.customobject.bo3.checks;
 
-import com.pg85.otg.constants.Constants;
 import com.pg85.otg.customobject.bo3.BO3Config;
 import com.pg85.otg.exceptions.InvalidConfigException;
 import com.pg85.otg.interfaces.IMaterialReader;
@@ -16,7 +15,7 @@ public class BlockCheck extends BO3Check
 	@Override
 	public boolean preventsSpawn(IWorldGenRegion worldGenregion, int x, int y, int z)
 	{
-		return y > Constants.WORLD_DEPTH && y < Constants.WORLD_HEIGHT && !this.toCheck.contains(worldGenregion.getMaterial(x, y, z));
+		return y >= worldGenregion.getWorldInfo().minY() && y <= worldGenregion.getWorldInfo().maxY() && !this.toCheck.contains(worldGenregion.getMaterial(x, y, z));
 	}
 
 	@Override

@@ -74,7 +74,7 @@ public class CarverSettings extends ConfigSection {
             "result of 5 to 6. This can be turned off by setting evenCaveDistribution (below) to true."
     );
     public static final Setting<Integer> CAVE_MIN_ALTITUDE = Settings.intSetting(
-            "CaveMinAltitude", 8, Constants.WORLD_DEPTH, Constants.WORLD_HEIGHT - 1,
+            "CaveMinAltitude", 8, Constants.WORLD_START_MIN_Y, Constants.WORLD_END_MAX_Y,
             t -> ((CarverSettings) t).getCaveMinAltitude(),
             "Sets the minimum and maximum altitudes at which caves will be generated. These values are",
             "used in a randomizer that trends towards lower numbers so that caves become more frequent",
@@ -83,7 +83,7 @@ public class CarverSettings extends ConfigSection {
             "density of caves at all altitudes."
     );
     public static final Setting<Integer> CAVE_MAX_ALTITUDE = Settings.intSetting(
-            "CaveMaxAltitude", 128, Constants.WORLD_DEPTH, Constants.WORLD_HEIGHT - 1,
+            "CaveMaxAltitude", 128, Constants.WORLD_START_MIN_Y, Constants.WORLD_END_MAX_Y,
             t -> ((CarverSettings) t).getCaveMaxAltitude(),
             "See " + CAVE_MIN_ALTITUDE
     );
@@ -126,11 +126,11 @@ public class CarverSettings extends ConfigSection {
             t -> ((CarverSettings) t).getRavineRarity()
     );
     public static final Setting<Integer> RAVINE_MIN_ALTITUDE = Settings.intSetting(
-            "RavineMinAltitude", 20, Constants.WORLD_DEPTH, Constants.WORLD_HEIGHT - 1,
+            "RavineMinAltitude", 20, Constants.WORLD_START_MIN_Y, Constants.WORLD_END_MAX_Y,
             t -> ((CarverSettings) t).getRavineMinAltitude()
     );
     public static final Setting<Integer> RAVINE_MAX_ALTITUDE = Settings.intSetting(
-            "RavineMaxAltitude", 68, Constants.WORLD_DEPTH, Constants.WORLD_HEIGHT - 1,
+            "RavineMaxAltitude", 68, Constants.WORLD_START_MIN_Y, Constants.WORLD_END_MAX_Y,
             t -> ((CarverSettings) t).getRavineMaxAltitude()
     );
     public static final Setting<Integer> RAVINE_MIN_LENGTH = Settings.intSetting(

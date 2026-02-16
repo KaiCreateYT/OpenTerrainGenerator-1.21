@@ -138,7 +138,7 @@ public class BO3 implements StructuredCustomObject
 
 		ArrayList<BO3BlockFunction> blocksToSpawn = new ArrayList<>();
 
-		ObjectExtrusionHelper oeh = new ObjectExtrusionHelper(this.settings.extrudeMode, this.settings.extrudeThroughBlocks);
+		ObjectExtrusionHelper oeh = new ObjectExtrusionHelper(this.settings.extrudeMode, this.settings.extrudeThroughBlocks, worldGenRegion.getWorldInfo());
 		HashSet<ChunkCoordinate> chunks = new HashSet<>();
 
 		LocalMaterialData localMaterial;
@@ -213,7 +213,7 @@ public class BO3 implements StructuredCustomObject
 							   Random random, Rotation rotation, int x, int y, int z, boolean allowReplaceBlocks)
 	{
 		BO3BlockFunction[] blocks = this.settings.getBlocks(rotation.getRotationId());
-		ObjectExtrusionHelper oeh = new ObjectExtrusionHelper(this.settings.extrudeMode, this.settings.extrudeThroughBlocks);
+		ObjectExtrusionHelper oeh = new ObjectExtrusionHelper(this.settings.extrudeMode, this.settings.extrudeThroughBlocks, world.getWorldInfo());
 		HashSet<ChunkCoordinate> chunks = new HashSet<>();
 
 		ReplaceBlockMatrix replaceBlocks = null;
@@ -314,14 +314,14 @@ public class BO3 implements StructuredCustomObject
 		}
 		// Offset by static and random settings values
 		// TODO: This is pointless used with randomY?
-		offsetY = baseY + this.getOffsetAndVariance(random, this.settings.getSpawnHeightOffset(), this.settings.spawnHeightVariance);
+		offsetY = baseY + this.getOffsetAndVariance(random, this.settings.getSpawnHeightOffset(), this.settings.spawnHeightVariance, worldGenRegion);
 		return trySpawnAt(null, structureCache, worldGenRegion, random, rotation, x, offsetY, z, minY, maxY, baseY);
 	}
 	
 	// Used for trees, customobjects and customstructures during decoration.
 	public boolean trySpawnAt(CustomStructure structure, CustomStructureCache structureCache, IWorldGenRegion worldGenRegion, Random random, Rotation rotation, int x, int y, int z, int minY, int maxY, int baseY)
 	{
-		if (y < Constants.WORLD_DEPTH || y >= Constants.WORLD_HEIGHT) // Isn't this already done before this method is called?
+		if (y < worldGenRegion.getWorldInfo().minY() || y > worldGenRegion.getWorldInfo().maxY())
 		{
 			return false;
 		}
@@ -353,7 +353,7 @@ public class BO3 implements StructuredCustomObject
 		ChunkCoordinate chunkCoord;
 		for (BO3BlockFunction block : blocks)
 		{
-			if (y + block.y < Constants.WORLD_DEPTH || y + block.y >= Constants.WORLD_HEIGHT)
+			if (y + block.y < worldGenRegion.getWorldInfo().minY() || y + block.y > worldGenRegion.getWorldInfo().maxY())
 			{
 				return false;
 			}
@@ -371,7 +371,7 @@ public class BO3 implements StructuredCustomObject
 		}
 
 		ArrayList<BO3BlockFunction> blocksToSpawn = new ArrayList<>();
-		ObjectExtrusionHelper oeh = new ObjectExtrusionHelper(this.settings.extrudeMode, this.settings.extrudeThroughBlocks);
+		ObjectExtrusionHelper oeh = new ObjectExtrusionHelper(this.settings.extrudeMode, this.settings.extrudeThroughBlocks, worldGenRegion.getWorldInfo());
 		HashSet<ChunkCoordinate> chunks = new HashSet<>();
 
 		int blocksOutsideSourceBlock = 0;
@@ -507,7 +507,7 @@ public class BO3 implements StructuredCustomObject
 	 *
 	 * @return The sum of the offset and variance.
 	 */
-	private int getOffsetAndVariance(Random random, int offset, int variance)
+	private int getOffsetAndVariance(Random random, int offset, int variance, IWorldGenRegion worldGenRegion)
 	{
 		if (variance == 0)
 		{
@@ -518,7 +518,7 @@ public class BO3 implements StructuredCustomObject
 		} else {
 			variance = random.nextInt(variance + 1);
 		}
-		return MathHelper.clamp(offset + variance, Constants.WORLD_DEPTH, Constants.WORLD_HEIGHT - 1);
+		return MathHelper.clamp(offset + variance, worldGenRegion.getWorldInfo().minY(), worldGenRegion.getWorldInfo().maxY());
 	}
 	
 	public CustomStructureCoordinate makeCustomStructureCoordinate(String presetFolderName, boolean useOldBO3StructureRarity, Random random, int chunkX, int chunkZ)

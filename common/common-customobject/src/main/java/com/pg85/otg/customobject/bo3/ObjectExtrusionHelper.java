@@ -5,6 +5,7 @@ import com.pg85.otg.customobject.util.BO3Enums.ExtrudeMode;
 import com.pg85.otg.config.settings.biome.BiomeSettings;
 import com.pg85.otg.interfaces.IWorldGenRegion;
 import com.pg85.otg.util.materials.MaterialSet;
+import com.pg85.otg.util.minecraft.OTGWorldInfo;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -36,17 +37,29 @@ class ObjectExtrusionHelper
 	 */
 	private final ArrayList<BO3BlockFunction> blocksToExtrude = new ArrayList<>();
 
+	private final OTGWorldInfo worldInfo;
+
 	/**
 	 * Constructor
 	 *
 	 * @param extrudeMode		  The style of extrusion to perform
 	 * @param extrudeThroughBlocks The types of materials to allow extrusion to act upon
+	 * @param worldInfo            World height info for Y bounds
 	 */
-	ObjectExtrusionHelper(ExtrudeMode extrudeMode, MaterialSet extrudeThroughBlocks)
+	ObjectExtrusionHelper(ExtrudeMode extrudeMode, MaterialSet extrudeThroughBlocks, OTGWorldInfo worldInfo)
 	{
 		this.extrudeMode = extrudeMode;
 		this.extrudeThroughBlocks = extrudeThroughBlocks;
-		blockExtrusionY = extrudeMode.getStartingHeight();
+		this.worldInfo = worldInfo;
+		if (extrudeMode == ExtrudeMode.BottomDown)
+		{
+			blockExtrusionY = worldInfo.maxY();
+		} else if (extrudeMode == ExtrudeMode.TopUp)
+		{
+			blockExtrusionY = worldInfo.minY();
+		} else {
+			blockExtrusionY = -1;
+		}
 	}
 
 	/**
@@ -95,7 +108,7 @@ class ObjectExtrusionHelper
 			if (extrudeMode == ExtrudeMode.BottomDown)
 			{
 				for (int yi = y + block.y - 1;
-					 yi > extrudeMode.getEndingHeight() && extrudeThroughBlocks.contains(worldGenRegion.getMaterial(x + block.x, yi, z + block.z));
+					 yi >= worldInfo.minY() && extrudeThroughBlocks.contains(worldGenRegion.getMaterial(x + block.x, yi, z + block.z));
 					 --yi)
 				{
 					if(replaceBlock)
@@ -109,7 +122,7 @@ class ObjectExtrusionHelper
 			else if (extrudeMode == ExtrudeMode.TopUp)
 			{
 				for (int yi = y + block.y + 1;
-					 yi < extrudeMode.getEndingHeight() && extrudeThroughBlocks.contains(worldGenRegion.getMaterial(x + block.x, yi, z + block.z));
+					 yi <= worldInfo.maxY() && extrudeThroughBlocks.contains(worldGenRegion.getMaterial(x + block.x, yi, z + block.z));
 					 ++yi)
 				{
 					if(replaceBlock)

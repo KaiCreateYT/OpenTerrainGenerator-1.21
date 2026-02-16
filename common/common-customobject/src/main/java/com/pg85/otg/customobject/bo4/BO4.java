@@ -5,7 +5,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Random;
 
-import com.pg85.otg.constants.Constants;
 import com.pg85.otg.constants.settings.ConfigMode;
 import com.pg85.otg.customobject.CustomObjectManager;
 import com.pg85.otg.customobject.bo4.bo4function.BO4BlockFunction;
@@ -450,9 +449,9 @@ public class BO4 implements StructuredCustomObject
 	
 							// TODO: Make override leaves and air configurable
 							// TODO: Make replaceBelow height configurable
-							while(blockY > Constants.WORLD_DEPTH)
+							while(blockY >= worldGenRegion.getWorldInfo().minY())
 							{
-								if(blockY < Constants.WORLD_HEIGHT)
+								if(blockY <= worldGenRegion.getWorldInfo().maxY())
 								{
 									sourceBlockMaterial = worldGenRegion.getMaterial(x + newBlock.x, blockY, z + newBlock.z);
 									
@@ -642,9 +641,9 @@ public class BO4 implements StructuredCustomObject
 	
 							// TODO: Make override leaves and air configurable
 							// TODO: Make replaceBelow height configurable
-							while(blockY > Constants.WORLD_DEPTH)
+							while(blockY >= worldGenRegion.getWorldInfo().minY())
 							{
-								if(blockY < Constants.WORLD_HEIGHT)
+								if(blockY <= worldGenRegion.getWorldInfo().maxY())
 								{
 									sourceBlockMaterial = worldGenRegion.getMaterial(x + block.x, blockY, z + block.z);
 									
