@@ -485,7 +485,7 @@ public class BO3Config extends CustomObjectConfigFile
 		writer.comment(" fails, a 100% percent chance to have the contents of anotherchest.nbt.");
 		writer.comment(
 				"*Note: Unlike Entity() and Spawner(), for Block() .txt files don't work, only .nbt files work.");
-		writer.comment("MinecraftObject(x,y,z,name) (TODO: This may not work anymore and needs to be tested.");
+		writer.comment("MinecraftObject(x,y,z,name) (NOT IMPLEMENTED - will log a warning and be skipped).");
 		writer.comment(" Spawns an object in the Mojang NBT structure format. For example, ");
 		writer.comment(" MinecraftObject(0,0,0," + DefaultStructurePart.IGLOO_BOTTOM.getPath() + ")");
 		writer.comment(" spawns the bottom part of an igloo.");

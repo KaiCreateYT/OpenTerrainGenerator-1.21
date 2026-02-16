@@ -5,8 +5,10 @@ import com.pg85.otg.customobject.config.CustomObjectConfigFile;
 import com.pg85.otg.customobject.config.CustomObjectConfigFunction;
 import com.pg85.otg.exceptions.InvalidConfigException;
 import com.pg85.otg.interfaces.IWorldGenRegion;
+import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.biome.ReplaceBlockMatrix;
 import com.pg85.otg.util.bo3.Rotation;
+import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.minecraft.DefaultStructurePart;
 
 import java.util.List;
@@ -42,19 +44,18 @@ public abstract class MinecraftObjectFunction<T extends CustomObjectConfigFile> 
 		return "MinecraftObject(" + x + ',' + y + ',' + z + ',' + structurePart + ')';
 	}
 
+	// TODO: Implement spawning of vanilla NBT structures (e.g. igloos, fossils).
+	//  Requires platform-side placeStructure(ResourceLocation, pos, rotation) bridge.
 	@Override
 	public void spawn(IWorldGenRegion worldGenRegion, Random random, int x, int y, int z)
 	{
-		// TODO: May cause cascading chunkgen.
-		// TODO: Implement this?
-		//SpawnableObject object = worldGenRegion.getMojangStructurePart(structurePart.getPath());
-		//object.spawnForced(null, worldGenRegion, random, rotation, x, y, z);
+		OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "MinecraftObject(%d,%d,%d,%s) is not implemented and will be skipped", x, y, z, structurePart);
 	}
-	
+
 	@Override
 	public void spawn(IWorldGenRegion worldGenRegion, Random random, int x, int y, int z, ReplaceBlockMatrix replaceBlocks)
 	{
-		// TODO: Implement this?	
+		OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "MinecraftObject(%d,%d,%d,%s) is not implemented and will be skipped", x, y, z, structurePart);
 	}
 
 	@Override

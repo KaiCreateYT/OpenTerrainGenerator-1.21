@@ -1235,7 +1235,7 @@ public class BO4Config extends CustomObjectConfigFile
 		writer.comment(" So RandomBlock(0,0,0,CHEST,chest.nbt,50,CHEST,anotherchest.nbt,100) will spawn a chest at");
 		writer.comment(" the BO4 origin, and give it a 50% chance to have the contents of chest.nbt, or, if that");
 		writer.comment(" fails, a 100% percent chance to have the contents of anotherchest.nbt.");
-		writer.comment("MinecraftObject(x,y,z,name) (TODO: This may not work anymore and needs to be tested.");
+		writer.comment("MinecraftObject(x,y,z,name) (NOT IMPLEMENTED - will log a warning and be skipped).");
 		writer.comment(" Spawns an object in the Mojang NBT structure format. For example, ");
 		writer.comment(" MinecraftObject(0,0,0," + DefaultStructurePart.IGLOO_BOTTOM.getPath() + ")");
 		writer.comment(" spawns the bottom part of an igloo.");
