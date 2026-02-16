@@ -5,7 +5,7 @@ import com.pg85.otg.customobject.util.BO3Enums.ExtrudeMode;
 import com.pg85.otg.config.settings.biome.BiomeSettings;
 import com.pg85.otg.interfaces.IWorldGenRegion;
 import com.pg85.otg.util.materials.MaterialSet;
-import com.pg85.otg.util.minecraft.OTGWorldInfo;
+import com.pg85.otg.util.gen.OTGWorldInfo;
 
 import java.util.ArrayList;
 import java.util.Random;

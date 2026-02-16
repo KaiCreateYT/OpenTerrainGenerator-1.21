@@ -28,7 +28,7 @@ import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.*;
 import net.minecraft.world.level.levelgen.synth.NormalNoise;
 import com.pg85.otg.platform.noise.OTGNoiseRouterBuilder;
-import com.pg85.otg.neoforge.noise.NeoForgeNoiseParamRegistry;
+import com.pg85.otg.platform.noise.OTGNoiseParamRegistry;
 import net.minecraft.world.level.levelgen.DensityFunctions;
 import net.minecraft.world.level.levelgen.NoiseRouter;
 import net.minecraft.world.level.levelgen.presets.WorldPreset;
@@ -104,6 +104,22 @@ public class RegistryLoaderMixin {
         if (OTG.getEngine().getPluginConfig().getDeveloperModeEnabled()) {
             OTG.getEngine().getCustomObjectManager().reloadCustomObjectFiles();
             OTG.getEngine().getPresetLoader().loadPresetsFromDisk();
+        }
+
+        // Override bootstrap HolderGetters with real registry lookups.
+        // The bootstrap context (BiomeDataMixin) creates unbound holder references
+        // that never get bound because they belong to a transient builder, not the
+        // materialized registry. Using the actual loaded registries here gives us
+        // holders that ARE (or will be) properly bound when the registry freezes.
+        WritableRegistry<net.minecraft.world.level.levelgen.placement.PlacedFeature> pfRegistry =
+                getRegistry(loaders, Registries.PLACED_FEATURE);
+        if (pfRegistry != null) {
+            LegacyNeoForgeBiomeLoader.PLACED_FEATURE_HOLDER = pfRegistry.asLookup();
+        }
+        WritableRegistry<net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver<?>> carverRegistry =
+                getRegistry(loaders, Registries.CONFIGURED_CARVER);
+        if (carverRegistry != null) {
+            LegacyNeoForgeBiomeLoader.CONFIGURED_CARVER_HOLDER = carverRegistry.asLookup();
         }
 
         LegacyNeoForgeBiomeLoader loader = (LegacyNeoForgeBiomeLoader) OTG.getEngine().getPresetLoader();
@@ -286,7 +302,7 @@ public class RegistryLoaderMixin {
         if (modernCaves) {
             WritableRegistry<NormalNoise.NoiseParameters> noiseRegistry = getRegistry(loaders, Registries.NOISE);
             if (noiseRegistry != null) {
-                NeoForgeNoiseParamRegistry.registerNoiseParameters(presetSettings, noiseRegistry);
+                OTGNoiseParamRegistry.registerNoiseParameters(presetSettings, noiseRegistry);
             }
             HolderGetter<DensityFunction> densityGetter = getRegistryOrThrow(loaders, Registries.DENSITY_FUNCTION).asLookup();
             HolderGetter<NormalNoise.NoiseParameters> noiseGetter = getRegistryOrThrow(loaders, Registries.NOISE).asLookup();
@@ -302,8 +318,8 @@ public class RegistryLoaderMixin {
                     SurfaceRuleData.overworld(),
                     new OverworldBiomeBuilder().spawnTarget(),
                     63,
-                    true,
-                    true,
+                    aquifers,
+                    oreVeins,
                     !resourceSettings.isDisableOreGen(),
                     false
             );
