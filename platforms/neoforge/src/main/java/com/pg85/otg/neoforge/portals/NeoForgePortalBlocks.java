@@ -2,6 +2,7 @@ package com.pg85.otg.neoforge.portals;
 
 import com.pg85.otg.config.settings.preset.PortalColors;
 import com.pg85.otg.constants.Constants;
+import com.pg85.otg.shared.portals.SharedOTGPortalBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -18,13 +19,13 @@ public class NeoForgePortalBlocks {
     public static final DeferredRegister.Blocks BLOCKS =
             DeferredRegister.createBlocks(Constants.MOD_ID_SHORT);
 
-    private static final Map<String, DeferredHolder<Block, OTGPortalBlock>> PORTAL_BLOCKS = new HashMap<>();
+    private static final Map<String, DeferredHolder<Block, SharedOTGPortalBlock>> PORTAL_BLOCKS = new HashMap<>();
 
     static {
         for (String color : PortalColors.COLORS) {
             String id = "otg_portal_" + color;
             final String c = color;
-            DeferredHolder<Block, OTGPortalBlock> holder = BLOCKS.register(id, () -> new OTGPortalBlock(
+            DeferredHolder<Block, SharedOTGPortalBlock> holder = BLOCKS.register(id, () -> new SharedOTGPortalBlock(
                     BlockBehaviour.Properties.of()
                             .mapColor(MapColor.COLOR_RED)
                             .noCollission()
@@ -42,18 +43,25 @@ public class NeoForgePortalBlocks {
         BLOCKS.register(modBus);
     }
 
-    public static OTGPortalBlock getPortalBlock(String color) {
+    public static void initSharedCallbacks() {
+        SharedOTGPortalBlock.init(
+                NeoForgePortalBlocks::getPortalBlock,
+                player -> player.getData(OTGAttachments.OTG_PLAYER.get())
+        );
+    }
+
+    public static SharedOTGPortalBlock getPortalBlock(String color) {
         String normalizedColor = color.toLowerCase().trim();
-        DeferredHolder<Block, OTGPortalBlock> holder = PORTAL_BLOCKS.get(normalizedColor);
+        DeferredHolder<Block, SharedOTGPortalBlock> holder = PORTAL_BLOCKS.get(normalizedColor);
         if (holder == null) {
             holder = PORTAL_BLOCKS.get("default");
         }
         return holder != null ? holder.get() : null;
     }
 
-    public static Map<String, OTGPortalBlock> getAllPortalBlocks() {
-        Map<String, OTGPortalBlock> result = new HashMap<>();
-        for (Map.Entry<String, DeferredHolder<Block, OTGPortalBlock>> entry : PORTAL_BLOCKS.entrySet()) {
+    public static Map<String, SharedOTGPortalBlock> getAllPortalBlocks() {
+        Map<String, SharedOTGPortalBlock> result = new HashMap<>();
+        for (Map.Entry<String, DeferredHolder<Block, SharedOTGPortalBlock>> entry : PORTAL_BLOCKS.entrySet()) {
             result.put(entry.getKey(), entry.getValue().get());
         }
         return result;

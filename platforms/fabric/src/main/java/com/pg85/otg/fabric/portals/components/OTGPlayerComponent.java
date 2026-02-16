@@ -4,7 +4,7 @@ import org.ladysnake.cca.api.v3.component.Component;
 import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
-public interface OTGPlayerComponent extends Component, AutoSyncedComponent, ServerTickingComponent {
+public interface OTGPlayerComponent extends Component, AutoSyncedComponent, ServerTickingComponent, com.pg85.otg.shared.portals.IPortalPlayerData {
 
     boolean isInPortal();
     void setInPortal(boolean inPortal);

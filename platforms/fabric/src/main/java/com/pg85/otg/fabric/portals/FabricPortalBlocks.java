@@ -2,6 +2,8 @@ package com.pg85.otg.fabric.portals;
 
 import com.pg85.otg.config.settings.preset.PortalColors;
 import com.pg85.otg.constants.Constants;
+import com.pg85.otg.fabric.portals.components.OTGComponents;
+import com.pg85.otg.shared.portals.SharedOTGPortalBlock;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -14,11 +16,11 @@ import java.util.Map;
 
 public class FabricPortalBlocks {
 
-    private static final Map<String, OTGPortalBlock> PORTAL_BLOCKS = new HashMap<>();
+    private static final Map<String, SharedOTGPortalBlock> PORTAL_BLOCKS = new HashMap<>();
 
     public static void register() {
         for (String color : PortalColors.COLORS) {
-            OTGPortalBlock block = new OTGPortalBlock(
+            SharedOTGPortalBlock block = new SharedOTGPortalBlock(
                     BlockBehaviour.Properties.of()
                             .mapColor(MapColor.COLOR_RED)
                             .noCollission()
@@ -33,14 +35,19 @@ public class FabricPortalBlocks {
             Registry.register(BuiltInRegistries.BLOCK, ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, id), block);
             PORTAL_BLOCKS.put(color, block);
         }
+
+        SharedOTGPortalBlock.init(
+                FabricPortalBlocks::getPortalBlock,
+                player -> OTGComponents.get(player)
+        );
     }
 
-    public static OTGPortalBlock getPortalBlock(String color) {
+    public static SharedOTGPortalBlock getPortalBlock(String color) {
         String normalizedColor = color.toLowerCase().trim();
         return PORTAL_BLOCKS.getOrDefault(normalizedColor, PORTAL_BLOCKS.get("default"));
     }
 
-    public static Map<String, OTGPortalBlock> getAllPortalBlocks() {
+    public static Map<String, SharedOTGPortalBlock> getAllPortalBlocks() {
         return PORTAL_BLOCKS;
     }
 }

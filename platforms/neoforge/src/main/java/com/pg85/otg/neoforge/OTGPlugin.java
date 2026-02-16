@@ -29,6 +29,7 @@ public class OTGPlugin {
 
         // Register portal blocks via DeferredRegister
         NeoForgePortalBlocks.register(modBus);
+        NeoForgePortalBlocks.initSharedCallbacks();
 
         // Register game event handlers
         NeoForge.EVENT_BUS.register(NeoForgeEventHandler.class);

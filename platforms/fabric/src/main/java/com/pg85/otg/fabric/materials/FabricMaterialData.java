@@ -19,7 +19,7 @@ import net.minecraft.world.level.block.state.properties.Property;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class FabricMaterialData extends LocalMaterialData {
+public class FabricMaterialData extends LocalMaterialData implements com.pg85.otg.shared.materials.IBlockStateMaterial {
     @Getter
     static final LocalMaterialData blank = new FabricMaterialData(null, null);
     @Getter

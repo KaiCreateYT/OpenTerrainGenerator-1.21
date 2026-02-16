@@ -1,9 +1,9 @@
-package com.pg85.otg.neoforge.portals;
+package com.pg85.otg.shared.portals;
 
-import com.pg85.otg.neoforge.OTGPlugin;
+import com.pg85.otg.shared.commands.OTGCommandRegistrar;
 import com.pg85.otg.shared.dimensions.DimensionKeys;
 import com.pg85.otg.shared.dimensions.DimensionManager;
-import com.pg85.otg.neoforge.gen.OTGNeoForgeChunkGenerator;
+import com.pg85.otg.shared.gen.SharedOTGChunkGenerator;
 import com.pg85.otg.presets.Preset;
 import com.pg85.otg.util.materials.LocalMaterialData;
 import net.minecraft.resources.ResourceKey;
@@ -22,12 +22,28 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
-public class OTGPortalBlock extends NetherPortalBlock {
+public class SharedOTGPortalBlock extends NetherPortalBlock {
+
+    private static volatile Function<String, SharedOTGPortalBlock> portalBlockLookup;
+    private static volatile Function<Player, IPortalPlayerData> playerDataAccessor;
+
+    public static void init(
+            Function<String, SharedOTGPortalBlock> portalBlockLookup,
+            Function<Player, IPortalPlayerData> playerDataAccessor
+    ) {
+        SharedOTGPortalBlock.portalBlockLookup = portalBlockLookup;
+        SharedOTGPortalBlock.playerDataAccessor = playerDataAccessor;
+    }
+
+    public static SharedOTGPortalBlock lookupPortalBlock(String color) {
+        return portalBlockLookup != null ? portalBlockLookup.apply(color) : null;
+    }
 
     private final String portalColor;
 
-    public OTGPortalBlock(Properties settings, String portalColor) {
+    public SharedOTGPortalBlock(Properties settings, String portalColor) {
         super(settings);
         this.portalColor = portalColor;
     }
@@ -39,7 +55,6 @@ public class OTGPortalBlock extends NetherPortalBlock {
     @Override
     public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
         if (!entity.isPassenger() && !entity.isVehicle() && entity.canUsePortal(false)) {
-            // Trigger visual effect on client side
             if (level.isClientSide) {
                 entity.setAsInsidePortal(this, pos);
                 return;
@@ -49,9 +64,8 @@ public class OTGPortalBlock extends NetherPortalBlock {
                 entity.setPortalCooldown();
             } else {
                 if (entity instanceof Player player) {
-                    OTGPlayerData data = player.getData(OTGAttachments.OTG_PLAYER.get());
-                    data.setInPortal(true);
-                    data.setPortalColor(this.portalColor);
+                    IPortalPlayerData data = playerDataAccessor.apply(player);
+                    data.setPortalState(true, this.portalColor);
 
                     int portalTime = data.getPortalTime();
                     int waitTime = this.getPortalTransitionTime((ServerLevel) level, player);
@@ -70,25 +84,22 @@ public class OTGPortalBlock extends NetherPortalBlock {
     private void doTeleport(Entity entity, ServerLevel serverLevel) {
         if (serverLevel == null) return;
 
-        MinecraftServer server = serverLevel.getServer();
         ServerLevel destination = findDestination(entity, serverLevel);
 
         if (destination != null && !entity.isPassenger()) {
             entity.setPortalCooldown();
-            OTGTeleporter.teleport(entity, destination, this.portalColor);
+            SharedOTGTeleporter.teleport(entity, destination, this.portalColor);
         }
     }
 
     private ServerLevel findDestination(Entity entity, ServerLevel currentLevel) {
         MinecraftServer server = currentLevel.getServer();
 
-        // If in overworld, find OTG dimension with matching color
         if (currentLevel.dimension() == Level.OVERWORLD) {
             return findOTGDimensionByColor(server, this.portalColor);
         }
 
-        // If in OTG dimension, check if color matches and go to overworld
-        if (currentLevel.getChunkSource().getGenerator() instanceof OTGNeoForgeChunkGenerator) {
+        if (currentLevel.getChunkSource().getGenerator() instanceof SharedOTGChunkGenerator) {
             String dimColor = getWorldPortalColor(currentLevel);
             if (this.portalColor.equals(dimColor)) {
                 return server.overworld();
@@ -99,7 +110,6 @@ public class OTGPortalBlock extends NetherPortalBlock {
     }
 
     private ServerLevel findOTGDimensionByColor(MinecraftServer server, String targetColor) {
-        // First check already loaded dimensions - direct color match, no collision handling
         for (ServerLevel level : server.getAllLevels()) {
             if (level.dimension() == Level.OVERWORLD ||
                 level.dimension() == Level.NETHER ||
@@ -107,7 +117,7 @@ public class OTGPortalBlock extends NetherPortalBlock {
                 continue;
             }
 
-            if (level.getChunkSource().getGenerator() instanceof OTGNeoForgeChunkGenerator) {
+            if (level.getChunkSource().getGenerator() instanceof SharedOTGChunkGenerator) {
                 String dimColor = getWorldPortalColor(level);
                 if (targetColor.equals(dimColor)) {
                     return level;
@@ -115,12 +125,11 @@ public class OTGPortalBlock extends NetherPortalBlock {
             }
         }
 
-        // Not found in loaded dimensions - look through presets and load dynamically
         return findAndLoadDimensionByColor(server, targetColor);
     }
 
     private ServerLevel findAndLoadDimensionByColor(MinecraftServer server, String targetColor) {
-        Optional<Preset> presetOpt = PortalConfigResolver.findPresetByColor(targetColor);
+        Optional<Preset> presetOpt = SharedPortalConfigResolver.findPresetByColor(targetColor);
         if (presetOpt.isEmpty()) {
             return null;
         }
@@ -133,27 +142,23 @@ public class OTGPortalBlock extends NetherPortalBlock {
         String dimName = DimensionKeys.normalizeName(preset.getFolderName());
         ResourceKey<Level> levelKey = DimensionKeys.otg(dimName);
 
-        // Check if dimension already loaded in runtime
         ServerLevel existing = server.getLevel(levelKey);
         if (existing != null) {
             return existing;
         }
 
-        DimensionManager manager = OTGPlugin.getDimensionManager();
+        DimensionManager manager = OTGCommandRegistrar.getDimensionManager();
         if (manager == null) {
             return null;
         }
 
-        // Check if dimension exists in storage but not loaded (e.g., created by command, needs restart normally)
         if (manager.getDimensionInfo(dimName).isPresent()) {
-            // Dimension exists in storage - load it at runtime via manager
             if (manager.loadDimensionRuntime(dimName)) {
                 return server.getLevel(levelKey);
             }
             return null;
         }
 
-        // Dimension doesn't exist - create it via manager (with storage + datapack)
         var result = manager.createDimension(preset.getFolderName());
 
         if (result.success()) {
@@ -164,13 +169,12 @@ public class OTGPortalBlock extends NetherPortalBlock {
     }
 
     private String getWorldPortalColor(ServerLevel level) {
-        if (level.getChunkSource().getGenerator() instanceof OTGNeoForgeChunkGenerator gen) {
-            return PortalConfigResolver.normalizeColor(gen.getPortalColor());
+        if (level.getChunkSource().getGenerator() instanceof SharedOTGChunkGenerator gen) {
+            return SharedPortalConfigResolver.normalizeColor(gen.getPortalColor());
         }
         return "default";
     }
 
-    // Portal frame validation
     public static boolean tryCreatePortal(LevelAccessor level, BlockPos pos, List<LocalMaterialData> frameBlocks, String portalColor) {
         return tryCreatePortal(level, pos, frameBlocks, portalColor, 2, 21, 3, 21);
     }
@@ -225,7 +229,6 @@ public class OTGPortalBlock extends NetherPortalBlock {
                 this.rightDir = Direction.SOUTH;
             }
 
-            // Find bottom
             BlockPos bottomPos = pos;
             while (bottomPos.getY() > level.getMinBuildHeight() && isEmpty(level.getBlockState(bottomPos.below()))) {
                 bottomPos = bottomPos.below();
@@ -233,17 +236,13 @@ public class OTGPortalBlock extends NetherPortalBlock {
 
             int distLeft = getDistanceToEdge(bottomPos, leftDir);
             if (distLeft > 0) {
-                // bottomLeft should be the leftmost INTERIOR position (not on the wall)
-                // distLeft is how far to the wall, so interior is at distLeft-1
                 this.bottomLeft = bottomPos.relative(leftDir, distLeft - 1);
-                // Width = distance from bottomLeft to right wall
                 this.width = getDistanceToEdge(bottomLeft, rightDir);
                 if (width < minWidth || width > maxWidth) {
                     this.bottomLeft = null;
                     this.width = 0;
                 }
             } else {
-                // Already at the left wall or no wall found
                 this.bottomLeft = bottomPos;
                 this.width = getDistanceToEdge(bottomLeft, rightDir);
                 if (width < minWidth || width > maxWidth) {
@@ -279,11 +278,10 @@ public class OTGPortalBlock extends NetherPortalBlock {
                         break outer;
                     }
 
-                    if (state.getBlock() instanceof OTGPortalBlock) {
+                    if (state.getBlock() instanceof SharedOTGPortalBlock) {
                         portalBlockCount++;
                     }
 
-                    // Check side frames
                     if (w == 0 && !isFrameBlock(level.getBlockState(checkPos.relative(leftDir)))) {
                         break outer;
                     }
@@ -294,7 +292,6 @@ public class OTGPortalBlock extends NetherPortalBlock {
                 this.height = h + 1;
             }
 
-            // Verify top frame
             for (int w = 0; w < this.width; w++) {
                 if (!isFrameBlock(level.getBlockState(bottomLeft.relative(rightDir, w).above(height)))) {
                     this.height = 0;
@@ -306,11 +303,11 @@ public class OTGPortalBlock extends NetherPortalBlock {
         }
 
         private boolean isEmpty(BlockState state) {
-            return state.isAir() || state.getBlock() == Blocks.WATER || state.getBlock() instanceof OTGPortalBlock;
+            return state.isAir() || state.getBlock() == Blocks.WATER || state.getBlock() instanceof SharedOTGPortalBlock;
         }
 
         private boolean isFrameBlock(BlockState state) {
-            return PortalConfigResolver.isFrameBlock(state, frameBlocks);
+            return SharedPortalConfigResolver.isFrameBlock(state, frameBlocks);
         }
 
         public boolean isValid() {
@@ -318,7 +315,7 @@ public class OTGPortalBlock extends NetherPortalBlock {
         }
 
         public void placePortalBlocks(String portalColor) {
-            Block portalBlock = NeoForgePortalBlocks.getPortalBlock(portalColor);
+            Block portalBlock = SharedOTGPortalBlock.lookupPortalBlock(portalColor);
             if (portalBlock == null) return;
 
             BlockState portalState = portalBlock.defaultBlockState().setValue(NetherPortalBlock.AXIS, this.axis);
