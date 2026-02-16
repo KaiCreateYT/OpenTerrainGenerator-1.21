@@ -11,6 +11,9 @@ import com.pg85.otg.customobject.CustomObjectCollection;
 import com.pg85.otg.customobject.bo4.BO4;
 import com.pg85.otg.customobject.structures.CustomStructureCache;
 import com.pg85.otg.util.ChunkCoordinate;
+import com.pg85.otg.util.OTGLog;
+import com.pg85.otg.util.logging.LogCategory;
+import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.bo3.Rotation;
 import com.pg85.otg.util.gen.LocalWorldGenRegion;
 import net.minecraft.commands.CommandSourceStack;
@@ -283,7 +286,7 @@ public class SpawnCommand {
 
         } catch (Exception e) {
             source.sendFailure(Component.literal("Error spawning BO4: " + e.getMessage()));
-            e.printStackTrace();
+            OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Failed to spawn BO4 structure: %s", e.getMessage()); OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e);
             return 0;
         }
     }
@@ -342,7 +345,7 @@ public class SpawnCommand {
             }
         } catch (Exception e) {
             source.sendFailure(Component.literal("Error spawning object: " + e.getMessage()));
-            e.printStackTrace();
+            OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Failed to spawn custom object: %s", e.getMessage()); OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e);
             return 0;
         }
     }

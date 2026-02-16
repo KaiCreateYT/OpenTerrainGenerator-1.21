@@ -6,6 +6,9 @@ import java.util.function.Function;
 import com.pg85.otg.config.settings.ConfigSection;
 import com.pg85.otg.exceptions.InvalidConfigException;
 import com.pg85.otg.util.OTGMaterialReader;
+import com.pg85.otg.util.OTGLog;
+import com.pg85.otg.util.logging.LogCategory;
+import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.helpers.StringHelper;
 import com.pg85.otg.util.materials.LocalMaterialData;
 
@@ -45,8 +48,7 @@ public class MaterialListSetting extends Setting<ArrayList<LocalMaterialData>>
 				try {
 					material = OTGMaterialReader.get().readMaterial(defaultMaterial);
 				} catch (InvalidConfigException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					OTGLog.error(LogCategory.CONFIGS, "Failed to read default material: %s", e.getMessage());
 				}
 				if(material != null)
 				{

@@ -10,6 +10,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
+import javax.tools.Diagnostic;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Set;
@@ -115,7 +116,7 @@ public class ConfigAnnotationProcessor extends AbstractProcessor {
                 }
             };
         } catch (Exception e) {
-            e.printStackTrace();
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Failed to generate config source file: " + e.getMessage());
         }
     }
 

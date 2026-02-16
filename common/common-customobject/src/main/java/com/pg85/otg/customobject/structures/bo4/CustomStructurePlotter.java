@@ -243,7 +243,7 @@ public class CustomStructurePlotter
 			}
 			catch (InterruptedException e)
 			{
-				e.printStackTrace();
+				OTGLog.error(LogCategory.STRUCTURE_PLOTTING, "Thread interrupted while waiting for structure plot: %s", e.getMessage());
 				throw new RuntimeException("This shouldn't happen, please ask for help on the OTG Discord or file an issue on the OTG github.");
 			}
 		}

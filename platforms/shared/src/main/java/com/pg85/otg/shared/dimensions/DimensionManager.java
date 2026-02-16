@@ -70,7 +70,7 @@ public class DimensionManager {
             try {
                 datapack.deleteDimensionFiles(normalizedName);
                 storage.removeDimension(normalizedName);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) { OTGLog.error("Failed to cleanup after failed dimension creation: %s", ignored.getMessage()); }
             return CreateResult.error("Failed to create dimension: " + e.getMessage());
         }
     }

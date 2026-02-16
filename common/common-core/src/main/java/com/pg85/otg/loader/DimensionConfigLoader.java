@@ -6,6 +6,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.pg85.otg.config.dimensions.DimensionConfig;
 import com.pg85.otg.constants.Constants;
+import com.pg85.otg.util.OTGLog;
+import com.pg85.otg.util.logging.LogCategory;
+import com.pg85.otg.util.logging.LogLevel;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,7 +29,7 @@ public class DimensionConfigLoader {
             }
             catch (IOException e)
             {
-                e.printStackTrace();
+                OTGLog.error(LogCategory.CONFIGS, "Failed to read dimension config file: %s", e.getMessage());
             }
             DimensionConfig loadedConfig = fromYamlString(content);
             if(loadedConfig != null)
@@ -54,11 +57,11 @@ public class DimensionConfigLoader {
         try {
             dimConfig = mapper.readValue(input, DimensionConfig.class);
         } catch (JsonParseException e) {
-            e.printStackTrace();
+            OTGLog.error(LogCategory.CONFIGS, "Failed to parse dimension config YAML: %s", e.getMessage());
         } catch (JsonMappingException e) {
-            e.printStackTrace();
+            OTGLog.error(LogCategory.CONFIGS, "Failed to map dimension config YAML: %s", e.getMessage());
         } catch (IOException e) {
-            e.printStackTrace();
+            OTGLog.error(LogCategory.CONFIGS, "Failed to read dimension config input: %s", e.getMessage());
         }
 
         return dimConfig;

@@ -91,7 +91,7 @@ public enum Rotation
 		try
 		{
 			rotation = getRotation(Integer.parseInt(string));
-		} catch (NumberFormatException e) { }
+		} catch (NumberFormatException e) { /* Not a number, trying as name */ }
 
 		if (rotation != null)
 		{
@@ -102,7 +102,7 @@ public enum Rotation
 		try
 		{
 			rotation = Rotation.valueOf(string.trim().toUpperCase());
-		} catch (IllegalArgumentException e) { }
+		} catch (IllegalArgumentException e) { /* Not a valid rotation name */ }
 
 		if (rotation != null)
 		{

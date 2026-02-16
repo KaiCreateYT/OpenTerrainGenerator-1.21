@@ -53,7 +53,7 @@ public class DimensionStorage {
             // Backup corrupt file
             try {
                 Files.move(storagePath, storagePath.resolveSibling(STORAGE_FILE + ".backup"));
-            } catch (IOException ignored) {}
+            } catch (IOException ignored) { OTGLog.error("Failed to backup corrupt storage file: %s", ignored.getMessage()); }
             data = new StorageData();
         }
     }

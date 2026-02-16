@@ -2,6 +2,9 @@ package com.pg85.otg.config.settings;
 
 import com.pg85.otg.config.ConfigFile;
 import com.pg85.otg.config.settingtype.Setting;
+import com.pg85.otg.util.OTGLog;
+import com.pg85.otg.util.logging.LogCategory;
+import com.pg85.otg.util.logging.LogLevel;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -37,8 +40,7 @@ public abstract class ConfigSection {
                     Setting<?> setting = (Setting<?>) field.get(null);
                     settingsMap.put(field.getName(), setting);
                 } catch (IllegalAccessException e) {
-                    // Handle exception
-                    e.printStackTrace();
+                    OTGLog.error(LogCategory.CONFIGS, "Failed to access setting field: %s", e.getMessage());
                 }
             }
         }

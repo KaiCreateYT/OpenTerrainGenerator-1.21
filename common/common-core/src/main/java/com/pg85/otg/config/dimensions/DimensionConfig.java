@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.pg85.otg.util.OTGLog;
+import com.pg85.otg.util.logging.LogCategory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
@@ -47,7 +49,7 @@ public class DimensionConfig
 		try {
 			return mapper.writeValueAsString(this);
 		} catch (JsonProcessingException e) {
-			e.printStackTrace();
+			OTGLog.error(LogCategory.CONFIGS, "Failed to serialize dimension config to YAML: %s", e.getMessage());
 		}
 		return null;
 	}

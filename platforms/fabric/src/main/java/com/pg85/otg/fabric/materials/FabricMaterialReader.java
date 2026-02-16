@@ -134,7 +134,7 @@ public class FabricMaterialReader implements IMaterialReader {
                         return FabricMaterialData.ofBlockState(blockState, input);
                     }
                 }
-            } catch(NumberFormatException ignored) { }
+            } catch(NumberFormatException ignored) { /* Not a numeric ID, trying next parse method */ }
         }
 
         // Try blockname[blockdata] / minecraft:blockname[blockdata] syntax
@@ -150,7 +150,7 @@ public class FabricMaterialReader implements IMaterialReader {
         try {
             String newInput = blockNameCorrected.contains(":") ? blockNameCorrected : "minecraft:" + blockNameCorrected;
             state = BlockStateParser.parseForBlock(blockLookup, new StringReader(newInput), true).blockState();
-        } catch (CommandSyntaxException ignored) {}
+        } catch (CommandSyntaxException ignored) { /* Block state parse failed, trying legacy format */ }
 
         if(state != null)
         {
@@ -172,7 +172,7 @@ public class FabricMaterialReader implements IMaterialReader {
             {
                 int blockId = Integer.parseInt(blockNameOrId);
                 blockNameOrId = BlockNames.blockNameFromLegacyBlockId(blockId);
-            } catch(NumberFormatException ignored) { }
+            } catch(NumberFormatException ignored) { /* Not a numeric ID, trying next parse method */ }
 
             try
             {
@@ -184,7 +184,7 @@ public class FabricMaterialReader implements IMaterialReader {
                 }
                 // Failed to parse data, remove. fe STONE:0 or STONE:1 -> STONE
                 blockNameCorrected = blockNameCorrected.substring(0, blockNameCorrected.indexOf(":"));
-            } catch(NumberFormatException ignored) { }
+            } catch(NumberFormatException ignored) { /* Not a numeric ID, trying next parse method */ }
         }
 
         // Try without data
@@ -205,7 +205,7 @@ public class FabricMaterialReader implements IMaterialReader {
                 }
                 return FabricMaterialData.ofBlock(block, input);
             }
-        } catch(ResourceLocationException ignored) { }
+        } catch(ResourceLocationException ignored) { /* Invalid resource location, trying legacy fallback */ }
 
         // Try legacy name again, without data.
         blockState = FabricLegacyMaterials.fromLegacyBlockName(blockNameCorrected.replace("minecraft:", ""));

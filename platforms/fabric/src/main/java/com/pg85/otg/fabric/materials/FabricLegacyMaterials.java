@@ -139,7 +139,7 @@ class FabricLegacyMaterials
 			{
 				return null;
 			}
-		} catch(NumberFormatException ignored) { }
+		} catch(NumberFormatException ignored) { /* Not a numeric ID, trying as name */ }
 		
 		try
 		{

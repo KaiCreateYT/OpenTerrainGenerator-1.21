@@ -635,6 +635,7 @@ public class FabricWorldGenRegion extends LocalWorldGenRegion {
                     }
                 );
             } catch (Exception ignored) {
+                OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to load entity from NBT: %s", ignored.getMessage());
             }
             if (entity == null) {
                 if (OTGLog.getLogger().getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS)) {

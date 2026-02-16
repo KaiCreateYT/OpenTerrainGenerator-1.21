@@ -1571,7 +1571,7 @@ public class BO4Config extends CustomObjectConfigFile
 					byte[] decompressedBytes = com.pg85.otg.util.CompressionUtils.decompress(compressedBytes);
 					bufferDecompressed = ByteBuffer.wrap(decompressedBytes);
 				} catch (DataFormatException e1) {
-					e1.printStackTrace();
+					OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Failed to decompress BO4 data for %s: %s", this.getName(), e1.getMessage()); OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e1);
 				}
 
 				//buffer.get(data, 0, remaining);
@@ -1597,14 +1597,14 @@ public class BO4Config extends CustomObjectConfigFile
 					}
 					catch (IOException e)
 					{
-						e.printStackTrace();
+						OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
 					}
 					try {
 						fis.close();
 					}
 					catch (IOException e)
 					{
-						e.printStackTrace();
+						OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
 					}
 					throw new InvalidConfigException("Could not read BO4Data file " + this.reader.getName() + ", it is outdated. Delete and re-export BO4Data files to fix this, or delete and reinstall your OTG preset.");
 				}
@@ -1812,7 +1812,7 @@ public class BO4Config extends CustomObjectConfigFile
 							if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
 							{
 								OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Could not read material \"" + materialName + "\" for BO4 \"" + this.getName() + "\"");
-								e.printStackTrace();
+								OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e);
 							}
 						}
 					}
@@ -1973,17 +1973,17 @@ public class BO4Config extends CustomObjectConfigFile
 				}
 				catch (IOException e)
 				{
-					e.printStackTrace();
+					OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
 				}
 				try {
 					fis.close();
 				}
 				catch (IOException e)
 				{
-					e.printStackTrace();
+					OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
 				}
 				
-				e1.printStackTrace();
+				OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, (Exception) e1);
 				throw new InvalidConfigException("Could not read BO4Data file " + this.reader.getName() + ", it may be outdated or corrupted. Delete and re-export BO4Data files to fix this, or delete and reinstall your OTG preset.");
 			}
 
@@ -2003,19 +2003,19 @@ public class BO4Config extends CustomObjectConfigFile
 			}
 			catch (IOException e)
 			{
-				e.printStackTrace();
+				OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
 			}
 			try {
 				fis.close();
 			}
 			catch (IOException e)
 			{
-				e.printStackTrace();
+				OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
 			}
 		}
 		catch (FileNotFoundException e2)
 		{
-			e2.printStackTrace();
+			OTGLog.error(LogCategory.CUSTOM_OBJECTS, "BO4 data file not found for %s: %s", this.reader.getName(), e2.getMessage());
 			return null;
 		}
 

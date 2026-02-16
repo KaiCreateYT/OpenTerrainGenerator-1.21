@@ -139,7 +139,7 @@ public class BO4BranchFunction extends BranchFunction<BO4Config>
 						this.totalChance = readDouble(args.get(i), 0, Double.MAX_VALUE);
 						i++;
 					}
-					catch(NumberFormatException ignored) { }
+					catch(NumberFormatException ignored) { /* Not a number - treating as branch group name */ }
 				}
 			}
 		}

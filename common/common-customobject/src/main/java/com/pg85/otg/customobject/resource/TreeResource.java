@@ -55,7 +55,7 @@ public class TreeResource extends BiomeResourceBase implements ICustomObjectReso
 				args = args.subList(0, args.size() - 2);
 				useExtendedParams = true;
 			}
-			catch (InvalidConfigException ignored) { }
+			catch (InvalidConfigException ignored) { /* Extended params not present, using defaults */ }
 		}
 		this.useExtendedParams = useExtendedParams;
 		this.maxSpawn = maxSpawn;
@@ -194,7 +194,7 @@ public class TreeResource extends BiomeResourceBase implements ICustomObjectReso
 						maxHeight = Integer.parseInt(sMaxHeight);
 						this.treeObjectMinChances[treeNumber] = minHeight;
 						this.treeObjectMaxChances[treeNumber] = maxHeight;					
-					} catch(NumberFormatException ignored) {  }
+					} catch(NumberFormatException ignored) { /* Not a number, treating as tree name */ }
 				} else {
 					tree = customObjectManager.getGlobalObjects().getObjectByName(treeName, presetFolderName, otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker);				
 					this.treeObjects[treeNumber] = tree;

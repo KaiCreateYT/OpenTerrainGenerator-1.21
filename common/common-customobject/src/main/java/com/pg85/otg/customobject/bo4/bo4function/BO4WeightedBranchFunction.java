@@ -64,7 +64,7 @@ public class BO4WeightedBranchFunction extends BO4BranchFunction
 					totalChance = readDouble(args.get(i), 0, Double.MAX_VALUE);
 					i++;
 				}
-				catch(NumberFormatException ignored) { }
+				catch(NumberFormatException ignored) { /* Not a number - treating as branch group name */ }
 			}
 		}
 

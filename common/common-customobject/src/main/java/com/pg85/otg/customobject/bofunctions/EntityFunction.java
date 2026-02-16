@@ -133,7 +133,7 @@ public abstract class EntityFunction<T extends CustomObjectConfigFile> extends C
 					// Set it to null so we don't go looking for this later
 					this.nameTagOrNBTFileName = null;
 				} catch (IOException e) {
-					e.printStackTrace();
+					OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to read NBT for entity function: %s", e.getMessage());
 				}
 			}
 		} else {
@@ -167,7 +167,7 @@ public abstract class EntityFunction<T extends CustomObjectConfigFile> extends C
                         }
                     }
 				} catch (IOException e1) {
-					e1.printStackTrace();
+					OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to read NBT file for entity function: %s", e1.getMessage());
 				}
 			}
 

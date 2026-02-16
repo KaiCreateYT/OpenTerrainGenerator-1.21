@@ -51,7 +51,7 @@ public class OreResource extends BiomeResourceBase implements IBasicResource
                 // Remove the extended parameters so materials can be read as usual
                 args = args.subList(0, args.size() - 2);
                 useExtendedParams = true;
-            } catch (InvalidConfigException ignored) {
+            } catch (InvalidConfigException ignored) { /* Extended params not present, using defaults */
             }
         }
         this.useExtendedParams = useExtendedParams;

@@ -256,7 +256,7 @@ public class ObjectCreator
 				}
 				catch (InvalidConfigException e)
 				{
-					e.printStackTrace();
+					OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Invalid config while creating object: %s", e.getMessage()); OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e);
 					return null;
 				}
 				Corner localmin = new Corner(min.x() + (16 * x), min.y(), min.z() + (16 * z));
