@@ -10,6 +10,7 @@ import com.pg85.otg.gen.biome.layers.BiomeLayers;
 import com.pg85.otg.gen.biome.layers.util.CachingLayerSampler;
 import com.pg85.otg.interfaces.ILayerSampler;
 import com.pg85.otg.interfaces.ILayerSource;
+import com.pg85.otg.shared.biome.IOTGBiomeProvider;
 import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.logging.LogLevel;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -31,7 +32,7 @@ import java.util.function.ToIntBiFunction;
 import java.util.stream.Stream;
 
 @Getter
-public class OTGNeoForgeBiomeProvider extends BiomeSource implements ILayerSource, BiomeManager.NoiseBiomeSource {
+public class OTGNeoForgeBiomeProvider extends BiomeSource implements ILayerSource, BiomeManager.NoiseBiomeSource, IOTGBiomeProvider {
     public static final MapCodec<OTGNeoForgeBiomeProvider> CODEC = RecordCodecBuilder.mapCodec(
             instance -> instance.group(
                     Codec.STRING.fieldOf("preset_name").stable().forGetter(OTGNeoForgeBiomeProvider::getPresetFolderName),
