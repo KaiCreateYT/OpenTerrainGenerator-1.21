@@ -133,7 +133,6 @@ public class BiomeLayers
 						riverFactory = new RiverInitLayer().create(contextProvider.apply(depth), riverFactory);
 						riversStarted = true;
 					} else {
-						// TODO: This generates no rivers atm
 						factory = new RiverInitLayer().create(contextProvider.apply(depth), factory);
 					}
 				}
@@ -145,7 +144,6 @@ public class BiomeLayers
 					{
 						riverFactory = new RiverLayer().create(contextProvider.apply(5 + depth), riverFactory);
 					} else {
-						// TODO: This generates no rivers atm						
 						factory = new RiverLayer().create(contextProvider.apply(5 + depth), factory);
 					}
 				}
@@ -199,7 +197,6 @@ public class BiomeLayers
 			{
 				factory = new FinalizeWithRiverLayer(generationSettings.isRiversEnabled(), data.riverBiomes).create(contextProvider.apply(1L), factory, riverFactory);
 			} else {
-				// TODO: This generates no rivers atm
 				factory = new FinalizeLayer(generationSettings.isRiversEnabled(), data.riverBiomes).create(contextProvider.apply(1L), factory);
 			}
 		}
