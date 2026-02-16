@@ -408,13 +408,6 @@ public class BO3 implements StructuredCustomObject
             oeh.addBlock((BO3BlockFunction) block);
         }
 
-		// Call event
-		//if (!worldGenRegion.fireCanCustomObjectSpawnEvent(this, x, y, z))
-		{
-			// Cancelled
-			//return false;
-		}
-
 		ReplaceBlockMatrix replaceBlocks = null;
 		int lastX = Integer.MIN_VALUE;
 		int lastZ = Integer.MIN_VALUE;		

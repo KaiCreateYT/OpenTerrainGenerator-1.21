@@ -347,13 +347,6 @@ public class BO2 extends CustomObjectConfigFile implements CustomObject
 			}
 		}
 
-		// Call event
-		//if (!worldGenRegion.fireCanCustomObjectSpawnEvent(this, x, y, z))
-		{
-			// Cancelled
-			//return false;
-		}
-
 		return true;
 	}
 
