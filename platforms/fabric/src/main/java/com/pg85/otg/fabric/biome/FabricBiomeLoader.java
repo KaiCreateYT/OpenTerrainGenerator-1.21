@@ -12,6 +12,8 @@ import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 
+import com.pg85.otg.shared.biome.MobInheritanceHandler;
+
 import java.util.List;
 
 public class FabricBiomeLoader {

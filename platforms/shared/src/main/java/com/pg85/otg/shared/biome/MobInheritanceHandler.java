@@ -1,4 +1,4 @@
-package com.pg85.otg.neoforge.biome;
+package com.pg85.otg.shared.biome;
 
 import com.pg85.otg.config.biome.BiomeConfig;
 import com.pg85.otg.config.settings.biome.MobSettings;
@@ -158,7 +158,4 @@ public class MobInheritanceHandler {
         processedBiomes.add(biomeName);
         return false;
     }
-
-
-
 }
