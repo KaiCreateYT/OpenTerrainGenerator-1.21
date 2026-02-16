@@ -1,4 +1,4 @@
-package com.pg85.otg.neoforge.gen;
+package com.pg85.otg.shared.gen;
 
 import com.pg85.otg.shared.materials.SharedMaterialData;
 import com.pg85.otg.util.ChunkCoordinate;
@@ -9,10 +9,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.chunk.ChunkAccess;
 
 @Getter
-public class NeoForgeChunkBuffer extends ChunkBuffer {
+public class SharedChunkBuffer extends ChunkBuffer {
     private final ChunkAccess chunkAccess;
 
-    public NeoForgeChunkBuffer(ChunkAccess chunkAccess) {
+    public SharedChunkBuffer(ChunkAccess chunkAccess) {
         this.chunkAccess = chunkAccess;
     }
 

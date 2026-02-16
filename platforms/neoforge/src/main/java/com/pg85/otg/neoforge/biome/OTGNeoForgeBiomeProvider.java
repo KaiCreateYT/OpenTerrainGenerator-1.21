@@ -11,6 +11,7 @@ import com.pg85.otg.gen.biome.layers.util.CachingLayerSampler;
 import com.pg85.otg.interfaces.ILayerSampler;
 import com.pg85.otg.interfaces.ILayerSource;
 import com.pg85.otg.shared.biome.IOTGBiomeProvider;
+import com.pg85.otg.shared.biome.SharedBiome;
 import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.logging.LogLevel;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -73,10 +74,10 @@ public class OTGNeoForgeBiomeProvider extends BiomeSource implements ILayerSourc
             return Stream.empty();
         }
         for (int otgBiomeID = 0; otgBiomeID < iBiomes.length; otgBiomeID++) {
-            keyLookup.put(otgBiomeID, ((NeoForgeBiome) iBiomes[otgBiomeID]).getBiomeHolder());
+            keyLookup.put(otgBiomeID, ((SharedBiome) iBiomes[otgBiomeID]).getBiomeHolder());
         }
         this.undergroundResolver = new UndergroundBiomeResolver(iBiomes, this.seed);
-        return Stream.of(iBiomes).map(iBiome -> ((NeoForgeBiome) iBiome).getBiomeHolder());
+        return Stream.of(iBiomes).map(iBiome -> ((SharedBiome) iBiome).getBiomeHolder());
     }
 
     @Override

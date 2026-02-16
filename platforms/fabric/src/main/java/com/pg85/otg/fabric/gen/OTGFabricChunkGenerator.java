@@ -2,10 +2,12 @@ package com.pg85.otg.fabric.gen;
 
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import com.pg85.otg.fabric.biome.FabricBiome;
 import com.pg85.otg.fabric.biome.OTGFabricBiomeProvider;
 import com.pg85.otg.interfaces.IBiome;
+import com.pg85.otg.shared.biome.SharedBiome;
+import com.pg85.otg.shared.gen.SharedChunkBuffer;
 import com.pg85.otg.shared.gen.SharedOTGChunkGenerator;
+import com.pg85.otg.shared.gen.SharedShadowChunkGenerator;
 import com.pg85.otg.shared.gen.SharedWorldGenRegion;
 import com.pg85.otg.util.ChunkCoordinate;
 import com.pg85.otg.util.gen.ChunkBuffer;
@@ -34,7 +36,7 @@ public class OTGFabricChunkGenerator extends SharedOTGChunkGenerator {
                     ).apply(instance, instance.stable(OTGFabricChunkGenerator::createFromCodec)));
 
     private final OTGFabricBiomeProvider biomeSource;
-    private final ShadowChunkGenerator shadowChunkGenerator;
+    private final SharedShadowChunkGenerator shadowChunkGenerator;
 
     public static OTGFabricChunkGenerator createFromCodec(
             OTGFabricBiomeProvider biomeSource, Holder<NoiseGeneratorSettings> settings
@@ -47,7 +49,7 @@ public class OTGFabricChunkGenerator extends SharedOTGChunkGenerator {
     ) {
         super(biomeSource, settings, biomeRegistry);
         this.biomeSource = biomeSource;
-        this.shadowChunkGenerator = new ShadowChunkGenerator();
+        this.shadowChunkGenerator = new SharedShadowChunkGenerator();
     }
 
     @Override
@@ -71,12 +73,12 @@ public class OTGFabricChunkGenerator extends SharedOTGChunkGenerator {
 
     @Override
     protected ChunkBuffer createChunkBuffer(ChunkAccess chunkAccess) {
-        return new FabricChunkBuffer(chunkAccess);
+        return new SharedChunkBuffer(chunkAccess);
     }
 
     @Override
     protected BiomeGenerationSettings getBiomeGenerationSettings(IBiome biome) {
-        return ((FabricBiome) biome).getBiome().getGenerationSettings();
+        return ((SharedBiome) biome).getBiome().getGenerationSettings();
     }
 
     @Override

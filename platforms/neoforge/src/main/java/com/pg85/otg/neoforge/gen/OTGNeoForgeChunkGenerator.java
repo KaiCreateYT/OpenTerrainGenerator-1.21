@@ -2,10 +2,12 @@ package com.pg85.otg.neoforge.gen;
 
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import com.pg85.otg.neoforge.biome.NeoForgeBiome;
 import com.pg85.otg.neoforge.biome.OTGNeoForgeBiomeProvider;
 import com.pg85.otg.interfaces.IBiome;
+import com.pg85.otg.shared.biome.SharedBiome;
+import com.pg85.otg.shared.gen.SharedChunkBuffer;
 import com.pg85.otg.shared.gen.SharedOTGChunkGenerator;
+import com.pg85.otg.shared.gen.SharedShadowChunkGenerator;
 import com.pg85.otg.shared.gen.SharedWorldGenRegion;
 import com.pg85.otg.util.ChunkCoordinate;
 import com.pg85.otg.util.gen.ChunkBuffer;
@@ -34,7 +36,7 @@ public class OTGNeoForgeChunkGenerator extends SharedOTGChunkGenerator {
                     ).apply(instance, instance.stable(OTGNeoForgeChunkGenerator::createFromCodec)));
 
     private final OTGNeoForgeBiomeProvider biomeSource;
-    private final ShadowChunkGenerator shadowChunkGenerator;
+    private final SharedShadowChunkGenerator shadowChunkGenerator;
 
     public static OTGNeoForgeChunkGenerator createFromCodec(
             OTGNeoForgeBiomeProvider biomeSource, Holder<NoiseGeneratorSettings> settings
@@ -47,7 +49,7 @@ public class OTGNeoForgeChunkGenerator extends SharedOTGChunkGenerator {
     ) {
         super(biomeSource, settings, biomeRegistry);
         this.biomeSource = biomeSource;
-        this.shadowChunkGenerator = new ShadowChunkGenerator();
+        this.shadowChunkGenerator = new SharedShadowChunkGenerator();
     }
 
     @Override
@@ -71,12 +73,12 @@ public class OTGNeoForgeChunkGenerator extends SharedOTGChunkGenerator {
 
     @Override
     protected ChunkBuffer createChunkBuffer(ChunkAccess chunkAccess) {
-        return new NeoForgeChunkBuffer(chunkAccess);
+        return new SharedChunkBuffer(chunkAccess);
     }
 
     @Override
     protected BiomeGenerationSettings getBiomeGenerationSettings(IBiome biome) {
-        return ((NeoForgeBiome) biome).getBiome().getGenerationSettings();
+        return ((SharedBiome) biome).getBiome().getGenerationSettings();
     }
 
     @Override

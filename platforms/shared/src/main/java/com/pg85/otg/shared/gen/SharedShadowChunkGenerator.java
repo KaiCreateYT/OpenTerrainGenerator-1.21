@@ -1,8 +1,8 @@
-package com.pg85.otg.fabric.gen;
+package com.pg85.otg.shared.gen;
 
 import java.util.*;
 
-import com.pg85.otg.fabric.biome.FabricBiome;
+import com.pg85.otg.shared.biome.SharedBiome;
 import com.pg85.otg.shared.materials.SharedMaterialData;
 import com.pg85.otg.interfaces.IBiome;
 import com.pg85.otg.interfaces.ICachedBiomeProvider;
@@ -31,7 +31,6 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.*;
 import net.minecraft.world.level.levelgen.GenerationStep;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.TerrainAdjustment;
 import net.minecraft.world.level.levelgen.structure.placement.RandomSpreadStructurePlacement;
@@ -51,9 +50,9 @@ import org.jetbrains.annotations.Nullable;
  *
  * <p>Note: As of the async fillFromNoise refactor, this class is NO LONGER
  * used for pre-generating chunks ahead of vanilla's pipeline. Chunk generation
- * is now async via CompletableFuture.supplyAsync in OTGFabricChunkGenerator.
+ * is now async via CompletableFuture.supplyAsync in SharedOTGChunkGenerator.
  */
-public class ShadowChunkGenerator {
+public class SharedShadowChunkGenerator {
     // Dummy placement for checkStructurePresence calls -- always passes placement checks.
     private static final StructurePlacement DUMMY_PLACEMENT =
             new RandomSpreadStructurePlacement(32, 8, RandomSpreadType.LINEAR, 0);
@@ -68,14 +67,14 @@ public class ShadowChunkGenerator {
     private volatile Map<Holder<Biome>, List<Structure>> biomeToNoiseStructures;
     private volatile Map<Holder<Biome>, List<Structure>> biomeToAllStructures;
 
-    public ShadowChunkGenerator() {
+    public SharedShadowChunkGenerator() {
         this.unloadedChunksCache = new ThreadSafeLRUCache<>(2048);
         this.unloadedBlockColumnsCache = new ThreadSafeLRUCache<>(2048);
     }
 
-    private FabricChunkBuffer getUnloadedChunk(
+    private SharedChunkBuffer getUnloadedChunk(
             ServerLevel serverLevel,
-            OTGFabricChunkGenerator otgChunkGenerator, OTGWorldInfo otgWorldInfo,
+            SharedOTGChunkGenerator otgChunkGenerator, OTGWorldInfo otgWorldInfo,
             ChunkCoordinate chunkCoordinate
     ) {
         Registry<Biome> biomeRegistry = getRegistry(serverLevel.registryAccess(), Registries.BIOME);
@@ -92,7 +91,7 @@ public class ShadowChunkGenerator {
                 null
         );
 
-        FabricChunkBuffer buffer = new FabricChunkBuffer(chunk);
+        SharedChunkBuffer buffer = new SharedChunkBuffer(chunk);
 
         // This is where vanilla processes any noise affecting structures like villages, in order to spawn smoothing areas.
         // Doing this for unloaded chunks causes a hang on load since getChunk is called by StructureManager.
@@ -169,7 +168,7 @@ public class ShadowChunkGenerator {
                     (chunkToHandle.getChunkZ() - chunkCoordinate.getChunkZ()));
 
             biome = cachedBiomeProvider.getNoiseBiome((chunkpos.x << 2) + 2, (chunkpos.z << 2) + 2);
-            Biome regBiome = ((FabricBiome) biome).getBiome();
+            Biome regBiome = ((SharedBiome) biome).getBiome();
             Holder<Biome> biomeHolder = biomeRegistry.wrapAsHolder(regBiome);
 
             // Fast path: if this biome has no noise-affecting structures, skip entirely.
@@ -321,9 +320,9 @@ public class ShadowChunkGenerator {
     // resources used for worldgen or bo4 shadowgen, since the chunks aren't actually supposed to generate in the world.
     // We won't get any density based smoothing applied to noisegen for vanilla structures, but that's ok for /otg mapterrain.
 
-    public FabricChunkBuffer getChunkWithoutLoadingOrCaching(
+    public SharedChunkBuffer getChunkWithoutLoadingOrCaching(
             ServerLevel serverLevel,
-            OTGFabricChunkGenerator otgChunkGenerator, OTGWorldInfo otgWorldInfo, Random random,
+            SharedOTGChunkGenerator otgChunkGenerator, OTGWorldInfo otgWorldInfo, Random random,
             ChunkCoordinate chunkCoordinate
     ) {
         return getUnloadedChunk(serverLevel, otgChunkGenerator, otgWorldInfo, chunkCoordinate);
@@ -337,7 +336,7 @@ public class ShadowChunkGenerator {
 
     private LocalMaterialData[] getBlockColumnInUnloadedChunk(
             ServerLevel serverLevel,
-            OTGFabricChunkGenerator otgChunkGenerator, OTGWorldInfo otgWorldInfo, int x, int z
+            SharedOTGChunkGenerator otgChunkGenerator, OTGWorldInfo otgWorldInfo, int x, int z
     ) {
         BlockPos2D blockPos = new BlockPos2D(x, z);
         ChunkCoordinate chunkCoord = ChunkCoordinate.fromBlockCoords(x, z);
@@ -374,7 +373,7 @@ public class ShadowChunkGenerator {
 
     public LocalMaterialData getMaterialInUnloadedChunk(
             ServerLevel serverLevel,
-            OTGFabricChunkGenerator otgChunkGenerator, OTGWorldInfo otgWorldInfo, int x, int y, int z
+            SharedOTGChunkGenerator otgChunkGenerator, OTGWorldInfo otgWorldInfo, int x, int y, int z
     ) {
         LocalMaterialData[] blockColumn = getBlockColumnInUnloadedChunk(
                 serverLevel, otgChunkGenerator, otgWorldInfo, x, z
@@ -384,7 +383,7 @@ public class ShadowChunkGenerator {
 
     public int getHighestBlockYInUnloadedChunk(
             ServerLevel serverLevel,
-            OTGFabricChunkGenerator otgChunkGenerator, OTGWorldInfo otgWorldInfo, int x, int z,
+            SharedOTGChunkGenerator otgChunkGenerator, OTGWorldInfo otgWorldInfo, int x, int z,
             boolean findSolid, boolean findLiquid, boolean ignoreLiquid, boolean ignoreSnow
     ) {
         int height = otgWorldInfo.minY() - 1;
@@ -413,4 +412,3 @@ public class ShadowChunkGenerator {
     }
 
 }
-

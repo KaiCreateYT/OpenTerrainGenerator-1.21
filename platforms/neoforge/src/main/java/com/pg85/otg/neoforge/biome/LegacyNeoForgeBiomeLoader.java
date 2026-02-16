@@ -4,6 +4,7 @@ import java.nio.file.Path;
 
 import com.pg85.otg.config.settings.biome.BiomeSettings;
 import com.pg85.otg.interfaces.IBiome;
+import com.pg85.otg.shared.biome.SharedBiome;
 import com.pg85.otg.shared.biome.SharedLegacyBiomeLoader;
 
 import net.minecraft.core.Holder;
@@ -20,7 +21,7 @@ public class LegacyNeoForgeBiomeLoader extends SharedLegacyBiomeLoader {
 
     @Override
     protected IBiome createPlatformBiome(BiomeSettings settings, Biome biome, Holder.Reference<Biome> ref) {
-        return new NeoForgeBiome(settings, biome, ref);
+        return new SharedBiome(settings, biome, ref);
     }
 
     @Override
