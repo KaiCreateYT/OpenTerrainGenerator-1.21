@@ -79,6 +79,22 @@ session.lock
 # Worktrees
 .worktrees
 
+# Build artifacts leaked into root
+/META-INF/
+/assets/
+/com/
+/data/
+/net/
+/reports/
+/pack.mcmeta
+/forge.exc
+/forge.sas
+/forge.srg
+/mcplogo.png
+/neoforged_logo.png
+/neoforge.mixins.json
+/url.png
+
 # Filesystem dust
 Thumbs.db
 .DS_Store
