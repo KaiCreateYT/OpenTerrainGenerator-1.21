@@ -24,7 +24,7 @@ No automated tests exist - testing is done manually in-game.
 
 ## Architecture
 
-OpenTerrainGenerator is a multi-platform Minecraft terrain generation mod using Architectury. Currently only Fabric is active (Forge disabled in `gradle.properties`).
+OpenTerrainGenerator is a multi-platform Minecraft terrain generation mod using Architectury. Both Fabric and NeoForge are active platforms.
 
 ### Module Structure
 
@@ -37,12 +37,39 @@ common/
 └── common-core/          # Chunk generation, integrates all above
 
 platforms/
-├── fabric/               # Active - Fabric-specific code
-├── shared/               # Common platform code
-└── forge/                # Disabled
+├── fabric/               # Fabric-specific code
+├── neoforge/             # NeoForge-specific code
+└── shared/               # Common platform code (shared mixins, helpers)
 ```
 
 Dependency flow: `common-core` → `common-generator` + `common-customobject` + `common-util` → `common-annotation`
+
+### Platform Deduplication Pattern
+
+Most runtime logic lives in `platforms/shared/`. Fabric and NeoForge are thin wrappers (5-50 LOC each). Two patterns:
+
+1. **Abstract shared base** — `SharedOTGChunkGenerator`, `SharedOTGBiomeProvider`, `SharedDimensionHelper`, `SharedNBTHelper`, `SharedWorldGenRegion` contain all logic; platform subclasses add only CODEC definitions
+2. **Composition** — `SharedPresetBiomeLoader` + `BiomePlatformAdapter` injected via constructor
+
+**Only genuinely platform-specific:** CODEC definitions, mod loader API (`FabricLoader` vs `ModList`), data attachments (Cardinals vs NeoForge Attachments), event bus wiring.
+
+#### Shared module key packages (`platforms/shared/`)
+
+| Package | Contents |
+|---------|----------|
+| `shared.biome` | `SharedOTGBiomeProvider`, `SharedPresetBiomeLoader`, `BiomeRegistrar`, `BiomeFactory`, `BiomePlanResolver`, `BiomeTagMapper` |
+| `shared.gen` | `SharedOTGChunkGenerator`, `SharedWorldGenRegion`, `SharedShadowChunkGenerator`, `SharedChunkBuffer` |
+| `shared.materials` | `SharedMaterials`, `SharedMaterialData`, `SharedMaterialReader`, `SharedMaterialTag` |
+| `shared.dimensions` | `SharedDimensionHelper`, `DimensionManager`, `DimensionKeys` |
+| `shared.commands` | `OTGCommandRegistrar`, `DimensionCommands`, `ExportCommand`, `SpawnCommand`, `StructureCommand` |
+| `shared.portals` | `SharedOTGPortalBlock`, `SharedOTGTeleporter`, portal config/ignition |
+| `shared.mixin` | 6 shared mixins: `BiomeDataMixin`, `WorldPresetTagsMixin`, `ChunkAccessAccessor`, `MappedRegistryAccessor`, `MinecraftServerAccessor`, `CocoaDecoratorMixin` |
+| `platform.noise` | `OTGNoiseRouterData` — custom noise router with tunable cave scales |
+
+#### Access wideners
+- `otg-shared.accesswidener` — shared module
+- `otg.accesswidener` — Fabric
+- NeoForge uses ATs, not access wideners at runtime
 
 ### Shadow JAR Relocation
 
@@ -54,12 +81,16 @@ Dependencies are relocated to avoid classpath conflicts:
 
 | Purpose | Location |
 |---------|----------|
-| Chunk generation | `common/common-core/.../gen/OTGChunkGenerator.java` |
+| Chunk generation (shared) | `platforms/shared/.../gen/SharedOTGChunkGenerator.java` |
+| Chunk generation (common) | `common/common-core/.../gen/OTGChunkGenerator.java` |
+| Biome provider | `platforms/shared/.../biome/SharedOTGBiomeProvider.java` |
+| Biome loading | `platforms/shared/.../biome/SharedPresetBiomeLoader.java` |
 | Tree spawning | `common/common-customobject/.../customobject/TreeObject.java` |
 | Cave/Ravine carvers | `common/common-generator/.../gen/carver/` |
-| Fabric materials mapping | `platforms/fabric/.../fabric/materials/FabricMaterials.java` |
+| Materials mapping | `platforms/shared/.../materials/SharedMaterials.java` |
 | World height constants | `common/common-util/.../constants/Constants.java` |
 | Dimension settings | `common/common-util/.../config/settings/preset/DimensionSettings.java` |
+| Noise router (caves) | `platforms/shared/.../noise/OTGNoiseRouterData.java` |
 
 ### Configuration Files
 
