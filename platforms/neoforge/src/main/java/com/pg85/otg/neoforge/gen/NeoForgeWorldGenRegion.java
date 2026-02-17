@@ -2,7 +2,7 @@ package com.pg85.otg.neoforge.gen;
 
 import com.pg85.otg.config.preset.PresetConfig;
 import com.pg85.otg.shared.materials.SharedMaterialData;
-import com.pg85.otg.neoforge.util.NeoForgeNBTHelper;
+import com.pg85.otg.shared.util.SharedNBTHelper;
 import com.pg85.otg.gen.OTGChunkGenerator;
 import com.pg85.otg.interfaces.IPluginConfig;
 import com.pg85.otg.shared.gen.SharedWorldGenRegion;
@@ -51,7 +51,7 @@ public class NeoForgeWorldGenRegion extends SharedWorldGenRegion {
 
     @Override
     protected CompoundTag convertNBT(NamedBinaryTag tag) {
-        return NeoForgeNBTHelper.getNMSFromNBTTagCompound(tag);
+        return SharedNBTHelper.getNMSFromNBTTagCompound(tag);
     }
 
     @Override
