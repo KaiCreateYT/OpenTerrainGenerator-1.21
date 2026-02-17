@@ -46,7 +46,7 @@ Dependency flow: `common-core` → `common-generator` + `common-customobject` + 
 
 ### Platform Deduplication Pattern
 
-Most runtime logic lives in `platforms/shared/`. Fabric and NeoForge are thin wrappers (5-50 LOC each). Two patterns:
+Most runtime logic lives in `platforms/shared/`. Fabric (~820 LOC, 17 files) and NeoForge (~740 LOC, 16 files) are thin wrappers (median ~50 LOC/file, range 11-101). Two patterns:
 
 1. **Abstract shared base** — `SharedOTGChunkGenerator`, `SharedOTGBiomeProvider`, `SharedDimensionHelper`, `SharedNBTHelper`, `SharedWorldGenRegion` contain all logic; platform subclasses add only CODEC definitions
 2. **Composition** — `SharedPresetBiomeLoader` + `BiomePlatformAdapter` injected via constructor
