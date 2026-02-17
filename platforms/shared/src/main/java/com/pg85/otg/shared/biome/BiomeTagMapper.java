@@ -1,4 +1,4 @@
-package com.pg85.otg.fabric.biome;
+package com.pg85.otg.shared.biome;
 
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -13,11 +13,11 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Maps OTG modtag.* selectors to Fabric conventional tags (c:*) and vanilla tags (minecraft:is_*).
+ * Maps OTG modtag.* selectors to conventional tags (c:*) and vanilla tags (minecraft:is_*).
  */
-public class FabricBiomeTagMapper {
+public class BiomeTagMapper {
 
-    // OTG modtag.* -> Fabric c:* or minecraft:is_* mapping
+    // OTG modtag.* -> c:* or minecraft:is_* mapping
     private static final Map<String, String[]> TAG_MAPPING = new HashMap<>();
 
     static {
@@ -45,7 +45,7 @@ public class FabricBiomeTagMapper {
      * @param biomeRegistry The biome registry
      * @param biomeKey The biome's resource key
      * @param otgTag The OTG tag name (without modtag. prefix), e.g., "water", "mountain"
-     * @return true if biome matches any of the mapped Fabric tags
+     * @return true if biome matches any of the mapped tags
      */
     public static boolean biomeHasTag(Registry<Biome> biomeRegistry, ResourceKey<Biome> biomeKey, String otgTag) {
         String[] fabricTags = TAG_MAPPING.get(otgTag.toLowerCase());
@@ -69,10 +69,10 @@ public class FabricBiomeTagMapper {
     }
 
     /**
-     * Get Fabric tag keys for an OTG tag.
+     * Get tag keys for an OTG tag.
      */
     @SuppressWarnings("unchecked")
-    public static TagKey<Biome>[] getFabricTagKeys(String otgTag) {
+    public static TagKey<Biome>[] getTagKeys(String otgTag) {
         String[] fabricTags = TAG_MAPPING.get(otgTag.toLowerCase());
         if (fabricTags == null) {
             return new TagKey[0];

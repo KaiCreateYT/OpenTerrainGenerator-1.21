@@ -19,7 +19,7 @@ public class OTGPlugin {
     private static NeoForgeEventHandler eventHandler;
 
     public OTGPlugin(IEventBus modBus) {
-        OTGLog.setLogger(new com.pg85.otg.neoforge.util.NeoForgeLogger());
+        OTGLog.setLogger(new com.pg85.otg.shared.util.OTGLogger());
         OTGLog.getLogger().log(LogLevel.INFO, LogCategory.MAIN, "OTG Engine starting");
         OTGMaterialReader.set(new SharedMaterialReader());
         OTG.startEngine(new NeoForgeEngine());

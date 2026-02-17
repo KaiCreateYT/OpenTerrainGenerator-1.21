@@ -1,4 +1,4 @@
-package com.pg85.otg.neoforge.util;
+package com.pg85.otg.shared.util;
 
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.util.logging.LogCategory;
@@ -8,7 +8,7 @@ import org.apache.logging.log4j.LogManager;
 
 import java.util.Locale;
 
-public class NeoForgeLogger extends Logger {
+public class OTGLogger extends Logger {
     private final String modId = Constants.MOD_ID_SHORT.toUpperCase(Locale.ROOT);
     private final org.apache.logging.log4j.Logger logger = LogManager.getLogger(modId);
     @Override
