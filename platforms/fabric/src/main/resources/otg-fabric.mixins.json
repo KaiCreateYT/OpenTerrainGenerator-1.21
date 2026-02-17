@@ -4,15 +4,9 @@
   "package": "com.pg85.otg.fabric.mixin.",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "BiomeDataMixin",
     "BuiltInRegistriesMixin",
     "RegistryLoaderMixin",
-    "ChunkAccessAccessor",
-    "WorldPresetTagsMixin",
-    "CocoaDecoratorMixin",
-    "WorldSaveMixin",
-    "MinecraftServerAccessor",
-    "MappedRegistryAccessor"
+    "WorldSaveMixin"
   ],
   "client": [
   ],

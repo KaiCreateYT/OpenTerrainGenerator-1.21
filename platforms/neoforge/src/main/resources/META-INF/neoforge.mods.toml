@@ -12,6 +12,9 @@ logoFile = "OTGlogo.png"
 [[mixins]]
 config = "otg-neoforge.mixins.json"
 
+[[mixins]]
+config = "otg-shared.mixins.json"
+
 [[accessTransformers]]
 file = "META-INF/accesstransformer.cfg"
 

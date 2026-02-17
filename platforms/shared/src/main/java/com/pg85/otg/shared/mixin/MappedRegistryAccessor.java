@@ -1,4 +1,4 @@
-package com.pg85.otg.neoforge.mixin;
+package com.pg85.otg.shared.mixin;
 
 import net.minecraft.core.MappedRegistry;
 import org.spongepowered.asm.mixin.Mixin;

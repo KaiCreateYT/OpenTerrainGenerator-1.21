@@ -2,8 +2,8 @@ package com.pg85.otg.fabric.dimensions;
 
 import com.pg85.otg.fabric.biome.OTGFabricBiomeProvider;
 import com.pg85.otg.fabric.gen.OTGFabricChunkGenerator;
-import com.pg85.otg.fabric.mixin.MappedRegistryAccessor;
-import com.pg85.otg.fabric.mixin.MinecraftServerAccessor;
+import com.pg85.otg.shared.mixin.MappedRegistryAccessor;
+import com.pg85.otg.shared.mixin.MinecraftServerAccessor;
 import com.pg85.otg.shared.dimensions.SharedDimensionHelper;
 import net.minecraft.core.Holder;
 import net.minecraft.core.MappedRegistry;

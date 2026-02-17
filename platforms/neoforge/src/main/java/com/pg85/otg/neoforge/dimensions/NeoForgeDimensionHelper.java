@@ -2,8 +2,8 @@ package com.pg85.otg.neoforge.dimensions;
 
 import com.pg85.otg.neoforge.biome.OTGNeoForgeBiomeProvider;
 import com.pg85.otg.neoforge.gen.OTGNeoForgeChunkGenerator;
-import com.pg85.otg.neoforge.mixin.MappedRegistryAccessor;
-import com.pg85.otg.neoforge.mixin.MinecraftServerAccessor;
+import com.pg85.otg.shared.mixin.MappedRegistryAccessor;
+import com.pg85.otg.shared.mixin.MinecraftServerAccessor;
 import com.pg85.otg.shared.dimensions.SharedDimensionHelper;
 import net.minecraft.core.Holder;
 import net.minecraft.core.MappedRegistry;

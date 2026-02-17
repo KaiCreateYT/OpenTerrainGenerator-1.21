@@ -4,14 +4,8 @@
   "package": "com.pg85.otg.neoforge.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "BiomeDataMixin",
     "BuiltInRegistriesMixin",
-    "RegistryLoaderMixin",
-    "ChunkAccessAccessor",
-    "WorldPresetTagsMixin",
-    "CocoaDecoratorMixin",
-    "MinecraftServerAccessor",
-    "MappedRegistryAccessor"
+    "RegistryLoaderMixin"
   ],
   "injectors": {
     "defaultRequire": 1

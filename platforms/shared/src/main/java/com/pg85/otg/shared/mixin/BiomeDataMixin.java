@@ -1,4 +1,4 @@
-package com.pg85.otg.neoforge.mixin;
+package com.pg85.otg.shared.mixin;
 
 import com.pg85.otg.shared.biome.SharedPresetBiomeLoader;
 import net.minecraft.core.registries.Registries;

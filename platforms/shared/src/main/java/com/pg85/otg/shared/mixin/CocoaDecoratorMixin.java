@@ -1,4 +1,4 @@
-package com.pg85.otg.fabric.mixin;
+package com.pg85.otg.shared.mixin;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.levelgen.feature.treedecorators.CocoaDecorator;

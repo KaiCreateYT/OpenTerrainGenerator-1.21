@@ -1,4 +1,4 @@
-package com.pg85.otg.neoforge.mixin;
+package com.pg85.otg.shared.mixin;
 
 import com.pg85.otg.config.settings.biome.BiomeStructureTagConfig;
 import com.pg85.otg.constants.Constants;
