@@ -47,6 +47,8 @@ import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
 @Getter
@@ -84,6 +86,20 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
     protected volatile RandomState caveRandomState = null;
     protected volatile SimplexNoise breakthroughNoise = null;
     protected volatile OTGNoiseRouterData.CaveDensityComponents caveComponents = null;
+
+    // --- Timing counters (thread-safe) ---
+    private static final int TIMING_LOG_INTERVAL = 50;
+    private final AtomicInteger fillNoiseCount = new AtomicInteger();
+    private final AtomicLong fillNoiseTotalNs = new AtomicLong();
+    private final AtomicLong populateNoiseTotalNs = new AtomicLong();
+    private final AtomicLong carveWithNoiseTotalNs = new AtomicLong();
+    private final AtomicInteger carversCount = new AtomicInteger();
+    private final AtomicLong carversTotalNs = new AtomicLong();
+    private final AtomicInteger structuresCount = new AtomicInteger();
+    private final AtomicLong structuresTotalNs = new AtomicLong();
+    private final AtomicInteger decorationCount = new AtomicInteger();
+    private final AtomicLong decorationTotalNs = new AtomicLong();
+    private final AtomicLong superDecorationTotalNs = new AtomicLong();
 
     // --- Constructor ---
 
@@ -204,6 +220,7 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
 
     @Override
     public void applyBiomeDecoration(WorldGenLevel worldGenLevel, ChunkAccess chunkAccess, StructureManager structureManager) {
+        long t0 = System.nanoTime();
         if (!OTG.getEngine().getPluginConfig().getDecorationEnabled()) {
             return;
         }
@@ -216,10 +233,21 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
         Path worldSaveFolder = worldGenLevel.getLevel().getServer().getWorldPath(LevelResource.PLAYER_DATA_DIR).getParent();
 
         this.chunkDecorator.decorate(chunkBeingDecorated, worldGenRegion, biome.getBiomeSettings(), getStructureCache(worldSaveFolder));
+        long tSuper = System.nanoTime();
         super.applyBiomeDecoration(worldGenLevel, chunkAccess, structureManager);
+        long superElapsed = System.nanoTime() - tSuper;
+        superDecorationTotalNs.addAndGet(superElapsed);
 
         if (!biome.getBiomeSettings().getIdentitySettings().isTemplateForBiome()) {
             this.chunkDecorator.doSnowAndIce(worldGenRegion, chunkBeingDecorated);
+        }
+        long totalElapsed = System.nanoTime() - t0;
+        decorationTotalNs.addAndGet(totalElapsed);
+        int count = decorationCount.incrementAndGet();
+        if (count % TIMING_LOG_INTERVAL == 0) {
+            OTG.log(String.format("[OTG-TIMING] decoration #%d avg=%.1fms (superDecorate avg=%.1fms)", count,
+                    decorationTotalNs.get() / 1_000_000.0 / count,
+                    superDecorationTotalNs.get() / 1_000_000.0 / count));
         }
     }
 
@@ -262,7 +290,15 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
             ChunkAccess chunkAccess,
             StructureTemplateManager structureTemplateManager
     ) {
+        long t0 = System.nanoTime();
         super.createStructures(registryAccess, chunkGeneratorStructureState, structureManager, chunkAccess, structureTemplateManager);
+        long elapsed = System.nanoTime() - t0;
+        structuresTotalNs.addAndGet(elapsed);
+        int count = structuresCount.incrementAndGet();
+        if (count % TIMING_LOG_INTERVAL == 0) {
+            OTG.log(String.format("[OTG-TIMING] createStructures #%d avg=%.1fms", count,
+                    structuresTotalNs.get() / 1_000_000.0 / count));
+        }
     }
 
     @Override
@@ -295,8 +331,16 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
 
     @Override
     public void applyCarvers(WorldGenRegion worldGenRegion, long seed, RandomState randomState, BiomeManager biomeManager, StructureManager structureManager, ChunkAccess chunkAccess, GenerationStep.Carving carving) {
+        long t0 = System.nanoTime();
         if (this.preset.getPresetConfig().getCarverSettings().isUseModernCaves()) {
             this.horribleDelegateForCarvers.applyCarvers(worldGenRegion, seed, randomState, biomeManager, structureManager, chunkAccess, carving);
+            long elapsed = System.nanoTime() - t0;
+            carversTotalNs.addAndGet(elapsed);
+            int count = carversCount.incrementAndGet();
+            if (count % TIMING_LOG_INTERVAL == 0) {
+                OTG.log(String.format("[OTG-TIMING] applyCarvers(modern) #%d avg=%.1fms", count,
+                        carversTotalNs.get() / 1_000_000.0 / count));
+            }
             return;
         }
 
@@ -411,6 +455,7 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
             Blender blender, RandomState randomState, StructureManager structureManager,
             ChunkAccess chunkAccess
     ) {
+        long t0 = System.nanoTime();
         ChunkCoordinate chunkCoord = ChunkCoordinate.fromChunkCoords(
                 chunkAccess.getPos().x, chunkAccess.getPos().z);
 
@@ -436,11 +481,27 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
 
         ChunkBuffer buffer = createChunkBuffer(chunkAccess);
         Random random = getRandomFromChunkCoord(chunkCoord);
+        long tNoise = System.nanoTime();
         this.internalGenerator.populateNoise(otgWorldInfo, buffer,
                 buffer.getChunkCoordinate(), structures, random);
+        long noiseElapsed = System.nanoTime() - tNoise;
+        populateNoiseTotalNs.addAndGet(noiseElapsed);
 
         if (this.preset.getPresetConfig().getCarverSettings().isUseModernCaves()) {
+            long tCarve = System.nanoTime();
             carveWithNoise(blender, randomState, structureManager, chunkAccess, buffer);
+            long carveElapsed = System.nanoTime() - tCarve;
+            carveWithNoiseTotalNs.addAndGet(carveElapsed);
+        }
+
+        long totalElapsed = System.nanoTime() - t0;
+        fillNoiseTotalNs.addAndGet(totalElapsed);
+        int count = fillNoiseCount.incrementAndGet();
+        if (count % TIMING_LOG_INTERVAL == 0) {
+            OTG.log(String.format("[OTG-TIMING] fillFromNoise #%d avg=%.1fms (populateNoise=%.1fms carveWithNoise=%.1fms)", count,
+                    fillNoiseTotalNs.get() / 1_000_000.0 / count,
+                    populateNoiseTotalNs.get() / 1_000_000.0 / count,
+                    carveWithNoiseTotalNs.get() / 1_000_000.0 / count));
         }
 
         return CompletableFuture.completedFuture(chunkAccess);

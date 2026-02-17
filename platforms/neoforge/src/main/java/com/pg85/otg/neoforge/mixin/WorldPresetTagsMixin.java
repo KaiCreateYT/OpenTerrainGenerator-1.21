@@ -62,16 +62,14 @@ public class WorldPresetTagsMixin {
 
         presets.bindTags(collected);
 
-        // PERF BUG: addBiomesToStructureTags() calls biomeRegistry.bindTags() which
-        // invalidates HolderSet.Named instances cached in BiomeGenerationSettings.
-        // This forces MC to rebuild feature ordering per-chunk instead of reusing cache.
-        // DefaultPreset is hit hard because it has 64 Registry() placed features +
-        // 15 TemplateBiomes with full vanilla feature lists — expensive feature sort.
-        // Biome Bundle is unaffected because it has 0 Registry() entries → nothing to sort.
-        // TODO: fix by either (a) not using bindTags() — inject via Holder manipulation,
-        // or (b) re-bake the feature ordering cache after bindTags().
-        // See: docs/plans/2026-02-16-bindtags-perf-bug.md
-        // addBiomesToStructureTags(registryAccess);
+        if (!Boolean.getBoolean("otg.structureTags.disable")) {
+            long tagStart = System.nanoTime();
+            addBiomesToStructureTags(registryAccess);
+            long tagMs = (System.nanoTime() - tagStart) / 1_000_000;
+            OTGLog.getLogger().info("[OTG-TIMING] addBiomesToStructureTags took %dms", tagMs);
+        } else {
+            OTGLog.getLogger().info("[OTG] Structure tag injection DISABLED via -Dotg.structureTags.disable=true");
+        }
     }
 
     private void addBiomesToStructureTags(RegistryAccess registryAccess) {
@@ -98,7 +96,7 @@ public class WorldPresetTagsMixin {
 
             Optional<Holder.Reference<Biome>> holderOpt = biomeRegistry.getHolder(biomeKey);
             if (holderOpt.isEmpty()) {
-                OTGLog.getLogger().warn("Could not find holder for biome {} when injecting structure tags", biomeKey.location());
+                OTGLog.getLogger().warn("Could not find holder for biome %s when injecting structure tags", biomeKey.location());
                 continue;
             }
             Holder.Reference<Biome> holder = holderOpt.get();
@@ -112,7 +110,7 @@ public class WorldPresetTagsMixin {
         }
 
         biomeRegistry.bindTags(biomeTagMap);
-        OTGLog.getLogger().info("Injected {} structure tag entries for {} OTG biomes",
+        OTGLog.getLogger().info("Injected %d structure tag entries for %d OTG biomes",
                 addedCount, structureConfigs.size());
     }
 
