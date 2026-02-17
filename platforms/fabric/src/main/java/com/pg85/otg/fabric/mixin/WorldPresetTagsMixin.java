@@ -3,11 +3,9 @@ package com.pg85.otg.fabric.mixin;
 import com.pg85.otg.config.settings.biome.BiomeStructureTagConfig;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.shared.biome.SharedPresetBiomeLoader;
-import com.pg85.otg.fabric.mixin.util.RegistryUtil;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.biome.StructureTagMapper;
 import net.minecraft.core.Holder;
-import net.minecraft.core.HolderSet;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
@@ -37,20 +35,15 @@ public class WorldPresetTagsMixin {
         RegistryAccess registryAccess = self.fullRegistries().get();
         OTGLog.getLogger().info("Adding OTG presets to the world preset tags");
         var presets = registryAccess.registryOrThrow(Registries.WORLD_PRESET);
-        // get all the tags from the presets registry
         var tags = presets.getTags();
         HashMap<TagKey<WorldPreset>, List<Holder<WorldPreset>>> collected = tags.collect(
                 HashMap::new,
                 (tagMap, pair) -> tagMap.put(pair.getFirst(), new ArrayList<>(pair.getSecond().stream().toList())),
                 HashMap::putAll);
-        // add our own presets to the tags
         presets.keySet().forEach(id -> {
-            // check it's in the OTG name space
             if (!id.getNamespace().equalsIgnoreCase(Constants.MOD_ID_SHORT)) {
-                //OTGLog.getLogger().info("Skipping preset %s as it's not in the OTG namespace", id.toString());
                 return;
             }
-            // can't use direct holders, need reference
             Holder.Reference<WorldPreset> holder = getAsReference(presets, id).orElse(null);
             if (holder == null) {
                 OTGLog.getLogger().error("Preset %s does not exist!", id.toString());
@@ -61,18 +54,19 @@ public class WorldPresetTagsMixin {
                     .add(holder);
         });
 
-        // print tags
-
         presets.bindTags(collected);
 
-        if (!Boolean.getBoolean("otg.structureTags.disable")) {
-            long tagStart = System.nanoTime();
-            addBiomesToStructureTags(registryAccess);
-            long tagMs = (System.nanoTime() - tagStart) / 1_000_000;
-            OTGLog.getLogger().info("[OTG-TIMING] addBiomesToStructureTags took %dms", tagMs);
-        } else {
-            OTGLog.getLogger().info("[OTG] Structure tag injection DISABLED via -Dotg.structureTags.disable=true");
-        }
+        // TODO: addBiomesToStructureTags() causes a ~60s stall on NeoForge. NeoForge patches
+        //  HolderSet.Named.bind() with invalidation callbacks that invalidate
+        //  ChunkGenerator.featuresPerStep (Lazy<>), triggering FeatureSorter.buildFeaturesPerStep()
+        //  rebuild on first decoration access.
+        //  Fabric is unaffected (vanilla bind() has no callbacks).
+        //  Attempted fix: @Redirect on bindTags() inside private static updateRegistryTags() to
+        //  inject OTG tags into the vanilla tag map before the single bindTags() call — still slow.
+        //  Possible fixes: pre-warm featuresPerStep cache after tag injection, or find a way to
+        //  suppress NeoForge invalidation callbacks during bindTags().
+        //  Without this, vanilla structures (villages, mineshafts etc.) won't spawn in OTG biomes.
+        addBiomesToStructureTags(registryAccess);
     }
 
     private void addBiomesToStructureTags(RegistryAccess registryAccess) {
@@ -83,10 +77,8 @@ public class WorldPresetTagsMixin {
 
         var biomeRegistry = registryAccess.registryOrThrow(Registries.BIOME);
 
-        // Collect ALL existing biome tags into mutable map
-        // bindTags() replaces everything, so we MUST preserve existing tags
-        var tags = biomeRegistry.getTags();
-        HashMap<TagKey<Biome>, List<Holder<Biome>>> biomeTagMap = tags.collect(
+        var existingTags = biomeRegistry.getTags();
+        HashMap<TagKey<Biome>, List<Holder<Biome>>> biomeTagMap = existingTags.collect(
                 HashMap::new,
                 (tagMap, pair) -> tagMap.put(pair.getFirst(), new ArrayList<>(pair.getSecond().stream().toList())),
                 HashMap::putAll
@@ -104,8 +96,7 @@ public class WorldPresetTagsMixin {
             }
             Holder.Reference<Biome> holder = holderOpt.get();
 
-            List<String> structureTags = StructureTagMapper.getStructureTags(config);
-            for (String tagPath : structureTags) {
+            for (String tagPath : StructureTagMapper.getStructureTags(config)) {
                 TagKey<Biome> tagKey = TagKey.create(Registries.BIOME, ResourceLocation.parse(tagPath));
                 biomeTagMap.computeIfAbsent(tagKey, k -> new ArrayList<>()).add(holder);
                 addedCount++;
