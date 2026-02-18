@@ -1,6 +1,8 @@
 package com.pg85.otg.util.helpers;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -230,6 +232,28 @@ public abstract class StringHelper
 	 * @throws InvalidConfigException
 	 *			 If the number is invalid.
 	 */
+	public static HashMap<String, Integer> parseGroupMap(String input) {
+		HashMap<String, Integer> map = new HashMap<>();
+		if (input == null || input.trim().isEmpty()) return map;
+		for (String token : input.split(",")) {
+			String[] parts = token.trim().isEmpty() ? null : token.split(":");
+			if (parts != null && parts.length == 2) {
+				map.put(parts[0].trim(), Integer.parseInt(parts[1].trim()));
+			}
+		}
+		return map;
+	}
+
+	public static ArrayList<String> splitTrimmedList(String input) {
+		ArrayList<String> list = new ArrayList<>();
+		if (input == null || input.trim().isEmpty()) return list;
+		for (String token : input.split(",")) {
+			String trimmed = token.trim();
+			if (!trimmed.isEmpty()) list.add(trimmed);
+		}
+		return list;
+	}
+
 	public static long readLong(String string, long minValue, long maxValue) throws InvalidConfigException
 	{
 		try

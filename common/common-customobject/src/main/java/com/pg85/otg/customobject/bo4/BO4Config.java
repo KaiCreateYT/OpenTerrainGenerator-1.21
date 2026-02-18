@@ -29,6 +29,7 @@ import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.nbt.NamedBinaryTag;
 import com.pg85.otg.util.bo3.Rotation;
 import com.pg85.otg.util.helpers.StreamHelper;
+import com.pg85.otg.util.helpers.StringHelper;
 import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.materials.LocalMaterialData;
@@ -199,9 +200,6 @@ public class BO4Config extends CustomObjectConfigFile
 		super(reader);
 	}
 	
-	static int BO4BlocksLoadedFromBO4Data = 0;
-	static int accumulatedTime = 0;
-	static int accumulatedTime2 = 0;
 	private void init(String presetFolderName, Path otgRootFolder,  CustomObjectManager customObjectManager, IMaterialReader materialReader, CustomObjectResourcesManager manager, IModLoadedChecker modLoadedChecker) throws InvalidConfigException
 	{
 		this.minX = Integer.MAX_VALUE;
@@ -212,21 +210,9 @@ public class BO4Config extends CustomObjectConfigFile
 		this.maxZ = Integer.MIN_VALUE;
 		if(!this.reader.getFile().getAbsolutePath().toLowerCase().endsWith(".bo4data"))
 		{
-			//long startTime = System.currentTimeMillis();
 			readConfigSettings(presetFolderName, otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker);
-			//BO4BlocksLoaded++;
-			//long timeTaken = (System.currentTimeMillis() - startTime);
-			//accumulatedTime += timeTaken;
-			//OTG.log(LogMarker.INFO, "BO4's loaded: " + BO4BlocksLoaded + " in " + accumulatedTime);
-			//OTG.log(LogMarker.INFO, ".BO4 loaded in: " + timeTaken + " " + this.getName() + ".BO4");
 		} else {
-			//long startTime = System.currentTimeMillis();
 			this.readFromBO4DataFile(false,  materialReader);
-			//BO4BlocksLoadedFromBO4Data++;
-			//long timeTaken = (System.currentTimeMillis() - startTime);
-			//accumulatedTime2 += timeTaken;			
-			//OTG.log(LogMarker.INFO, ".BO4Data's loaded: " + BO4BlocksLoadedFromBO4Data + " in " + accumulatedTime2);
-			//OTG.log(LogMarker.INFO, ".BO4Data loaded in: " + timeTaken + " " + this.getName()  + ".BO4Data");
 		}
 
 		// When writing, we'll need to read some raw data from the file,
@@ -353,7 +339,7 @@ public class BO4Config extends CustomObjectConfigFile
 									{
 										continue;
 									}
-									if(randomMaterial.isSmoothAreaAnchor(start.getConfig().overrideChildSettings && this.overrideChildSettings ? start.getConfig().smoothStartWood : this.smoothStartWood, start.getConfig().spawnUnderWater))
+									if(randomMaterial.isSmoothAreaAnchor(resolveSmoothing(start.getConfig(), start.getConfig().smoothStartWood, this.smoothStartWood), start.getConfig().spawnUnderWater))
 									{
 										isSmoothAreaAnchor = true;
 										break;
@@ -366,13 +352,13 @@ public class BO4Config extends CustomObjectConfigFile
 								isSmoothAreaAnchor ||
 								(
 									!isRandomBlock &&
-									material.isSmoothAreaAnchor(start.getConfig().overrideChildSettings && this.overrideChildSettings ? start.getConfig().smoothStartWood : this.smoothStartWood, start.getConfig().spawnUnderWater)
+									material.isSmoothAreaAnchor(resolveSmoothing(start.getConfig(), start.getConfig().smoothStartWood, this.smoothStartWood), start.getConfig().spawnUnderWater)
 								)
 							)
 							{
 								if(
-									(!(start.getConfig().overrideChildSettings && this.overrideChildSettings ? start.getConfig().smoothStartTop : this.smoothStartTop) && y == getminY()) ||
-									((start.getConfig().overrideChildSettings && this.overrideChildSettings ? start.getConfig().smoothStartTop : this.smoothStartTop) && (this.heightMap[x][z] == null || y > this.heightMap[x][z].y))
+									(!resolveSmoothing(start.getConfig(), start.getConfig().smoothStartTop, this.smoothStartTop) && y == getminY()) ||
+									(resolveSmoothing(start.getConfig(), start.getConfig().smoothStartTop, this.smoothStartTop) && (this.heightMap[x][z] == null || y > this.heightMap[x][z].y))
 								)
 								{
 									BO4BlockFunction blockFunction;
@@ -405,6 +391,10 @@ public class BO4Config extends CustomObjectConfigFile
 			}
 		}
 		return this.heightMap;
+	}
+
+	private <T> T resolveSmoothing(BO4Config startConfig, T startValue, T childValue) {
+		return startConfig.overrideChildSettings && this.overrideChildSettings ? startValue : childValue;
 	}
 
 	BO4BlockFunction[] getBlocks(String presetFolderName, Path otgRootFolder,  CustomObjectManager customObjectManager, IMaterialReader materialReader, CustomObjectResourcesManager manager, IModLoadedChecker modLoadedChecker)
@@ -612,7 +602,6 @@ public class BO4Config extends CustomObjectConfigFile
 		}
 	}
 
-	static int BO4BlocksLoaded = 0;
 	private void readResources( IMaterialReader materialReader, CustomObjectResourcesManager manager) throws InvalidConfigException
 	{		
 		List<BO4BlockFunction> tempBlocksList = new ArrayList<>();
@@ -1075,17 +1064,7 @@ public class BO4Config extends CustomObjectConfigFile
 		this.branchFrequency = readSettings(BO4Settings.BRANCH_FREQUENCY,  materialReader, manager);
 		
 		this.branchFrequencyGroup = readSettings(BO4Settings.BRANCH_FREQUENCY_GROUP,  materialReader, manager);
-		this.branchFrequencyGroups = new HashMap<>();
-		if(this.branchFrequencyGroup != null && !this.branchFrequencyGroup.trim().isEmpty())
-		{
-			String[] groupStrings = this.branchFrequencyGroup.split(",");
-            for (String string : groupStrings) {
-                String[] groupString = !string.trim().isEmpty() ? string.split(":") : null;
-                if (groupString != null && groupString.length == 2) {
-                    this.branchFrequencyGroups.put(groupString[0].trim(), Integer.parseInt(groupString[1].trim()));
-                }
-            }
-        }
+		this.branchFrequencyGroups = StringHelper.parseGroupMap(this.branchFrequencyGroup);
 		
 		this.heightOffset = readSettings(BO4Settings.HEIGHT_OFFSET,  materialReader, manager);
 		this.inheritBO3Rotation = readSettings(BO4Settings.INHERITBO3ROTATION,  materialReader, manager);
@@ -1104,60 +1083,20 @@ public class BO4Config extends CustomObjectConfigFile
 		this.replaceWithStoneBlock = readSettings(BO4Settings.REPLACEWITHSTONEBLOCK,  materialReader, manager);
 		
 		this.bo3Group = readSettings(BO4Settings.BO3GROUP,  materialReader, manager);
-		this.bo4Groups = new HashMap<>();
-		if(this.bo3Group != null && !this.bo3Group.trim().isEmpty())
-		{
-			String[] groupStrings = this.bo3Group.split(",");
-            for (String string : groupStrings) {
-                String[] groupString = !string.trim().isEmpty() ? string.split(":") : null;
-                if (groupString != null && groupString.length == 2) {
-                    this.bo4Groups.put(groupString[0].trim(), Integer.parseInt(groupString[1].trim()));
-                }
-            }
-        }
+		this.bo4Groups = StringHelper.parseGroupMap(this.bo3Group);
 		
 		this.canOverride = readSettings(BO4Settings.CANOVERRIDE,  materialReader, manager);
 		this.mustBeBelowOther = readSettings(BO4Settings.MUSTBEBELOWOTHER,  materialReader, manager);
 		this.mustBeInsideWorldBorders = readSettings(BO4Settings.MUSTBEINSIDEWORLDBORDERS,  materialReader, manager);
 		
 		this.mustBeInside = readSettings(BO4Settings.MUSTBEINSIDE,  materialReader, manager);
-		this.mustBeInsideBranches = new ArrayList<>();
-		if(this.mustBeInside != null && !this.mustBeInside.trim().isEmpty())
-		{
-			String[] mustBeInsideStrings = this.mustBeInside.split(",");
-            for (String beInsideString : mustBeInsideStrings) {
-                String mustBeInsideString = beInsideString.trim();
-                if (!mustBeInsideString.isEmpty()) {
-                    this.mustBeInsideBranches.add(mustBeInsideString);
-                }
-            }
-        }
-		
+		this.mustBeInsideBranches = StringHelper.splitTrimmedList(this.mustBeInside);
+
 		this.cannotBeInside =  readSettings(BO4Settings.CANNOTBEINSIDE,  materialReader, manager);
-		this.cannotBeInsideBranches = new ArrayList<>();
-		if(this.cannotBeInside != null && !this.cannotBeInside.trim().isEmpty())
-		{
-			String[] cannotBeInsideStrings = this.cannotBeInside.split(",");
-            for (String beInsideString : cannotBeInsideStrings) {
-                String cannotBeInsideString = beInsideString.trim();
-                if (!cannotBeInsideString.isEmpty()) {
-                    this.cannotBeInsideBranches.add(cannotBeInsideString);
-                }
-            }
-        }
-		
+		this.cannotBeInsideBranches = StringHelper.splitTrimmedList(this.cannotBeInside);
+
 		this.replacesBO3 = readSettings(BO4Settings.REPLACESBO3,  materialReader, manager);
-		this.replacesBO3Branches = new ArrayList<>();
-		if(this.replacesBO3 != null && !this.replacesBO3.trim().isEmpty())
-		{
-			String[] replacesBO3Strings = replacesBO3.split(",");
-            for (String bo3String : replacesBO3Strings) {
-                String replacesBO3String = bo3String.trim();
-                if (!replacesBO3String.isEmpty()) {
-                    this.replacesBO3Branches.add(replacesBO3String);
-                }
-            }
-        }
+		this.replacesBO3Branches = StringHelper.splitTrimmedList(this.replacesBO3);
 
 		//smoothHeightOffset = readSettings(BO3Settings.SMOOTH_HEIGHT_OFFSET).equals("HeightOffset") ? heightOffset : Integer.parseInt(readSettings(BO3Settings.SMOOTH_HEIGHT_OFFSET));
 		this.smoothHeightOffset = readSettings(BO4Settings.SMOOTH_HEIGHT_OFFSET,  materialReader, manager);
@@ -1525,291 +1464,173 @@ public class BO4Config extends CustomObjectConfigFile
 
 	private BO4Config readFromBO4DataFile(boolean getBlocks,  IMaterialReader materialReader) throws InvalidConfigException
 	{
-		FileInputStream fis;
-		ByteBuffer bufferCompressed = null;
-		ByteBuffer bufferDecompressed = null;
-		try
+		try (FileInputStream fis = new FileInputStream(this.reader.getFile());
+			 FileChannel channel = fis.getChannel())
 		{
-			fis = new FileInputStream(this.reader.getFile());
-			try
+			ByteBuffer bufferCompressed = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
+			byte[] compressedBytes = new byte[(int) channel.size()];
+			bufferCompressed.get(compressedBytes);
+
+			ByteBuffer bufferDecompressed;
+			try {
+				byte[] decompressedBytes = com.pg85.otg.util.CompressionUtils.decompress(compressedBytes);
+				bufferDecompressed = ByteBuffer.wrap(decompressedBytes);
+			} catch (DataFormatException e) {
+				throw new InvalidConfigException("Failed to decompress BO4 data for " + this.getName() + ": " + e.getMessage());
+			}
+
+			int bo4DataVersion = bufferDecompressed.getInt();
+			if(bo4DataVersion < 2)
 			{
-				bufferCompressed = fis.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, fis.getChannel().size());
-				byte[] compressedBytes = new byte[(int) fis.getChannel().size()];
-				bufferCompressed.get(compressedBytes);
-				try {
-					byte[] decompressedBytes = com.pg85.otg.util.CompressionUtils.decompress(compressedBytes);
-					bufferDecompressed = ByteBuffer.wrap(decompressedBytes);
-				} catch (DataFormatException e1) {
-					OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Failed to decompress BO4 data for %s: %s", this.getName(), e1.getMessage()); OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e1);
+				throw new InvalidConfigException("Could not read BO4Data file " + this.reader.getName() + ", it is outdated. Delete and re-export BO4Data files to fix this, or delete and reinstall your OTG preset.");
+			}
+			// Version 3 added fixedRotation
+			if(bo4DataVersion > 2)
+			{
+				String rotationString = StreamHelper.readStringFromBuffer(bufferDecompressed);
+				this.fixedRotation = Rotation.getRotation(rotationString);
+			}
+
+			this.isBO4Data = true;
+			this.inheritedBO3Loaded = true;
+			this.minimumSizeTop = bufferDecompressed.getInt();
+			this.minimumSizeBottom = bufferDecompressed.getInt();
+			this.minimumSizeLeft = bufferDecompressed.getInt();
+			this.minimumSizeRight = bufferDecompressed.getInt();
+
+			this.minX = bufferDecompressed.getInt();
+			this.maxX = bufferDecompressed.getInt();
+			this.minY = bufferDecompressed.getInt();
+			this.maxY = bufferDecompressed.getInt();
+			this.minZ = bufferDecompressed.getInt();
+			this.maxZ = bufferDecompressed.getInt();
+
+			this.author = StreamHelper.readStringFromBuffer(bufferDecompressed);
+			this.description = StreamHelper.readStringFromBuffer(bufferDecompressed);
+			this.settingsMode = ConfigMode.valueOf(StreamHelper.readStringFromBuffer(bufferDecompressed));
+			this.frequency = bufferDecompressed.getInt();
+			this.spawnHeight = SpawnHeightEnum.valueOf(StreamHelper.readStringFromBuffer(bufferDecompressed));
+			this.minHeight = bufferDecompressed.getInt();
+			this.maxHeight = bufferDecompressed.getInt();
+			short inheritedBO3sSize = bufferDecompressed.getShort();
+			this.inheritedBO3s = new ArrayList<>();
+			for(int i = 0; i < inheritedBO3sSize; i++)
+			{
+				this.inheritedBO3s.add(StreamHelper.readStringFromBuffer(bufferDecompressed));
+			}
+
+			this.inheritBO3 = StreamHelper.readStringFromBuffer(bufferDecompressed);
+			this.inheritBO3Rotation = Rotation.valueOf(StreamHelper.readStringFromBuffer(bufferDecompressed));
+			this.overrideChildSettings = bufferDecompressed.get() != 0;
+			this.overrideParentHeight = bufferDecompressed.get() != 0;
+			this.canOverride = bufferDecompressed.get() != 0;
+			this.branchFrequency = bufferDecompressed.getInt();
+			this.branchFrequencyGroup = StreamHelper.readStringFromBuffer(bufferDecompressed);
+			this.mustBeBelowOther = bufferDecompressed.get() != 0;
+			this.mustBeInsideWorldBorders = bufferDecompressed.get() != 0;
+			this.mustBeInside = StreamHelper.readStringFromBuffer(bufferDecompressed);
+			this.cannotBeInside = StreamHelper.readStringFromBuffer(bufferDecompressed);
+			this.replacesBO3 = StreamHelper.readStringFromBuffer(bufferDecompressed);
+			this.canSpawnOnWater = bufferDecompressed.get() != 0;
+			this.spawnOnWaterOnly = bufferDecompressed.get() != 0;
+			this.spawnUnderWater = bufferDecompressed.get() != 0;
+			this.spawnAtWaterLevel = bufferDecompressed.get() != 0;
+			this.doReplaceBlocks = bufferDecompressed.get() != 0;
+			this.heightOffset = bufferDecompressed.getInt();
+			this.removeAir = bufferDecompressed.get() != 0;
+			this.replaceAbove = StreamHelper.readStringFromBuffer(bufferDecompressed);
+			this.replaceBelow = StreamHelper.readStringFromBuffer(bufferDecompressed);
+			this.replaceWithBiomeBlocks = bufferDecompressed.get() != 0;
+			this.replaceWithSurfaceBlock = StreamHelper.readStringFromBuffer(bufferDecompressed);
+			this.replaceWithGroundBlock = StreamHelper.readStringFromBuffer(bufferDecompressed);
+			this.replaceWithStoneBlock = StreamHelper.readStringFromBuffer(bufferDecompressed);
+			this.smoothRadius = bufferDecompressed.getInt();
+			this.smoothHeightOffset = bufferDecompressed.getInt();
+			this.smoothStartTop = bufferDecompressed.get() != 0;
+			this.smoothStartWood = bufferDecompressed.get() != 0;
+			this.smoothingSurfaceBlock = StreamHelper.readStringFromBuffer(bufferDecompressed);
+			this.smoothingGroundBlock = StreamHelper.readStringFromBuffer(bufferDecompressed);
+			this.bo3Group = StreamHelper.readStringFromBuffer(bufferDecompressed);
+			this.isSpawnPoint = bufferDecompressed.get() != 0;
+			this.isCollidable = bufferDecompressed.get() != 0;
+			this.useCenterForHighestBlock = bufferDecompressed.get() != 0;
+
+			this.branchFrequencyGroups = StringHelper.parseGroupMap(this.branchFrequencyGroup);
+			this.bo4Groups = StringHelper.parseGroupMap(this.bo3Group);
+			this.mustBeInsideBranches = StringHelper.splitTrimmedList(this.mustBeInside);
+			this.cannotBeInsideBranches = StringHelper.splitTrimmedList(this.cannotBeInside);
+			this.replacesBO3Branches = StringHelper.splitTrimmedList(this.replacesBO3);
+
+			int branchesOTGPlusLength = bufferDecompressed.getInt();
+			this.branchesBO4 = new BO4BranchFunction[branchesOTGPlusLength];
+			for(int i = 0; i < branchesOTGPlusLength; i++)
+			{
+				boolean branchType = bufferDecompressed.get() != 0;
+				if(branchType)
+				{
+					this.branchesBO4[i] = BO4WeightedBranchFunction.fromStream(this, bufferDecompressed,  materialReader);
+				} else {
+					this.branchesBO4[i] = BO4BranchFunction.fromStream(this, bufferDecompressed,  materialReader);
+				}
+			}
+
+			int entityDataOTGPlusLength = bufferDecompressed.getInt();
+			this.entityDataBO4 = new BO4EntityFunction[entityDataOTGPlusLength];
+			for(int i = 0; i < entityDataOTGPlusLength; i++)
+			{
+				this.entityDataBO4[i] = BO4EntityFunction.fromStream(this, bufferDecompressed);
+			}
+
+			// Legacy settings, hoping they were always 0 and noone actually used them :/.
+			bufferDecompressed.getInt(); // Used to be particles
+			bufferDecompressed.getInt(); // Used to be spawners
+			bufferDecompressed.getInt(); // Used to be moddata
+
+			// Reconstruct blocks
+			if(getBlocks)
+			{
+				short metaDataNamesArrLength = bufferDecompressed.getShort();
+				String[] metaDataNames = new String[metaDataNamesArrLength];
+				for(int i = 0; i < metaDataNamesArrLength; i++)
+				{
+					metaDataNames[i] = StreamHelper.readStringFromBuffer(bufferDecompressed);
 				}
 
-				//buffer.get(data, 0, remaining);
-				// do something with data
-
-				boolean isBO4Data = true;
-				boolean inheritedBO3Loaded = true;
-				int bo4DataVersion = bufferDecompressed.getInt();
-				// Version 2 made breaking changes
-				if(bo4DataVersion < 2)
+				short blocksArrArrLength = bufferDecompressed.getShort();
+				LocalMaterialData[] blocksArr = new LocalMaterialData[blocksArrArrLength];
+				for(int i = 0; i < blocksArrArrLength; i++)
 				{
-					// TODO: Should only need to close the reader?
-					if(bufferCompressed != null)
-					{
-						bufferCompressed.clear();
-					}
-					if(bufferDecompressed != null)
-					{
-						bufferDecompressed.clear();
-					}				
+					String materialName = StreamHelper.readStringFromBuffer(bufferDecompressed);
 					try {
-						fis.getChannel().close();
-					}
-					catch (IOException e)
-					{
-						OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
-					}
-					try {
-						fis.close();
-					}
-					catch (IOException e)
-					{
-						OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
-					}
-					throw new InvalidConfigException("Could not read BO4Data file " + this.reader.getName() + ", it is outdated. Delete and re-export BO4Data files to fix this, or delete and reinstall your OTG preset.");
-				}
-				// Version 3 added fixedRotation
-				if(bo4DataVersion > 2)
-				{
-					String rotationString = StreamHelper.readStringFromBuffer(bufferDecompressed);
-					this.fixedRotation = Rotation.getRotation(rotationString);
-				}
-				
-				int minimumSizeTop = bufferDecompressed.getInt();
-				int minimumSizeBottom = bufferDecompressed.getInt();
-				int minimumSizeLeft = bufferDecompressed.getInt();
-				int minimumSizeRight = bufferDecompressed.getInt();
-
-				int minX = bufferDecompressed.getInt();
-				int maxX = bufferDecompressed.getInt();
-				int minY = bufferDecompressed.getInt();
-				int maxY = bufferDecompressed.getInt();
-				int minZ = bufferDecompressed.getInt();
-				int maxZ = bufferDecompressed.getInt();
-
-				String author = StreamHelper.readStringFromBuffer(bufferDecompressed);
-				String description = StreamHelper.readStringFromBuffer(bufferDecompressed);
-				ConfigMode settingsMode = ConfigMode.valueOf(StreamHelper.readStringFromBuffer(bufferDecompressed));
-				int frequency = bufferDecompressed.getInt();
-				SpawnHeightEnum spawnHeight = SpawnHeightEnum.valueOf(StreamHelper.readStringFromBuffer(bufferDecompressed));
-				int minHeight = bufferDecompressed.getInt();
-				int maxHeight = bufferDecompressed.getInt();
-				short inheritedBO3sSize = bufferDecompressed.getShort();
-				ArrayList<String> inheritedBO3s = new ArrayList<>();
-				for(int i = 0; i < inheritedBO3sSize; i++)
-				{
-					inheritedBO3s.add(StreamHelper.readStringFromBuffer(bufferDecompressed));
-				}
-
-				String inheritBO3 = StreamHelper.readStringFromBuffer(bufferDecompressed);
-				Rotation inheritBO3Rotation = Rotation.valueOf(StreamHelper.readStringFromBuffer(bufferDecompressed));
-				boolean overrideChildSettings = bufferDecompressed.get() != 0;
-				boolean overrideParentHeight = bufferDecompressed.get() != 0;
-				boolean canOverride = bufferDecompressed.get() != 0;
-				int branchFrequency = bufferDecompressed.getInt();
-				String branchFrequencyGroup = StreamHelper.readStringFromBuffer(bufferDecompressed);
-				boolean mustBeBelowOther = bufferDecompressed.get() != 0;
-				boolean mustBeInsideWorldBorders = bufferDecompressed.get() != 0;
-				String mustBeInside = StreamHelper.readStringFromBuffer(bufferDecompressed);
-				String cannotBeInside = StreamHelper.readStringFromBuffer(bufferDecompressed);
-				String replacesBO3 = StreamHelper.readStringFromBuffer(bufferDecompressed);
-				boolean canSpawnOnWater = bufferDecompressed.get() != 0;
-				boolean spawnOnWaterOnly = bufferDecompressed.get() != 0;
-				boolean spawnUnderWater = bufferDecompressed.get() != 0;
-				boolean spawnAtWaterLevel = bufferDecompressed.get() != 0;
-				boolean doReplaceBlocks = bufferDecompressed.get() != 0;
-				int heightOffset = bufferDecompressed.getInt();
-				boolean removeAir = bufferDecompressed.get() != 0;
-				String replaceAbove = StreamHelper.readStringFromBuffer(bufferDecompressed);
-				String replaceBelow = StreamHelper.readStringFromBuffer(bufferDecompressed);
-				boolean replaceWithBiomeBlocks = bufferDecompressed.get() != 0;
-				String replaceWithSurfaceBlock = StreamHelper.readStringFromBuffer(bufferDecompressed);				
-				String replaceWithGroundBlock = StreamHelper.readStringFromBuffer(bufferDecompressed);
-				String replaceWithStoneBlock = StreamHelper.readStringFromBuffer(bufferDecompressed);
-				int smoothRadius = bufferDecompressed.getInt();
-				int smoothHeightOffset = bufferDecompressed.getInt();
-				boolean smoothStartTop = bufferDecompressed.get() != 0;
-				boolean smoothStartWood = bufferDecompressed.get() != 0;
-				String smoothingSurfaceBlock = StreamHelper.readStringFromBuffer(bufferDecompressed);
-				String smoothingGroundBlock = StreamHelper.readStringFromBuffer(bufferDecompressed);
-				String bo3Group = StreamHelper.readStringFromBuffer(bufferDecompressed);
-				boolean isSpawnPoint = bufferDecompressed.get() != 0;		
-				boolean isCollidable = bufferDecompressed.get() != 0;
-				boolean useCenterForHighestBlock = bufferDecompressed.get() != 0;				
-			
-				HashMap<String, Integer> branchFrequencyGroups = new HashMap<>();
-				if(branchFrequencyGroup != null && !branchFrequencyGroup.trim().isEmpty())
-				{
-					String[] groupStrings = branchFrequencyGroup.split(",");
-					if(groupStrings != null && groupStrings.length > 0)
-					{
-                        for (String string : groupStrings) {
-                            String[] groupString = string.trim().length() > 0 ? string.split(":") : null;
-                            if (groupString != null && groupString.length == 2) {
-                                branchFrequencyGroups.put(groupString[0].trim(), Integer.parseInt(groupString[1].trim()));
-                            }
-                        }
-					}
-				}
-				
-				HashMap<String, Integer> bo4Groups = new HashMap<>();
-				if(bo3Group != null && !bo3Group.trim().isEmpty())
-				{
-					String[] groupStrings = bo3Group.split(",");
-					if(groupStrings != null && groupStrings.length > 0)
-					{
-                        for (String string : groupStrings) {
-                            String[] groupString = string.trim().length() > 0 ? string.split(":") : null;
-                            if (groupString != null && groupString.length == 2) {
-                                bo4Groups.put(groupString[0].trim(), Integer.parseInt(groupString[1].trim()));
-                            }
-                        }
-					}
-				}			
-							
-				ArrayList<String> mustBeInsideBranches = new ArrayList<>();
-				if(mustBeInside != null && !mustBeInside.trim().isEmpty())
-				{
-					String[] mustBeInsideStrings = mustBeInside.split(",");
-					if(mustBeInsideStrings != null && mustBeInsideStrings.length > 0)
-					{
-                        for (String beInsideString : mustBeInsideStrings) {
-                            String mustBeInsideString = beInsideString.trim();
-                            if (!mustBeInsideString.isEmpty()) {
-                                mustBeInsideBranches.add(mustBeInsideString);
-                            }
-                        }
-					}
-				}
-				
-				ArrayList<String> cannotBeInsideBranches = new ArrayList<>();
-				if(cannotBeInside != null && !cannotBeInside.trim().isEmpty())
-				{
-					String[] cannotBeInsideStrings = cannotBeInside.split(",");
-					if(cannotBeInsideStrings != null && cannotBeInsideStrings.length > 0)
-					{
-                        for (String beInsideString : cannotBeInsideStrings) {
-                            String cannotBeInsideString = beInsideString.trim();
-                            if (!cannotBeInsideString.isEmpty()) {
-                                cannotBeInsideBranches.add(cannotBeInsideString);
-                            }
-                        }
-					}
-				}
-				
-				ArrayList<String> replacesBO3Branches = new ArrayList<>();
-				if(replacesBO3 != null && !replacesBO3.trim().isEmpty())
-				{
-					String[] replacesBO3Strings = replacesBO3.split(",");
-					if(replacesBO3Strings != null && replacesBO3Strings.length > 0)
-					{
-                        for (String bo3String : replacesBO3Strings) {
-                            String replacesBO3String = bo3String.trim();
-                            if (!replacesBO3String.isEmpty()) {
-                                replacesBO3Branches.add(replacesBO3String);
-                            }
-                        }
-					}
-				}
-			
-				int branchesOTGPlusLength = bufferDecompressed.getInt();
-				boolean branchType;
-				BO4BranchFunction branch;
-				BO4BranchFunction[] branchesBO4 = new BO4BranchFunction[branchesOTGPlusLength];
-				for(int i = 0; i < branchesOTGPlusLength; i++)
-				{
-					branchType = bufferDecompressed.get() != 0;
-					if(branchType)
-					{
-						branch = BO4WeightedBranchFunction.fromStream(this, bufferDecompressed,  materialReader);
-					} else {
-						branch = BO4BranchFunction.fromStream(this, bufferDecompressed,  materialReader);
-					}
-					branchesBO4[i] = branch;
-				}
-				
-				int entityDataOTGPlusLength = bufferDecompressed.getInt();
-				BO4EntityFunction[] entityDataBO4 = new BO4EntityFunction[entityDataOTGPlusLength];
-				for(int i = 0; i < entityDataOTGPlusLength; i++)
-				{
-					entityDataBO4[i] = BO4EntityFunction.fromStream(this, bufferDecompressed);
-				}
-
-				// Legacy settings, hoping they were always 0 and noone actually used them :/.
-				bufferDecompressed.getInt(); // Used to be particles
-				bufferDecompressed.getInt(); // Used to be spawners
-				bufferDecompressed.getInt(); // Used to be moddata
-				//
-					
-				ArrayList<BlockFunction<?>> newBlocks = new ArrayList<>();
-				short[][] columnSizes = null;
-				
-				this.minX = minX;
-				this.maxX = maxX;
-				this.minY = minY;
-				this.maxY = maxY;
-				this.minZ = minZ;
-				this.maxZ = maxZ;
-				
-				// Reconstruct blocks
-				if(getBlocks)
-				{
-					short metaDataNamesArrLength = bufferDecompressed.getShort();
-					String[] metaDataNames = new String[metaDataNamesArrLength];
-					for(int i = 0; i < metaDataNamesArrLength; i++)
-					{
-						metaDataNames[i] = StreamHelper.readStringFromBuffer(bufferDecompressed);
-					}
-					
-					short blocksArrArrLength = bufferDecompressed.getShort();
-					LocalMaterialData[] blocksArr = new LocalMaterialData[blocksArrArrLength];
-					for(int i = 0; i < blocksArrArrLength; i++)
-					{
-						String materialName = StreamHelper.readStringFromBuffer(bufferDecompressed);
-						try {
-							blocksArr[i] = materialReader.readMaterial(materialName);
-						} catch (InvalidConfigException e) {
-							if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
-							{
-								OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Could not read material \"" + materialName + "\" for BO4 \"" + this.getName() + "\"");
-								OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e);
-							}
+						blocksArr[i] = materialReader.readMaterial(materialName);
+					} catch (InvalidConfigException e) {
+						if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
+						{
+							OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Could not read material \"" + materialName + "\" for BO4 \"" + this.getName() + "\"");
+							OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e);
 						}
 					}
-									
-					columnSizes = new short[this.xSize][this.zSize];
-							
-					// TODO: This assumes that loading blocks in a different order won't matter, which may not be true?
-					// Anything that spawns on top, entities/spawners etc, should be spawned last tho, so shouldn't be a problem?
-					int nonRandomBlockCount = bufferDecompressed.getInt();
-					int nonRandomBlockIndex = 0;
-					ArrayList<BO4BlockFunction> nonRandomBlocks = new ArrayList<>();
-					if(nonRandomBlockCount > 0)
+				}
+
+				short[][] columnSizes = new short[this.xSize][this.zSize];
+
+				// TODO: This assumes that loading blocks in a different order won't matter, which may not be true?
+				// Anything that spawns on top, entities/spawners etc, should be spawned last tho, so shouldn't be a problem?
+				int nonRandomBlockCount = bufferDecompressed.getInt();
+				int nonRandomBlockIndex = 0;
+				ArrayList<BO4BlockFunction> nonRandomBlocks = new ArrayList<>();
+				if(nonRandomBlockCount > 0)
+				{
+					for(int x = this.getminX(); x < this.xSize; x++)
 					{
-						for(int x = this.getminX(); x < this.xSize; x++)
+						for(int z = this.getminZ(); z < this.zSize; z++)
 						{
-							for(int z = this.getminZ(); z < this.zSize; z++)
+							short blocksInColumnSize = bufferDecompressed.getShort();
+							for(int j = 0; j < blocksInColumnSize; j++)
 							{
-								short blocksInColumnSize = bufferDecompressed.getShort();
-								for(int j = 0; j < blocksInColumnSize; j++)
-								{
-									columnSizes[x][z]++;
-									nonRandomBlocks.add(BO4BlockFunction.fromStream(x, z, metaDataNames, blocksArr, this, bufferDecompressed));
-									nonRandomBlockIndex++;
-									if(nonRandomBlockCount == nonRandomBlockIndex)
-									{
-										break;
-									}
-								}
+								columnSizes[x][z]++;
+								nonRandomBlocks.add(BO4BlockFunction.fromStream(x, z, metaDataNames, blocksArr, this, bufferDecompressed));
+								nonRandomBlockIndex++;
 								if(nonRandomBlockCount == nonRandomBlockIndex)
 								{
 									break;
@@ -1820,28 +1641,28 @@ public class BO4Config extends CustomObjectConfigFile
 								break;
 							}
 						}
-					}				
-									
-					int randomBlockCount = bufferDecompressed.getInt();
-					int randomBlockIndex = 0;
-					ArrayList<BO4RandomBlockFunction> randomBlocks = new ArrayList<>();
-					if(randomBlockCount > 0)
-					{
-						for(int x = this.getminX(); x < this.xSize; x++)
+						if(nonRandomBlockCount == nonRandomBlockIndex)
 						{
-							for(int z = this.getminZ(); z < this.zSize; z++)
+							break;
+						}
+					}
+				}
+
+				int randomBlockCount = bufferDecompressed.getInt();
+				int randomBlockIndex = 0;
+				ArrayList<BO4RandomBlockFunction> randomBlocks = new ArrayList<>();
+				if(randomBlockCount > 0)
+				{
+					for(int x = this.getminX(); x < this.xSize; x++)
+					{
+						for(int z = this.getminZ(); z < this.zSize; z++)
+						{
+							short blocksInColumnSize = bufferDecompressed.getShort();
+							for(int j = 0; j < blocksInColumnSize; j++)
 							{
-								short blocksInColumnSize = bufferDecompressed.getShort();
-								for(int j = 0; j < blocksInColumnSize; j++)
-								{
-									columnSizes[x][z]++;
-									randomBlocks.add(BO4RandomBlockFunction.fromStream(x, z, metaDataNames, blocksArr, this, bufferDecompressed));
-									randomBlockIndex++;
-									if(randomBlockCount == randomBlockIndex)
-									{
-										break;
-									}
-								}
+								columnSizes[x][z]++;
+								randomBlocks.add(BO4RandomBlockFunction.fromStream(x, z, metaDataNames, blocksArr, this, bufferDecompressed));
+								randomBlockIndex++;
 								if(randomBlockCount == randomBlockIndex)
 								{
 									break;
@@ -1852,140 +1673,32 @@ public class BO4Config extends CustomObjectConfigFile
 								break;
 							}
 						}
+						if(randomBlockCount == randomBlockIndex)
+						{
+							break;
+						}
 					}
-									
-					newBlocks = new ArrayList<>();
-					newBlocks.addAll(nonRandomBlocks);
-					newBlocks.addAll(randomBlocks);				
 				}
 
-				this.isBO4Data = isBO4Data;
-				this.inheritedBO3Loaded = inheritedBO3Loaded;
-				this.minimumSizeTop = minimumSizeTop;
-				this.minimumSizeBottom = minimumSizeBottom;
-				this.minimumSizeLeft = minimumSizeLeft;
-				this.minimumSizeRight = minimumSizeRight;
-							
-				this.author = author;
-				this.description = description;
-				this.settingsMode = settingsMode;
-				this.frequency = frequency;
-				this.spawnHeight = spawnHeight;
-				this.minHeight = minHeight;
-				this.maxHeight = maxHeight;
-				this.inheritedBO3s = inheritedBO3s;
-							
-				this.inheritBO3 = inheritBO3;
-				this.inheritBO3Rotation = inheritBO3Rotation;
-				this.overrideChildSettings = overrideChildSettings;
-				this.overrideParentHeight = overrideParentHeight;
-				this.canOverride = canOverride;
-				this.branchFrequency = branchFrequency;
-				this.branchFrequencyGroup = branchFrequencyGroup;
-				this.mustBeBelowOther = mustBeBelowOther;
-				this.mustBeInsideWorldBorders = mustBeInsideWorldBorders;
-				this.mustBeInside = mustBeInside;
-				this.cannotBeInside = cannotBeInside;
-				this.replacesBO3 = replacesBO3;
-				this.canSpawnOnWater = canSpawnOnWater;
-				this.spawnOnWaterOnly = spawnOnWaterOnly;
-				this.spawnUnderWater = spawnUnderWater;
-				this.spawnAtWaterLevel = spawnAtWaterLevel;
-				this.doReplaceBlocks = doReplaceBlocks;
-				this.heightOffset = heightOffset;
-				this.removeAir = removeAir;
-				this.replaceAbove = replaceAbove;
-				this.replaceBelow = replaceBelow;
-				this.replaceWithBiomeBlocks = replaceWithBiomeBlocks;
-				this.replaceWithSurfaceBlock = replaceWithSurfaceBlock;				
-				this.replaceWithGroundBlock = replaceWithGroundBlock;
-				this.replaceWithStoneBlock = replaceWithStoneBlock;
-				this.smoothRadius = smoothRadius;
-				this.smoothHeightOffset = smoothHeightOffset;
-				this.smoothStartTop = smoothStartTop;
-				this.smoothStartWood = smoothStartWood;
-				this.smoothingSurfaceBlock = smoothingSurfaceBlock;
-				this.smoothingGroundBlock = smoothingGroundBlock;
-				this.bo3Group = bo3Group;
-				this.isSpawnPoint = isSpawnPoint;
-				this.isCollidable = isCollidable;
-				this.useCenterForHighestBlock = useCenterForHighestBlock;
-			
-				this.branchFrequencyGroups = branchFrequencyGroups;
-				this.bo4Groups = bo4Groups;							
-				this.mustBeInsideBranches = mustBeInsideBranches;			
-				this.cannotBeInsideBranches = cannotBeInsideBranches;			
-				this.replacesBO3Branches = replacesBO3Branches;
-							
-				this.branchesBO4 = branchesBO4;
-				this.entityDataBO4 = entityDataBO4;
-
-				// Reconstruct blocks
-				if(getBlocks)
-				{
-					loadBlockArrays(newBlocks, columnSizes);
-				}
-			}
-			catch (Exception | Error e1)
-			{
-				// TODO: Should only need to close the reader?
-				if(bufferCompressed != null)
-				{
-					bufferCompressed.clear();
-				}
-				if(bufferDecompressed != null)
-				{
-					bufferDecompressed.clear();
-				}				
-				try {
-					fis.getChannel().close();
-				}
-				catch (IOException e)
-				{
-					OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
-				}
-				try {
-					fis.close();
-				}
-				catch (IOException e)
-				{
-					OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
-				}
-				
-				OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, (Exception) e1);
-				throw new InvalidConfigException("Could not read BO4Data file " + this.reader.getName() + ", it may be outdated or corrupted. Delete and re-export BO4Data files to fix this, or delete and reinstall your OTG preset.");
-			}
-
-			// When finished
-			
-			// TODO: Should only need to close the reader?
-			if(bufferCompressed != null)
-			{
-				bufferCompressed.clear();
-			}
-			if(bufferDecompressed != null)
-			{
-				bufferDecompressed.clear();
-			}
-			try {
-				fis.getChannel().close();
-			}
-			catch (IOException e)
-			{
-				OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
-			}
-			try {
-				fis.close();
-			}
-			catch (IOException e)
-			{
-				OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
+				ArrayList<BlockFunction<?>> newBlocks = new ArrayList<>();
+				newBlocks.addAll(nonRandomBlocks);
+				newBlocks.addAll(randomBlocks);
+				loadBlockArrays(newBlocks, columnSizes);
 			}
 		}
-		catch (FileNotFoundException e2)
+		catch (FileNotFoundException e)
 		{
-			OTGLog.error(LogCategory.CUSTOM_OBJECTS, "BO4 data file not found for %s: %s", this.reader.getName(), e2.getMessage());
+			OTGLog.error(LogCategory.CUSTOM_OBJECTS, "BO4 data file not found for %s: %s", this.reader.getName(), e.getMessage());
 			return null;
+		}
+		catch (InvalidConfigException e)
+		{
+			throw e;
+		}
+		catch (Exception e)
+		{
+			OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e);
+			throw new InvalidConfigException("Could not read BO4Data file " + this.reader.getName() + ", it may be outdated or corrupted. Delete and re-export BO4Data files to fix this, or delete and reinstall your OTG preset.");
 		}
 
 		return this;
