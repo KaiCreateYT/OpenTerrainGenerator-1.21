@@ -223,7 +223,7 @@ public class BO4CustomStructure extends CustomStructure
 			throw new RuntimeException("An unknown error occurred while calculating branches for BO4 " + this.start.bo3Name + ". This is probably an error in the BO4's branch configuration, not a bug. If you can track this down, please tell us what caused it!");
 		}
 		
-		if(OTGLog.getLogCategoryEnabled(LogCategory.PERFORMANCE) && (System.currentTimeMillis() - startTime) > 50)
+		if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.PERFORMANCE) && (System.currentTimeMillis() - startTime) > 50)
 		{
 			OTGLog.log(LogLevel.WARN, LogCategory.PERFORMANCE, "Warning: Plotting branches for BO4 " +  this.start.bo3Name + " at " + (chunkBeingDecorated.getBlockX() + DecorationArea.BO_CHUNK_CENTER_X) + " ~ " + (chunkBeingDecorated.getBlockZ() + DecorationArea.BO_CHUNK_CENTER_Z)  + " took " + (System.currentTimeMillis() - startTime) + " Ms.");
 		}
@@ -295,7 +295,7 @@ public class BO4CustomStructure extends CustomStructure
 		if(!this.objectsToSpawn.isEmpty())
 		{
 			isSpawned = true;
-			if(OTGLog.getLogCategoryEnabled(LogCategory.STRUCTURE_PLOTTING))
+			if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 			{
 				int totalBO3sSpawned = 0;
 				for(ChunkCoordinate entry : this.objectsToSpawn.keySet())
@@ -535,7 +535,7 @@ public class BO4CustomStructure extends CustomStructure
 			bo4Config.minimumSizeLeft 
 		};
 
-		if(OTGLog.getLogCategoryEnabled(LogCategory.STRUCTURE_PLOTTING))
+		if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 		{
 			OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "");
 			OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, bo4.getName() + " minimum size: Width " + ((Integer)returnValue[1] + (Integer)returnValue[3] + 1) + " Length " + ((Integer)returnValue[0] + (Integer)returnValue[2] + 1) + " top " + (Integer)returnValue[0] + " right " + (Integer)returnValue[1] + " bottom " + (Integer)returnValue[2] + " left " + (Integer)returnValue[3]);
@@ -548,7 +548,7 @@ public class BO4CustomStructure extends CustomStructure
 
 	private void calculateBranches(BO4Config startBO4Config, boolean minimumSize, CustomStructureCache structureCache, IWorldGenRegion worldGenRegion, ArrayList<String> targetBiomes, ChunkCoordinate chunkBeingDecorated, Path otgRootFolder,  CustomObjectManager customObjectManager, IMaterialReader materialReader, CustomObjectResourcesManager manager, IModLoadedChecker modLoadedChecker) throws InvalidConfigException
 	{
-		if(OTGLog.getLogCategoryEnabled(LogCategory.STRUCTURE_PLOTTING))
+		if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 		{
 			String sminimumSize = minimumSize ? " (minimumSize)" : "";
 			OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "");
@@ -557,7 +557,7 @@ public class BO4CustomStructure extends CustomStructure
 
 		BranchDataItem branchData = new BranchDataItem(random, null, (BO4CustomStructureCoordinate)this.start, null, 0, 0, minimumSize);
 
-		if(OTGLog.getLogCategoryEnabled(LogCategory.STRUCTURE_PLOTTING))
+		if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 		{
 			OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "");
 			OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "---- Cycle 0 ----");
@@ -577,7 +577,7 @@ public class BO4CustomStructure extends CustomStructure
 
 			Cycle += 1;
 
-			if(OTGLog.getLogCategoryEnabled(LogCategory.STRUCTURE_PLOTTING))
+			if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 			{
 				OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "");
 				OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "---- Cycle " + Cycle + " ----");
@@ -585,7 +585,7 @@ public class BO4CustomStructure extends CustomStructure
 
 			traverseAndSpawnChildBranches(startBO4Config, branchData, minimumSize, true, structureCache, worldGenRegion, targetBiomes, chunkBeingDecorated, otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker);
 
-			if(OTGLog.getLogCategoryEnabled(LogCategory.STRUCTURE_PLOTTING))
+			if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 			{
 				OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "All branch groups with required branches only have been processed for cycle " + Cycle + ", plotting branch groups with optional branches.");
 			}
@@ -639,7 +639,7 @@ public class BO4CustomStructure extends CustomStructure
 			{
 				if(minimumSize)
 				{
-					if(OTGLog.getLogCategoryEnabled(LogCategory.STRUCTURE_PLOTTING))
+					if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 					{
 						OTGLog.log(LogLevel.FATAL, LogCategory.STRUCTURE_PLOTTING, "Error: Branching BO4 " + this.start.bo3Name + " could not be spawned in minimum configuration (isRequiredBranch branches only).");
 					}
@@ -780,7 +780,7 @@ public class BO4CustomStructure extends CustomStructure
 						childBranchDataItem.cannotSpawn = true;
 						if(bo4 == null)
 						{
-							if(OTGLog.getLogCategoryEnabled(LogCategory.STRUCTURE_PLOTTING))
+							if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 							{
 								OTGLog.log(LogLevel.ERROR, LogCategory.STRUCTURE_PLOTTING, "Error: Could not find BO4 file: " + childBranchDataItem.branch.bo3Name + ".BO4/.BO4Data which is a branch of " + branchDataItem.branch.bo3Name + ".BO4/.BO4Data");
 							}
@@ -976,7 +976,7 @@ public class BO4CustomStructure extends CustomStructure
 					// As usual, if there are optional branches in the same branchgroups as required branches, the required branches won't try to spawn this cycle.
 					if(canSpawn)
 					{
-						if(OTGLog.getLogCategoryEnabled(LogCategory.STRUCTURE_PLOTTING))
+						if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 						{
 							StringBuilder allParentsString = new StringBuilder();
 							BranchDataItem tempBranch = childBranchDataItem;
@@ -1021,7 +1021,7 @@ public class BO4CustomStructure extends CustomStructure
 							!childBranchDataItem.branch.isRequiredBranch
 						)
 						{
-							if(OTGLog.getLogCategoryEnabled(LogCategory.STRUCTURE_PLOTTING))
+							if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 							{
 								OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "Plotting all required child branches that are not in a branch group with optional branches.");
 							}
@@ -1048,7 +1048,7 @@ public class BO4CustomStructure extends CustomStructure
 							}
 							canSpawn = bFound;
 
-							if(OTGLog.getLogCategoryEnabled(LogCategory.STRUCTURE_PLOTTING))
+							if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 							{
 								OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "Done spawning required children for optional branch X" + childBranchDataItem.chunkCoordinate.getChunkX() + " Z" + childBranchDataItem.chunkCoordinate.getChunkZ() + (minimumSize ? "" : " Y" + (childBranchDataItem.branch.getY())) + " " +  childBranchDataItem.branch.bo3Name + ":" + childBranchDataItem.branch.getRotation());
 							}
@@ -1114,7 +1114,7 @@ public class BO4CustomStructure extends CustomStructure
 							{
 								// Branch could not spawn, abort this branch because it contains a branch group that could not be spawned.
 
-								if(OTGLog.getLogCategoryEnabled(LogCategory.STRUCTURE_PLOTTING))
+								if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 								{
 									StringBuilder allParentsString = new StringBuilder();
 									BranchDataItem tempBranch = branchDataItem;
@@ -1203,7 +1203,7 @@ public class BO4CustomStructure extends CustomStructure
 
 											if(branchGroupFailedSpawning)
 											{
-												if(OTGLog.getLogCategoryEnabled(LogCategory.STRUCTURE_PLOTTING))
+												if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 												{
 													StringBuilder allParentsString = new StringBuilder();
 													BranchDataItem tempBranch = branchDataItem;
@@ -1432,7 +1432,7 @@ public class BO4CustomStructure extends CustomStructure
 							{
 									if(checkCollision(childBranchDataItem.branch, branchDataItem3.branch, otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker))
 									{
-			 							if(OTGLog.getLogCategoryEnabled(LogCategory.STRUCTURE_PLOTTING))
+			 							if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 										{
 			 								OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "CannotBeInside branch " + childBranchDataItem.branch.bo3Name + " was blocked by " + branchDataItem3.branch.bo3Name);
 										}
@@ -1530,7 +1530,7 @@ public class BO4CustomStructure extends CustomStructure
 
 		if(AllBranchesBranchDataHash.contains(branchData.branchNumber))
 		{
-			if(OTGLog.getLogCategoryEnabled(LogCategory.STRUCTURE_PLOTTING))
+			if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 			{
 				StringBuilder allParentsString = new StringBuilder();
 				BranchDataItem tempBranch = branchData;
@@ -1755,7 +1755,7 @@ public class BO4CustomStructure extends CustomStructure
 			}
 			if(AllBranchesBranchDataHash.contains(branchDataItem.branchNumber))
 			{
-				if(OTGLog.getLogCategoryEnabled(LogCategory.STRUCTURE_PLOTTING))
+				if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 				{
 					StringBuilder allParentsString = new StringBuilder();
 					BranchDataItem tempBranch = branchDataItem;
@@ -2241,7 +2241,7 @@ public class BO4CustomStructure extends CustomStructure
 					)
 				)
 				{
-					if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
+					if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.CUSTOM_OBJECTS))
 					{
 						OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Could not spawn chunk " + coordObject.bo3Name + " for structure " + config.getName());
 					}
@@ -2297,7 +2297,7 @@ public class BO4CustomStructure extends CustomStructure
 					)
 				)
 				{
-					if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
+					if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.CUSTOM_OBJECTS))
 					{
 						OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Could not spawn chunk " + coordObject.bo3Name + " for structure " + config.getName());
 					}

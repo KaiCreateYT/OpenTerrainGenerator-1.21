@@ -20,6 +20,7 @@ import com.pg85.otg.interfaces.IBiomeResourceLocation;
 import com.pg85.otg.config.settings.preset.PresetSettings;
 import com.pg85.otg.presets.LocalPresetLoader;
 import com.pg85.otg.presets.Preset;
+import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.biome.MCBiomeResourceLocation;
 import com.pg85.otg.util.biome.OTGBiomeResourceLocation;
 import com.pg85.otg.util.logging.LogCategory;
@@ -170,9 +171,7 @@ public class SharedPresetBiomeLoader extends LocalPresetLoader {
         }
 
         for (TemplateBiome templateBiome : ((PresetConfig) presetConfig).getGenerationSettings().getTemplateBiomes()) {
-            if (OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.BIOME_REGISTRY)) {
-                OTG.getEngine().getLogger().log(LogLevel.INFO, LogCategory.BIOME_REGISTRY, "Processing template biome: " + templateBiome.toString());
-            }
+            OTGLog.info(LogCategory.BIOME_REGISTRY, "Processing template biome: {}", templateBiome);
 
             BiomeTemplate biomeTemplate = biomeTemplates.stream()
                 .filter(bt -> bt.getIdentitySettings().getBiomeName().equalsIgnoreCase(templateBiome.getName()))
@@ -282,10 +281,8 @@ public class SharedPresetBiomeLoader extends LocalPresetLoader {
                         biomeConfigsByResourceLocation.put(location, biomeTemplate);
                         biomeConfigsByName.put(biomeTemplate.getIdentitySettings().getBiomeName(), biomeTemplate);
 
-                        if (OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.BIOME_REGISTRY)) {
-                            OTG.getEngine().getLogger().log(LogLevel.INFO, LogCategory.BIOME_REGISTRY,
-                                "Template biome " + templateBiome.getName() + " matched: " + biomeKey.location());
-                        }
+                        OTGLog.info(LogCategory.BIOME_REGISTRY,
+                            "Template biome {} matched: {}", templateBiome.getName(), biomeKey.location());
                     }
                 }
             }
@@ -315,16 +312,10 @@ public class SharedPresetBiomeLoader extends LocalPresetLoader {
                 biomeConfigsByResourceLocation.put(otgLocation, biomeSettings);
                 biomeConfigsByName.put(biomeSettings.getIdentitySettings().getBiomeName(), biomeSettings);
 
-                if (OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.BIOME_REGISTRY)) {
-                    OTG.getEngine().getLogger().log(LogLevel.INFO, LogCategory.BIOME_REGISTRY,
-                        "Direct biome reference matched: " + biomeId);
-                }
+                OTGLog.info(LogCategory.BIOME_REGISTRY, "Direct biome reference matched: {}", biomeId);
             }
         } else {
-            if (OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.BIOME_REGISTRY)) {
-                OTG.getEngine().getLogger().log(LogLevel.WARN, LogCategory.BIOME_REGISTRY,
-                    "Direct biome reference not found in registry: " + biomeId);
-            }
+            OTGLog.warn(LogCategory.BIOME_REGISTRY, "Direct biome reference not found in registry: {}", biomeId);
         }
     }
 }

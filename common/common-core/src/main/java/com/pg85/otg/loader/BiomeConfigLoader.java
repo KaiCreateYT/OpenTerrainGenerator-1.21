@@ -16,7 +16,6 @@ import com.pg85.otg.util.logging.LogLevel;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -64,14 +63,7 @@ public final class BiomeConfigLoader {
 		{
 			readBiomeFilesRecursive(biomeSettingsStore, directory, type);
 		} else {
-			if(OTGLog.getLogger().getLogCategoryEnabled(LogCategory.CONFIGS))
-			{
-				OTGLog.getLogger().log(
-					LogLevel.ERROR,
-					LogCategory.CONFIGS,
-					MessageFormat.format("Biome directory {0} does not exist.", directory)
-				);
-			}
+			OTGLog.error(LogCategory.CONFIGS, "Biome directory {} does not exist.", directory);
 		}
 
 		return biomeSettingsStore;
@@ -141,18 +133,7 @@ public final class BiomeConfigLoader {
 		{
 			return newFile;
 		} else {
-			if(OTGLog.getLogger().getLogCategoryEnabled(LogCategory.CONFIGS))
-			{
-				OTGLog.getLogger().log(
-					LogLevel.ERROR,
-					LogCategory.CONFIGS,
-					MessageFormat.format(
-						"Failed to rename biome file {0} to {1}",
-						toRename.getAbsolutePath(), 
-						newFile.getAbsolutePath()
-					)
-				);
-			}
+			OTGLog.error(LogCategory.CONFIGS, "Failed to rename biome file {} to {}", toRename.getAbsolutePath(), newFile.getAbsolutePath());
 			return toRename;
 		}
 	}
@@ -243,22 +224,15 @@ public final class BiomeConfigLoader {
 		processSettings(presetConfig, biomeSettings);
 
 		ILogger logger = OTGLog.getLogger();
-		if(logger.getLogCategoryEnabled(LogCategory.CONFIGS) && logger.canLogForPreset(presetDir.getFileName().toString()))
+		if (logger.isEnabled(LogLevel.INFO, LogCategory.CONFIGS) && logger.canLogForPreset(presetDir.getFileName().toString()))
 		{
-			logger.log(
-				LogLevel.INFO,
-				LogCategory.CONFIGS,
-				MessageFormat.format(
-					"{0} {1} loaded for preset {2}",
-					biomeSettings.size(),
-					type == BiomeSettingType.CONFIG ? "biome configs" : "biome templates",
-					presetConfig.getConfigName()
-				)
+			logger.info(LogCategory.CONFIGS, "{} {} loaded for preset {}",
+				biomeSettings.size(),
+				type == BiomeSettingType.CONFIG ? "biome configs" : "biome templates",
+				presetConfig.getConfigName()
 			);
 			if (!biomeSettings.isEmpty()) {
-				logger.log(
-						LogLevel.INFO,
-						LogCategory.CONFIGS,
+				logger.info(LogCategory.CONFIGS,
 						biomeSettings.stream().map(
 								item -> item.getIdentitySettings().getBiomeName()
 						).collect(

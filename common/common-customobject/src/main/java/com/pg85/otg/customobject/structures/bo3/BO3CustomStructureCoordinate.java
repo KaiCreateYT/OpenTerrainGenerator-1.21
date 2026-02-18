@@ -53,10 +53,7 @@ public class BO3CustomStructureCoordinate extends CustomStructureCoordinate
 		}
 		if(!(object instanceof BO3))
 		{
-			if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
-			{
-				OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "BO3CustomStructure loaded with non-BO3 object " + object.getName());
-			}
+			OTGLog.error(LogCategory.CUSTOM_OBJECTS, "BO3CustomStructure loaded with non-BO3 object {}", object.getName());
 			return null;
 		}
 

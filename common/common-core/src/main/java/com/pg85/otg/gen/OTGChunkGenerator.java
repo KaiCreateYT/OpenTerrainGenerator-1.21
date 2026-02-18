@@ -19,6 +19,7 @@ import com.pg85.otg.util.ChunkCoordinate;
 import com.pg85.otg.util.gen.*;
 import com.pg85.otg.util.helpers.MathHelper;
 import com.pg85.otg.util.logging.LogCategory;
+import com.pg85.otg.util.logging.LogLevel;
 import it.unimi.dsi.fastutil.HashCommon;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import it.unimi.dsi.fastutil.objects.ObjectListIterator;
@@ -380,7 +381,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                 int biomeIndex = cacheX * areaSize + cacheZ;
                 if (biomeIndex < 0 || biomeIndex >= biomes.length) {
                     OTG.getEngine().getLogger().log(
-                        com.pg85.otg.util.logging.LogLevel.ERROR,
+                        LogLevel.ERROR,
                         LogCategory.MAIN,
                         String.format("Invalid biome index %d (max=%d) at noiseX=%d, noiseZ=%d, x1=%d, z1=%d, areaSize=%d",
                             biomeIndex, biomes.length, noiseX, noiseZ, x1, z1, areaSize)
@@ -390,7 +391,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                 biome = biomes[biomeIndex];
                 if (biome == null) {
                     OTG.getEngine().getLogger().log(
-                        com.pg85.otg.util.logging.LogLevel.ERROR,
+                        LogLevel.ERROR,
                         LogCategory.MAIN,
                         String.format("Null biome at noiseX=%d, noiseZ=%d, index=%d",
                             noiseX, noiseZ, biomeIndex)
@@ -745,7 +746,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
             long total = tBiome + tNoise + tBlock + tSurface + tCarve;
             if (total > 0) {
                 logger.log(
-                        com.pg85.otg.util.logging.LogLevel.INFO,
+                        LogLevel.INFO,
                         LogCategory.PERFORMANCE,
                         String.format("TerrainGen stats (%d chunks): Biome=%.1f%% (%dms), Noise=%.1f%% (%dms), BlockPlace=%.1f%% (%dms), Surface=%.1f%% (%dms), Carve=%.1f%% (%dms), Avg=%.2fms/chunk",
                                 count,
@@ -760,10 +761,10 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
         }
 
         long totalTime = System.currentTimeMillis() - startTime;
-        if (logger.getLogCategoryEnabled(LogCategory.PERFORMANCE) && totalTime > 50) {
+        if (logger.isEnabled(LogLevel.WARN, LogCategory.PERFORMANCE) && totalTime > 50) {
             logger.warn(
                     LogCategory.PERFORMANCE,
-                    "Slow chunk %s: %dms (biome=%d, noise=%d, blocks=%d, surface=%d)",
+                    "Slow chunk {}: {}ms (biome={}, noise={}, blocks={}, surface={})",
                     chunkCoord, totalTime,
                     biomeTime, noiseTime, blockPlaceTime, surfaceTime
             );

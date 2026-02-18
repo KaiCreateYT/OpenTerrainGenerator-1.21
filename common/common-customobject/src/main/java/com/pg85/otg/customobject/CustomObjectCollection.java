@@ -393,7 +393,7 @@ public class CustomObjectCollection {
             // .bo4data gets priority — it's the pre-compiled format
             if (ext.equals(".bo4data") || !customObjectFiles.containsKey(name)) {
                 customObjectFiles.put(name, file);
-            } else if (OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS)) {
+            } else if (OTGLog.isEnabled(LogLevel.WARN, LogCategory.CUSTOM_OBJECTS)) {
                 OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Duplicate file found: %s", file.getName());
             }
         } else if (ext.equals(".bo3template") || ext.equals(".bo4template")) {

@@ -2,12 +2,11 @@ package com.pg85.otg.shared.materials;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.pg85.otg.OTG;
 import com.pg85.otg.exceptions.InvalidConfigException;
 import com.pg85.otg.interfaces.IMaterialReader;
 import com.pg85.otg.util.LRUCache;
+import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.materials.LocalMaterialData;
 import com.pg85.otg.util.materials.LocalMaterialTag;
 import com.pg85.otg.util.minecraft.BlockNames;
@@ -56,10 +55,8 @@ public class SharedMaterialReader implements IMaterialReader {
         catch(InvalidConfigException ex)
         {
             // Happens when a non existing block name is used.
-            if(OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.CONFIGS))
-            {
-                OTG.getEngine().getLogger().log(LogLevel.ERROR, LogCategory.CONFIGS, "Invalid material " + material + ". Exception: " + ex.getMessage() + ". Replacing with blank.");
-            }
+            OTGLog.error(LogCategory.CONFIGS,
+                "Invalid material {}. Exception: {}. Replacing with blank.", material, ex.getMessage());
         }
 
         this.cachedMaterials.put(material, localMaterial);
@@ -214,10 +211,7 @@ public class SharedMaterialReader implements IMaterialReader {
             return SharedMaterialData.ofBlockState(blockState, input);
         }
 
-        if(OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.CONFIGS))
-        {
-            OTG.getEngine().getLogger().log(LogLevel.ERROR, LogCategory.CONFIGS, "Could not parse block: " + input + ", substituting AIR.");
-        }
+        OTGLog.error(LogCategory.CONFIGS, "Could not parse block: {}, substituting AIR.", input);
 
         return SharedMaterialData.ofBlock(Blocks.AIR, input);
     }

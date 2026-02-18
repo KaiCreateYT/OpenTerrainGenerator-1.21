@@ -7,12 +7,9 @@ import com.pg85.otg.config.settings.preset.PresetSettings;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.helpers.StringHelper;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
-
 import lombok.Getter;
 import lombok.Setter;
 
-import java.text.MessageFormat;
 import java.util.*;
 
 /**
@@ -164,10 +161,7 @@ public final class BiomeGroupFunction extends ConfigFunction<PresetSettings>
 					continue;
 				}
 				// Invalid biome name, remove
-				if(OTGLog.getLogger().getLogCategoryEnabled(LogCategory.CONFIGS))
-				{
-					OTGLog.getLogger().log(LogLevel.ERROR, LogCategory.CONFIGS, MessageFormat.format("Invalid biome name {0} in biome group {1}", biomeName, this.name));
-				}
+				OTGLog.error(LogCategory.CONFIGS, "Invalid biome name {} in biome group {}", biomeName, this.name);
 			}
 			it.remove();
 		}

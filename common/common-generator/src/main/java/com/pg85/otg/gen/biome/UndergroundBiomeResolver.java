@@ -118,13 +118,9 @@ public class UndergroundBiomeResolver {
             }
         }
 
-        if (OTGLog.getLogCategoryEnabled(LogCategory.BIOME_REGISTRY)) {
-            int totalUnderground = undergroundBiomes.size();
-            int surfacesWithUnderground = candidatesBySurfaceBiome.size();
-            OTGLog.info(LogCategory.BIOME_REGISTRY,
-                    "Underground biome resolver initialized: %d underground biomes, %d surface biomes have candidates",
-                    totalUnderground, surfacesWithUnderground);
-        }
+        OTGLog.info(LogCategory.BIOME_REGISTRY,
+                "Underground biome resolver initialized: %d underground biomes, %d surface biomes have candidates",
+                undergroundBiomes.size(), candidatesBySurfaceBiome.size());
     }
 
     /**

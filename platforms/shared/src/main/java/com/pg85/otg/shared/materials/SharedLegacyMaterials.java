@@ -1,8 +1,7 @@
 package com.pg85.otg.shared.materials;
 
-import com.pg85.otg.OTG;
+import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.minecraft.BlockNames;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.*;
@@ -910,10 +909,8 @@ class SharedLegacyMaterials
 					return null;
 			}
 		} catch(IllegalArgumentException ex) {
-			if(OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.CONFIGS))
-			{
-				OTG.getEngine().getLogger().log(LogLevel.ERROR, LogCategory.CONFIGS, "Could not parse block with data, illegal data: " + blockName + ":" + data + ". Exception: " + ex.getMessage());
-			}
+			OTGLog.error(LogCategory.CONFIGS,
+				"Could not parse block with data, illegal data: {}:{}. Exception: {}", blockName, data, ex.getMessage());
 		}
 		return null;
 	}

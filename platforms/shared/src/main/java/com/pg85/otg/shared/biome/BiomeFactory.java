@@ -1,6 +1,5 @@
 package com.pg85.otg.shared.biome;
 
-import com.pg85.otg.OTG;
 import com.pg85.otg.config.ConfigFunction;
 import com.pg85.otg.config.biome.BiomeConfig;
 import com.pg85.otg.config.settings.biome.BiomeSettings;
@@ -10,7 +9,6 @@ import com.pg85.otg.gen.resource.RegistryResource;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.biome.WeightedMobSpawnGroup;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
@@ -70,9 +68,8 @@ public final class BiomeFactory {
                 ) {
                     featuresByStep.computeIfAbsent(stage, k -> new ArrayList<>()).add(placedFeatureReference.get().unwrapKey().get());
                 } else {
-                    if (OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.DECORATION)) {
-                        OTG.getEngine().getLogger().log(LogLevel.ERROR, LogCategory.DECORATION, "Registry() " + registryResource.getFeatureKey() + " could not be found for biomeconfig " + biomeConfig.getIdentitySettings().getBiomeName());
-                    }
+                    OTGLog.error(LogCategory.DECORATION,
+                        "Registry() {} could not be found for biomeconfig {}", registryResource.getFeatureKey(), biomeConfig.getIdentitySettings().getBiomeName());
                 }
             }
         }
@@ -209,9 +206,8 @@ public final class BiomeFactory {
             if (entityType.isPresent()) {
                 mobSpawnInfoBuilder.addSpawn(entityClassification, new MobSpawnSettings.SpawnerData(entityType.get(), mobSpawnGroup.getWeight(), mobSpawnGroup.getMin(), mobSpawnGroup.getMax()));
             } else {
-                if (OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.MOBS)) {
-                    OTG.getEngine().getLogger().log(LogLevel.ERROR, LogCategory.MOBS, "Could not find entity for mob: " + mobSpawnGroup.getMob() + " in BiomeConfig " + biomeName);
-                }
+                OTGLog.error(LogCategory.MOBS,
+                    "Could not find entity for mob: {} in BiomeConfig {}", mobSpawnGroup.getMob(), biomeName);
             }
         }
     }

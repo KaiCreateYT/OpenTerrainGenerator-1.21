@@ -12,11 +12,9 @@ import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.biome.ColorSet;
 import com.pg85.otg.util.biome.SimpleColorSet;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.text.MessageFormat;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -253,12 +251,9 @@ public class BiomeVisualSettings extends ConfigSection {
                     colorSet = new SimpleColorSet(new String[]
                             { color, "-0.1" });
                 } catch (InvalidConfigException e) {
-                    if (OTGLog.getLogger().getLogCategoryEnabled(LogCategory.CONFIGS)) {
-                        OTGLog.getLogger().log(LogLevel.ERROR, LogCategory.CONFIGS, MessageFormat.format(
-                                "Encountered an invalid value while reading legacy setting {0} with value {1}: {2}",
-                                oldSetting.getName(), color, e.getMessage()
-                        ));
-                    }
+                    OTGLog.error(LogCategory.CONFIGS,
+                            "Encountered an invalid value while reading legacy setting {} with value {}: {}",
+                            oldSetting.getName(), color, e.getMessage());
                 }
             }
         }

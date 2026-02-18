@@ -197,10 +197,10 @@ public class CustomStructureCache
 				{
 					return (BO3CustomStructureCoordinate)((BO3)object).makeCustomStructureCoordinate(worldGenRegion.getPresetFolderName(), worldGenRegion.getPresetConfig().getResourceSettings().isUseOldBO3StructureRarity(), random, chunkX, chunkZ);
 				} else {
-					if(worldGenRegion.getLogger().getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
+					if(worldGenRegion.getLogger().isEnabled(LogLevel.INFO, LogCategory.CUSTOM_OBJECTS))
 					{
 						BiomeSettings biomeConfig = worldGenRegion.getCachedBiomeProvider().getBiomeConfig(chunkX * 16 + 15, chunkZ * 16 + 15);
-						worldGenRegion.getLogger().log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Error: Could not find BO3 for CustomStructure in biome " + biomeConfig.getIdentitySettings().getBiomeName() + ". BO3: " + structureGen.getObjectName(objectNumber));
+						worldGenRegion.getLogger().error(LogCategory.CUSTOM_OBJECTS, "Error: Could not find BO3 for CustomStructure in biome {}. BO3: {}", biomeConfig.getIdentitySettings().getBiomeName(), structureGen.getObjectName(objectNumber));
 					}
 				}
 			}

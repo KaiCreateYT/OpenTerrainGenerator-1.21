@@ -103,7 +103,7 @@ public class BO4 implements StructuredCustomObject
 		}
 		catch(InvalidConfigException ex)
 		{
-			if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
+			if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.CUSTOM_OBJECTS))
 			{
 				OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Error occurred while enabling BO4 " + this.getName() + ": " + ex.getMessage());
 			}
@@ -213,7 +213,7 @@ public class BO4 implements StructuredCustomObject
 			bo3SurfaceBlock = replaceWithSurfaceBlock != null && !replaceWithSurfaceBlock.isEmpty() ? materialReader.readMaterial(replaceWithSurfaceBlock) : LocalMaterials.GRASS;
 		} catch (InvalidConfigException e1) {
 			bo3SurfaceBlock = LocalMaterials.GRASS;
-			if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
+			if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.CUSTOM_OBJECTS))
 			{
 				OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Value " + replaceWithSurfaceBlock + " for replaceWithSurfaceBlock in BO4 " + this.getName() + " was not recognised. Using GRASS instead.");
 			}
@@ -222,7 +222,7 @@ public class BO4 implements StructuredCustomObject
 			bo3GroundBlock = replaceWithGroundBlock != null && !replaceWithGroundBlock.isEmpty() ? materialReader.readMaterial(replaceWithGroundBlock) : LocalMaterials.DIRT;
 		} catch (InvalidConfigException e1) {
 			bo3GroundBlock = LocalMaterials.DIRT;
-			if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
+			if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.CUSTOM_OBJECTS))
 			{
 				OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Value " + replaceWithGroundBlock + " for replaceWithGroundBlock in BO4 " + this.getName() + " was not recognised. Using DIRT instead.");
 			}
@@ -231,7 +231,7 @@ public class BO4 implements StructuredCustomObject
 			bo3StoneBlock = replaceWithStoneBlock != null && !replaceWithStoneBlock.isEmpty() ? materialReader.readMaterial(replaceWithStoneBlock) : LocalMaterials.STONE;
 		} catch (InvalidConfigException e1) {
 			bo3StoneBlock = LocalMaterials.STONE;
-			if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
+			if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.CUSTOM_OBJECTS))
 			{
 				OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Value " + replaceWithStoneBlock + " for replaceWithStoneBlock in BO4 " + this.getName() + " was not recognised. Using STONE instead.");
 			}
@@ -241,7 +241,7 @@ public class BO4 implements StructuredCustomObject
 			replaceBelowMaterial = config.replaceBelow != null && config.replaceBelow.equalsIgnoreCase("none") ? null : replaceBelow != null && !replaceBelow.isEmpty() ? materialReader.readMaterial(replaceBelow) : null;
 		} catch (InvalidConfigException e1) {
 			replaceBelowMaterial = LocalMaterials.DIRT;
-			if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
+			if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.CUSTOM_OBJECTS))
 			{
 				OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Value " + config.replaceBelow + " for replaceBelow in BO4 " + this.getName() + " was not recognised. Using DIRT instead.");
 			}
@@ -250,7 +250,7 @@ public class BO4 implements StructuredCustomObject
 			replaceAboveMaterial = config.replaceAbove != null && config.replaceAbove.equalsIgnoreCase("none") ? null : replaceAbove != null && !replaceAbove.isEmpty() ? materialReader.readMaterial(replaceAbove) : null;
 		} catch (InvalidConfigException e1) {
 			replaceAboveMaterial = LocalMaterials.AIR;
-			if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
+			if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.CUSTOM_OBJECTS))
 			{
 				OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Value " + config.replaceAbove + " for replaceAbove in BO4 " + this.getName() + " was not recognised. Using AIR instead.");
 			}
@@ -762,13 +762,13 @@ public class BO4 implements StructuredCustomObject
 			}
 			if(outOfBounds)
 			{
-				if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
+				if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.CUSTOM_OBJECTS))
 				{
 					OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "BO4 " + this.getName() + " tried to spawn blocks outside of the chunk being decorated, the blocks have been ignored. This can happen if a BO3 is not sliced into 16x16 pieces or has branches positioned in such a way that they cross a chunk border. OTG is more strict than TC in how branching BO4's used as CustomStructures() should be designed, BO4 creators have to design their BO4's and position their branches so that they fit neatly into a 16x16 grid. Hopefully in a future release OTG can be made to automatically slice branching structures instead of forcing the BO4 creator to do it.");
 				}
 			}
 	
-			if(OTGLog.getLogCategoryEnabled(LogCategory.PERFORMANCE) && (System.currentTimeMillis() - startTime) > 50)
+			if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.PERFORMANCE) && (System.currentTimeMillis() - startTime) > 50)
 			{
 				OTGLog.log(LogLevel.WARN, LogCategory.PERFORMANCE, "Warning: Spawning BO4 " + this.getName()  + " took " + (System.currentTimeMillis() - startTime) + " Ms.");
 			}

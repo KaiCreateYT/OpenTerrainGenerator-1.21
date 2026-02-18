@@ -22,15 +22,15 @@ public abstract class CustomStructureCoordinate
 {
 	public String bo3Name;
 	public String presetFolderName;
-	
+
 	protected transient IStructuredCustomObject object;
 	public Rotation rotation;
 	public int x;
 	public short y;
 	public int z;
-	
-	protected CustomStructureCoordinate() { } 
-			
+
+	protected CustomStructureCoordinate() { }
+
 	public int getX()
 	{
 		return x;
@@ -50,17 +50,17 @@ public abstract class CustomStructureCoordinate
 	{
 		return rotation;
 	}
-	
+
 	public final int getChunkX()
 	{
-		return (int)MathHelper.floor(x / (double)16); 
+		return (int)MathHelper.floor(x / (double)16);
 	}
-	
+
 	public final int getChunkZ()
 	{
 		return (int)MathHelper.floor(z / (double)16);
 	}
-	
+
 	/**
 	 * Returns the object of this coordinate.
 	 *
@@ -75,10 +75,7 @@ public abstract class CustomStructureCoordinate
 			if(object == null || !(object instanceof StructuredCustomObject))
 			{
 				object = null;
-				if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
-				{
-					OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Could not find BO3/BO4 " + this.bo3Name + " in GlobalObjects or WorldObjects directory.");
-				}
+				OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Could not find BO3/BO4 {} in GlobalObjects or WorldObjects directory.", this.bo3Name);
 			}
 
 			this.bo3Name = object != null ? object.getName() : this.bo3Name;
@@ -88,13 +85,13 @@ public abstract class CustomStructureCoordinate
 
 		return object;
 	}
-	
+
 	@Override
 	public int hashCode()
 	{
 		return (x >> 13) ^ (y >> 7) ^ z ^ object.getName().hashCode() ^ rotation.toString().hashCode();
 	}
-	
+
 	@Override
 	public boolean equals(Object otherObject)
 	{
@@ -127,5 +124,5 @@ public abstract class CustomStructureCoordinate
 			return false;
 		}
 		return true;
-	}	  
+	}
 }

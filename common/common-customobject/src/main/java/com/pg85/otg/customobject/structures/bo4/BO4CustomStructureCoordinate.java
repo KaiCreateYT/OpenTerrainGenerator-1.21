@@ -26,7 +26,7 @@ public class BO4CustomStructureCoordinate extends CustomStructureCoordinate
 	final boolean isRequiredBranch;
 	final boolean isWeightedBranch;
 	final String branchGroup;
-		
+
 	public BO4CustomStructureCoordinate(String presetFolderName, IStructuredCustomObject object, String customObjectName, Rotation rotation, int x, short y, int z, int branchDepth, boolean isRequiredBranch, boolean isWeightedBranch, String branchGroup)
 	{
 		this.presetFolderName = presetFolderName;
@@ -41,7 +41,7 @@ public class BO4CustomStructureCoordinate extends CustomStructureCoordinate
 		this.isWeightedBranch = isWeightedBranch;
 		this.branchGroup = branchGroup;
 	}
-	
+
 	/**
 	 * Returns the object of this coordinate.
 	 *
@@ -56,10 +56,7 @@ public class BO4CustomStructureCoordinate extends CustomStructureCoordinate
 			if(object == null || !(object instanceof StructuredCustomObject))
 			{
 				object = null;
-				if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
-				{
-					OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Could not find BO3/BO4 " + this.bo3Name + " in GlobalObjects or WorldObjects directory.");
-				}
+				OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Could not find BO3/BO4 {} in GlobalObjects or WorldObjects directory.", this.bo3Name);
 			}
 
 			this.bo3Name = object != null ? object.getName() : this.bo3Name;
@@ -69,7 +66,7 @@ public class BO4CustomStructureCoordinate extends CustomStructureCoordinate
 
 		return this.object;
 	}
-	
+
 	/**
 	 * Returns the object of this coordinate, casted to a
 	 * StructuredCustomObject. Will throw a ClassCastExcpetion
@@ -81,13 +78,13 @@ public class BO4CustomStructureCoordinate extends CustomStructureCoordinate
 	{
 		return (StructuredCustomObject)getObject(otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker);
 	}
-		
+
 	@Override
 	public int hashCode()
 	{
 		return (x >> 13) ^ (y >> 7) ^ z ^ object.getName().hashCode() ^ rotation.toString().hashCode();
 	}
-	
+
 	@Override
 	public boolean equals(Object otherObject)
 	{
@@ -121,7 +118,7 @@ public class BO4CustomStructureCoordinate extends CustomStructureCoordinate
 		}
 		return true;
 	}
-	
+
 	/**
 	 * Same as getRotatedBO3Coords except it assumes that the minX=-8 maxX=7 minZ=-7 maxZ=8 coordinates have been
 	 * centered and justified inside chunk (aligned to fit between 0,0 and 15,15).
@@ -147,7 +144,7 @@ public class BO4CustomStructureCoordinate extends CustomStructureCoordinate
 
 		return new BO4CustomStructureCoordinate(null, null, null, newRotation, rotatedX, (short)y, rotatedZ, 0, false, false, null);
 	}
-	
+
 	public static BO4CustomStructureCoordinate getRotatedCoord(int x, int y, int z, Rotation newRotation)
 	{
 		int rotations = newRotation.getRotationId();
@@ -166,8 +163,8 @@ public class BO4CustomStructureCoordinate extends CustomStructureCoordinate
 		}
 
 		return new BO4CustomStructureCoordinate(null, null, null, newRotation, rotatedX, (short)y, rotatedZ, 0, false, false, null);
-	}	
-		
+	}
+
 	/**
 	 * Rotates a coordinate around its center, assumes the center is at 0,0.
 	 * Should only be used for resouces that like Block() that spawn in BO3's and have a -1z offset.
@@ -214,7 +211,7 @@ public class BO4CustomStructureCoordinate extends CustomStructureCoordinate
 
 		return new BO4CustomStructureCoordinate(null, null, null, newRotation, rotatedX, (short)y, rotatedZ, 0, false, false, null);
 	}
-	
+
 	// TODO: Why is this necessary for smoothing areas?
 	public static BO4CustomStructureCoordinate getRotatedSmoothingCoords(int x, short y, int z, Rotation newRotation)
 	{

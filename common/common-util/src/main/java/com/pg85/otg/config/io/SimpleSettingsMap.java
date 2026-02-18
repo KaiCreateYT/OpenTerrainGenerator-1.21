@@ -103,35 +103,12 @@ public final class SimpleSettingsMap implements SettingsMap
 				continue;
 			}
 			result.add(function);
-			if (presetFolderName == null) {
-				if (logger.getLogCategoryEnabled(LogCategory.CONFIGS) && function instanceof ErroredFunction)
+			if (function instanceof ErroredFunction<?> errored)
+			{
+				if (presetFolderName == null || logger.canLogForPreset(presetFolderName))
 				{
-					logger.log(
-							LogLevel.ERROR,
-							LogCategory.CONFIGS,
-							MessageFormat.format(
-									"Invalid resource {0} in {1} on line {2}: {3}",
-									functionName,
-									this.name,
-									configFunctionLine.getLineNumber(),
-									((ErroredFunction<?>)function).error
-							)
-					);
-				}
-			} else {
-				if (logger.getLogCategoryEnabled(LogCategory.CONFIGS) && function instanceof ErroredFunction && logger.canLogForPreset(presetFolderName))
-				{
-					logger.log(
-							LogLevel.ERROR,
-							LogCategory.CONFIGS,
-							MessageFormat.format(
-									"Invalid resource {0} in {1} on line {2}: {3}",
-									functionName,
-									this.name,
-									configFunctionLine.getLineNumber(),
-									((ErroredFunction<?>)function).error
-							)
-					);
+					logger.error(LogCategory.CONFIGS, "Invalid resource {} in {} on line {}: {}",
+							functionName, this.name, configFunctionLine.getLineNumber(), errored.error);
 				}
 			}
 		}
@@ -198,21 +175,9 @@ public final class SimpleSettingsMap implements SettingsMap
 			}
 			catch (InvalidConfigException e)
 			{
-				if(logger.getLogCategoryEnabled(LogCategory.CONFIGS))
-				{
-					logger.log(
-						LogLevel.ERROR,
-						LogCategory.CONFIGS,
-						MessageFormat.format(
-							"The value \"{0}\" is not valid for the setting {1} in {2} on line {3}: {4}", 
-							stringValue, 
-							setting, 
-							name, 
-							stringWithLineNumber.getLineNumber(), 
-							e.getMessage()
-						)
-					);
-				}
+				logger.error(LogCategory.CONFIGS,
+						"The value \"{}\" is not valid for the setting {} in {} on line {}: {}",
+						stringValue, setting, name, stringWithLineNumber.getLineNumber(), e.getMessage());
 			}
 		}
 

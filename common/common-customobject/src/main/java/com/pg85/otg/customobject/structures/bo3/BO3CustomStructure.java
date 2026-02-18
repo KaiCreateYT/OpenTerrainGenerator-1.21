@@ -52,13 +52,10 @@ public class BO3CustomStructure extends CustomStructure
 		}
 		if(!(object instanceof BO3))
 		{
-			if(worldGenRegion.getLogger().getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
-			{
-				worldGenRegion.getLogger().log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "BO3CustomStructure loaded with non-BO3 object " + object.getName());
-			}
+			worldGenRegion.getLogger().error(LogCategory.CUSTOM_OBJECTS, "BO3CustomStructure loaded with non-BO3 object {}", object.getName());
 			return;
 		}
-		
+
 		this.start = start;
 		this.height = ((BO3)object).getStructurePartSpawnHeight();
 		this.maxBranchDepth = ((BO3)object).getMaxBranchDepth();
@@ -91,7 +88,7 @@ public class BO3CustomStructure extends CustomStructure
 
 				// Add this object to the chunk
 				addToSpawnList(childCoordObject, object, otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker);
-				
+
 				// Also add the branches of this object
 				if (depth < this.maxBranchDepth)
 				{
@@ -119,10 +116,7 @@ public class BO3CustomStructure extends CustomStructure
             Set<CustomStructureCoordinate> objectsInChunk = this.objectsToSpawn.computeIfAbsent(chunkCoordinate, k -> new LinkedHashSet<>());
             objectsInChunk.add(coordObject);
 		} else {
-			if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
-			{
-				OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Error reading branch in BO3 " + parent.getName()  + " Could not find BO3: " + coordObject.bo3Name);
-			}
+			OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Error reading branch in BO3 {} Could not find BO3: {}", parent.getName(), coordObject.bo3Name);
 		}
 	}
 
@@ -147,5 +141,5 @@ public class BO3CustomStructure extends CustomStructure
             case highestSolidBlock -> worldGenRegion.getBlockAboveSolidHeight(x, z);
             default -> -1;
         };
-	}	
+	}
 }

@@ -23,7 +23,7 @@ import java.util.Map.Entry;
  *
  */
 public class FileSettingsReaderBO4 implements SettingsReaderBO4
-{  
+{
 	private static final <T, C extends CustomObjectConfigFunction<T>> List<C> mergeListsCustomObject(Collection<? extends C> childList, Collection<? extends C> parentList)
 	{
 		List<C> returnList = new ArrayList<>(childList);
@@ -35,8 +35,8 @@ public class FileSettingsReaderBO4 implements SettingsReaderBO4
 			}
 		}
 		return returnList;
-	}	
-	
+	}
+
 	private static final <T, C extends CustomObjectConfigFunction<T>> boolean hasAnalogousFunction(C function, Collection<? extends C> list)
 	{
 		for (C toCheck : list)
@@ -69,12 +69,12 @@ public class FileSettingsReaderBO4 implements SettingsReaderBO4
 				throw new UnsupportedOperationException();
 			}
 		}
-	
+
 	private final List<StringOnLine> configFunctions;
 	private SettingsReaderBO4 fallback;
 	private final File file;
 	private final String name;
-	
+
 	/**
 	 * Stores all the settings. Settings like Name:Value or Name=Value are
 	 * stored as name. Because this is a linked hashmap,
@@ -82,7 +82,7 @@ public class FileSettingsReaderBO4 implements SettingsReaderBO4
 	 * over this map.
 	 */
 	private final Map<String, StringOnLine> settingsCache;
-	
+
 	/**
 	 * Creates a new settings reader.
 	 * @param name Name of the config file, like "PresetConfig" or "Taiga".
@@ -91,7 +91,7 @@ public class FileSettingsReaderBO4 implements SettingsReaderBO4
 	public FileSettingsReaderBO4(String name, File file)
 	{
 		this.name = name;
-		
+
 		this.file = file;
 		this.settingsCache = new HashMap<>();
 		this.configFunctions = new ArrayList<>();
@@ -125,19 +125,18 @@ public class FileSettingsReaderBO4 implements SettingsReaderBO4
 			CustomObjectConfigFunction<T> function = manager.getConfigFunction(functionName, holder, args,  materialReader);
 			if(function == null)
 			{
-				function = manager.getConfigFunction(functionName, holder, args,  materialReader);	
+				function = manager.getConfigFunction(functionName, holder, args,  materialReader);
 			}
 			result.add(function);
-			if (!function.isValid() && OTGLog.getLogCategoryEnabled(LogCategory.CONFIGS))
+			if (!function.isValid() && OTGLog.isEnabled(LogLevel.ERROR, LogCategory.CONFIGS))
 			{
-				OTGLog.log(
-					LogLevel.ERROR,
+				OTGLog.error(
 					LogCategory.CONFIGS,
 					MessageFormat.format(
-						"Invalid resource {0} in {1} on line {2}: {3}", 
-						functionName, 
-						this.name, 
-						configFunctionLine.line, 
+						"Invalid resource {0} in {1} on line {2}: {3}",
+						functionName,
+						this.name,
+						configFunctionLine.line,
 						function.getError()
 					)
 				);
@@ -190,17 +189,16 @@ public class FileSettingsReaderBO4 implements SettingsReaderBO4
 			}
 			catch (InvalidConfigException e)
 			{
-				if(OTGLog.getLogCategoryEnabled(LogCategory.CONFIGS))
+				if(OTGLog.isEnabled(LogLevel.ERROR, LogCategory.CONFIGS))
 				{
-					OTGLog.log(
-						LogLevel.ERROR, 
+					OTGLog.error(
 						LogCategory.CONFIGS,
 						MessageFormat.format(
-							"The value \"{0}\" is not valid for the setting {1} in {2} on line {3}: {4}", 
-							stringValue, 
-							setting, 
-							this.name, 
-							stringWithLineNumber.line, 
+							"The value \"{0}\" is not valid for the setting {1} in {2} on line {3}: {4}",
+							stringValue,
+							setting,
+							this.name,
+							stringWithLineNumber.line,
 							e.getMessage()
 						)
 					);
@@ -231,7 +229,7 @@ public class FileSettingsReaderBO4 implements SettingsReaderBO4
 		}
 		return false;
 	}
-		
+
 	@Override
 	public boolean isNewConfig()
 	{

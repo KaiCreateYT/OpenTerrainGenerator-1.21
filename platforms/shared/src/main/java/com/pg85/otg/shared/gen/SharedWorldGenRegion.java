@@ -14,7 +14,6 @@ import com.pg85.otg.util.biome.ReplaceBlockMatrix;
 import com.pg85.otg.util.gen.LocalWorldGenRegion;
 import com.pg85.otg.util.gen.OTGWorldInfo;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.materials.LocalMaterialData;
 import com.pg85.otg.util.materials.LocalMaterials;
 import com.pg85.otg.util.minecraft.TreeType;
@@ -46,7 +45,6 @@ import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.configurations.FeatureConfiguration;
 
-import java.text.MessageFormat;
 import java.util.Optional;
 import java.util.Random;
 
@@ -203,12 +201,7 @@ public abstract class SharedWorldGenRegion extends LocalWorldGenRegion {
                            ))
                        .orElse(false);
         } catch (NullPointerException | IndexOutOfBoundsException ex) {
-            if (OTGLog.getLogCategoryEnabled(LogCategory.DECORATION)) {
-                OTGLog.log(
-                    LogLevel.ERROR, LogCategory.DECORATION,
-                    String.format("Treegen caused an error: %s", (Object[]) ex.getStackTrace())
-                );
-            }
+            OTGLog.error(LogCategory.DECORATION, "Treegen caused an error: {}", (Object) ex.getStackTrace());
             // Return true to prevent further attempts.
             return true;
         }
@@ -516,17 +509,9 @@ public abstract class SharedWorldGenRegion extends LocalWorldGenRegion {
         if (tileEntity != null) {
             tileEntity.loadCustomOnly(nms, this.worldGenLevel.registryAccess());
         } else {
-            if (OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS)) {
-                OTGLog.log(
-                    LogLevel.ERROR,
-                    LogCategory.CUSTOM_OBJECTS,
-                    MessageFormat.format(
-                        "Skipping tile entity with id {0}, cannot be placed at {1},{2},{3}",
-                        nms.getString("id"),
-                        x, y, z
-                    )
-                );
-            }
+            OTGLog.error(LogCategory.CUSTOM_OBJECTS,
+                "Skipping tile entity with id {}, cannot be placed at {},{},{}",
+                nms.getString("id"), x, y, z);
         }
     }
 
@@ -537,13 +522,8 @@ public abstract class SharedWorldGenRegion extends LocalWorldGenRegion {
     @Override
     public void spawnEntity(IEntityFunction entityData) {
         if (entityData.getY() < otgWorldInfo.minY() || entityData.getY() > otgWorldInfo.maxY()) {
-            if (OTGLog.getLogger().getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS)) {
-                OTGLog.log(
-                    LogLevel.ERROR,
-                    LogCategory.CUSTOM_OBJECTS,
-                    "Failed to spawn mob for Entity() " + entityData.makeString() + ", y position out of bounds"
-                );
-            }
+            OTGLog.error(LogCategory.CUSTOM_OBJECTS,
+                "Failed to spawn mob for Entity() {}, y position out of bounds", entityData.makeString());
             return;
         }
 
@@ -554,15 +534,8 @@ public abstract class SharedWorldGenRegion extends LocalWorldGenRegion {
         if (type1.isPresent()) {
             type2 = type1.get();
         } else {
-            if (OTGLog.getLogger().getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS)) {
-                OTGLog.log(
-                    LogLevel.ERROR,
-                    LogCategory.CUSTOM_OBJECTS,
-                    "Could not parse mob for Entity() "
-                    + entityData.makeString()
-                    + ", mob type could not be found."
-                );
-            }
+            OTGLog.error(LogCategory.CUSTOM_OBJECTS,
+                "Could not parse mob for Entity() {}, mob type could not be found.", entityData.makeString());
             return;
         }
 
@@ -581,16 +554,9 @@ public abstract class SharedWorldGenRegion extends LocalWorldGenRegion {
                     // Parse SNBT (text-based NBT format like {PersistenceRequired:1})
                     nbtTagCompound = TagParser.parseTag(entityData.getMetaData());
                 } catch (Exception e) {
-                    if (OTGLog.getLogger().getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS)) {
-                        OTGLog.log(
-                            LogLevel.ERROR,
-                            LogCategory.CUSTOM_OBJECTS,
-                            "Could not parse nbt for Entity() "
-                            + entityData.makeString()
-                            + ", file: "
-                            + entityData.getNameTagOrNBTFileName()
-                        );
-                    }
+                    OTGLog.error(LogCategory.CUSTOM_OBJECTS,
+                        "Could not parse nbt for Entity() {}, file: {}",
+                        entityData.makeString(), entityData.getNameTagOrNBTFileName());
                     throw new RuntimeException(
                         "Could not parse nbt for Entity() "
                         + entityData.makeString()
@@ -610,26 +576,14 @@ public abstract class SharedWorldGenRegion extends LocalWorldGenRegion {
             try {
                 entity = type2.create(worldGenLevel.getLevel());
             } catch (Exception exception) {
-                if (OTGLog.getLogger().getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS)) {
-                    OTGLog.log(
-                        LogLevel.ERROR,
-                        LogCategory.CUSTOM_OBJECTS,
-                        "Could not create entity for Entity() "
-                        + entityData.makeString()
-                        + ", exception: "
-                        + exception.getMessage()
-                    );
-                }
+                OTGLog.error(LogCategory.CUSTOM_OBJECTS,
+                    "Could not create entity for Entity() {}, exception: {}",
+                    entityData.makeString(), exception.getMessage());
                 return;
             }
             if (entity == null) {
-                if (OTGLog.getLogger().getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS)) {
-                    OTGLog.log(
-                        LogLevel.ERROR,
-                        LogCategory.CUSTOM_OBJECTS,
-                        "Could not create entity for Entity() " + entityData.makeString() + ", MC returned null."
-                    );
-                }
+                OTGLog.error(LogCategory.CUSTOM_OBJECTS,
+                    "Could not create entity for Entity() {}, MC returned null.", entityData.makeString());
                 return;
             } else {
                 entity.moveTo(
@@ -660,13 +614,8 @@ public abstract class SharedWorldGenRegion extends LocalWorldGenRegion {
                 OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to load entity from NBT: %s", ignored.getMessage());
             }
             if (entity == null) {
-                if (OTGLog.getLogger().getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS)) {
-                    OTGLog.log(
-                        LogLevel.ERROR,
-                        LogCategory.CUSTOM_OBJECTS,
-                        "Could not create entity for Entity() " + entityData.makeString() + ", MC returned null."
-                    );
-                }
+                OTGLog.error(LogCategory.CUSTOM_OBJECTS,
+                    "Could not create entity for Entity() {}, MC returned null.", entityData.makeString());
                 return;
             }
         }
@@ -729,21 +678,9 @@ public abstract class SharedWorldGenRegion extends LocalWorldGenRegion {
                         && !block.isLiquid()
                     )
                 ) {
-                    if (OTGLog.getLogger().getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS)) {
-                        OTGLog.log(
-                            LogLevel.ERROR,
-                            LogCategory.CUSTOM_OBJECTS,
-                            "Could not spawn entity at "
-                            + entityData.getX()
-                            + " "
-                            + entityData.getY()
-                            + " "
-                            + entityData.getZ()
-                            + " for Entity() "
-                            + entityData.makeString()
-                            + ", a solid block was found or a water mob tried to spawn outside of water."
-                        );
-                    }
+                    OTGLog.error(LogCategory.CUSTOM_OBJECTS,
+                        "Could not spawn entity at {} {} {} for Entity() {}, a solid block was found or a water mob tried to spawn outside of water.",
+                        entityData.getX(), entityData.getY(), entityData.getZ(), entityData.makeString());
                     continue;
                 }
 

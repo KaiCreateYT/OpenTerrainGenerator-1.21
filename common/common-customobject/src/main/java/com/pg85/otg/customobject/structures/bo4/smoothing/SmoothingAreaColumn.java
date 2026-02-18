@@ -38,7 +38,7 @@ class SmoothingAreaColumn
 		if(this.highestFillingBlock == null && this.lowestCuttingBlock == null)
 		{
 			// For each column, make sure there is only one cutting line (the lowest cutting block in the column)
-			// and one filling line (the highest filling block in the column).	
+			// and one filling line (the highest filling block in the column).
 			for(SmoothingAreaBlock block : this.blocks)
 			{
 				if(block.smoothingBlockType == enumSmoothingBlockType.FILLING && (this.highestFillingBlock == null || this.highestFillingBlock.y < block.y))
@@ -50,7 +50,7 @@ class SmoothingAreaColumn
 					this.lowestCuttingBlock = block;
 				}
 			}
-			
+
 			// Make sure no cutting line spawns below a filling line (fill overrides cut),
 			if(
 				this.highestFillingBlock != null && this.lowestCuttingBlock != null &&
@@ -62,12 +62,12 @@ class SmoothingAreaColumn
 				this.lowestCuttingBlock.y = this.highestFillingBlock.y;
 			}
 
-			// TODO: When using SmoothStartTop:true, if a smoothing line is underneath a bo4 block, we can 
+			// TODO: When using SmoothStartTop:true, if a smoothing line is underneath a bo4 block, we can
 			// cancel spawning the rest of the line since we know we won't need it.
 		}
 		spawn(worldGenRegion, bo4Config,  materialReader);
 	}
-	
+
 	private void spawn(IWorldGenRegion worldGenRegion, BO4Config bo4Config,  IMaterialReader materialReader)
 	{
 		BiomeSettings biomeConfig = worldGenRegion.getBiomeConfigForDecoration(this.x, this.z);
@@ -78,10 +78,7 @@ class SmoothingAreaColumn
 			try {
 				replaceAboveMaterial = materialReader.readMaterial(bo4Config.replaceAbove);
 			} catch (InvalidConfigException e) {
-				if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
-				{
-					OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "ReplaceAbove: " + bo4Config.replaceAbove + " could not be parsed as a material for BO4 " + bo4Config.getName());
-				}
+				OTGLog.error(LogCategory.CUSTOM_OBJECTS, "ReplaceAbove: {} could not be parsed as a material for BO4 {}", bo4Config.replaceAbove, bo4Config.getName());
 			}
 		}
 
@@ -92,10 +89,7 @@ class SmoothingAreaColumn
 			try {
 				smoothingSurfaceBlock = materialReader.readMaterial(bo4Config.smoothingSurfaceBlock);
 			} catch (InvalidConfigException e) {
-				if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
-				{
-					OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "SmoothingSurfaceBlock: " + bo4Config.smoothingSurfaceBlock + " could not be parsed as a material for BO4 " + bo4Config.getName());
-				}
+				OTGLog.error(LogCategory.CUSTOM_OBJECTS, "SmoothingSurfaceBlock: {} could not be parsed as a material for BO4 {}", bo4Config.smoothingSurfaceBlock, bo4Config.getName());
 			}
 		}
 		if(bo4Config.smoothingGroundBlock != null && !bo4Config.smoothingGroundBlock.trim().isEmpty())
@@ -103,23 +97,20 @@ class SmoothingAreaColumn
 			try {
 				smoothingGroundBlock = materialReader.readMaterial(bo4Config.smoothingGroundBlock);
 			} catch (InvalidConfigException e) {
-				if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
-				{
-					OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "SmoothingGroundBlock: " + bo4Config.smoothingGroundBlock + " could not be parsed as a material for BO4 " + bo4Config.getName());
-				}
+				OTGLog.error(LogCategory.CUSTOM_OBJECTS, "SmoothingGroundBlock: {} could not be parsed as a material for BO4 {}", bo4Config.smoothingGroundBlock, bo4Config.getName());
 			}
 		}
 		boolean needsReplaceBlocks;
 		LocalMaterialData surfaceBlock;
 		LocalMaterialData groundBlock;
 		LocalMaterialData blockAbove;
-		
+
 		int highestBlockInWorld = -1;
 		// If there is a filling block in this column, fill below and replace above.
 		// If there is a cutting block and no filling block in this column, replace above.
 		if(this.lowestCuttingBlock != null && this.highestFillingBlock == null)
 		{
-			// ReplaceAbove 
+			// ReplaceAbove
 			// Should be AIR, WATER or none
 			if(replaceAboveMaterial != null)
 			{
@@ -132,7 +123,7 @@ class SmoothingAreaColumn
 						worldGenRegion.setBlock(this.x, y, this.z, replaceAboveMaterial);
 					}
 				}
-				
+
 				// Set the new top block to surface block
 				if(highestBlockInWorld > this.lowestCuttingBlock.y && this.lowestCuttingBlock.y > 0)
 				{
@@ -164,7 +155,7 @@ class SmoothingAreaColumn
 						}
 					}
 					if(surfaceBlock != null)
-					{						
+					{
 						if(needsReplaceBlocks)
 						{
 							worldGenRegion.setBlock(this.x, this.lowestCuttingBlock.y, this.z, surfaceBlock, biomeConfig.getSurfaceSettings().getReplacedBlocks());
@@ -181,8 +172,8 @@ class SmoothingAreaColumn
 			{
 				highestBlockInWorld = worldGenRegion.getHighestBlockYAt(this.x, this.z, true, false, true, true, true);
 			}
-			
-			// ReplaceAbove 
+
+			// ReplaceAbove
 			// Should be AIR, WATER or none
 			if(replaceAboveMaterial != null)
 			{
@@ -194,22 +185,22 @@ class SmoothingAreaColumn
 					}
 				}
 			}
-			
+
 			// Place the surface block
             needsReplaceBlocks = bo4Config.doReplaceBlocks;
 			if(smoothingSurfaceBlock != null && !bo4Config.replaceWithBiomeBlocks)
 			{
 				surfaceBlock = smoothingSurfaceBlock;
 			} else {
-				
+
 				blockAbove = worldGenRegion.getMaterial(this.x, this.highestFillingBlock.y + 1, this.z);
 				if(blockAbove != null && (blockAbove.isSolid() || blockAbove.isLiquid()))
 				{
 					surfaceBlock = biomeConfig.getSurfaceSettings().getGroundBlockAtHeight(worldGenRegion, this.x, this.highestFillingBlock.y, this.z);
 				} else {
 					surfaceBlock = biomeConfig.getSurfaceSettings().getSurfaceBlockAtHeight(worldGenRegion, this.x, this.highestFillingBlock.y, this.z);
-				}				
-				
+				}
+
 				needsReplaceBlocks = false;
 				if(surfaceBlock.isAir())
 				{
@@ -236,7 +227,7 @@ class SmoothingAreaColumn
 					}
 				}
 			}
-						
+
 			// ReplaceBelow
 			if(smoothingGroundBlock != null && !bo4Config.replaceWithBiomeBlocks)
 			{

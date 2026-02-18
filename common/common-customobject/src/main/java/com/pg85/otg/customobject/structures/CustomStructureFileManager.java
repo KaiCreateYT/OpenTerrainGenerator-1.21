@@ -136,10 +136,7 @@ public class CustomStructureFileManager
 			}
 		}
 		
-		if(OTGLog.getLogCategoryEnabled(LogCategory.STRUCTURE_PLOTTING))
-		{
-			OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, regionsSaved + " plotted chunk regions saved.");
-		}
+		OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "{} plotted chunk regions saved.", regionsSaved);
 	}
 	
 	public static Map<ChunkCoordinate, PlottedChunksRegion> loadPlottedChunksData(Path worldSaveDir, String presetFolderName)
@@ -412,10 +409,7 @@ public class CustomStructureFileManager
 				saveStructuresRegionFile(worldSaveDir, presetFolderName, cachedRegion.getKey(), structuresPerRegion);
 			}
 		}
-		if(OTGLog.getLogCategoryEnabled(LogCategory.STRUCTURE_PLOTTING))
-		{
-			OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, regionsSaved + " structure data regions saved.");
-		}
+		OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "{} structure data regions saved.", regionsSaved);
 	}
 
 	private static void saveStructuresRegionFile(Path worldSaveDir, String presetFolderName, ChunkCoordinate regionCoord, HashMap<String, HashMap<CustomStructure, ArrayList<ChunkCoordinate>>> structuresPerRegion)

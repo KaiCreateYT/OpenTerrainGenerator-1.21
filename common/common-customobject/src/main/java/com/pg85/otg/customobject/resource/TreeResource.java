@@ -105,7 +105,7 @@ public class TreeResource extends BiomeResourceBase implements ICustomObjectReso
 		}
 		return args.size(); // All args are tree definitions
 	}
-	
+
 	@Override
 	public void spawnForChunkDecoration(CustomStructureCache structureCache, IWorldGenRegion worldGenRegion, Random random, Path otgRootFolder, CustomObjectManager customObjectManager, IMaterialReader materialReader, CustomObjectResourcesManager manager, IModLoadedChecker modLoadedChecker)
 	{
@@ -142,18 +142,18 @@ public class TreeResource extends BiomeResourceBase implements ICustomObjectReso
 			}
 		}
 	}
-	
+
 	// TODO: Could this cause problems for developer mode / flushcache, trees not updating during a session?
 	private void loadTrees(String presetFolderName, Path otgRootFolder,  CustomObjectManager customObjectManager, IMaterialReader materialReader, CustomObjectResourcesManager manager, IModLoadedChecker modLoadedChecker)
 	{
 		if(!this.treesLoaded)
 		{
 			this.treesLoaded = true;
-			
+
 			this.treeObjects = new CustomObject[this.treeNames.size()];
 			this.treeObjectMinChances = new int[this.treeNames.size()];
 			this.treeObjectMaxChances = new int[this.treeNames.size()];
-			
+
 			String treeName;
 			CustomObject tree;
 			int minHeight;
@@ -166,44 +166,38 @@ public class TreeResource extends BiomeResourceBase implements ICustomObjectReso
 				treeName = this.treeNames.get(treeNumber);
                 minHeight = -1;
 				maxHeight = -1;
-	
+
 				this.treeObjectMinChances[treeNumber] = minHeight;
 				this.treeObjectMaxChances[treeNumber] = maxHeight;
-				
+
 				if(treeName.contains("("))
 				{
 					params = treeName.replace(")", "").split("\\(");
 					treeName = params[0];
 					tree = customObjectManager.getGlobalObjects().getObjectByName(treeName, presetFolderName, otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker);
-					this.treeObjects[treeNumber] = tree;				
+					this.treeObjects[treeNumber] = tree;
 					if(tree == null)
 					{
-						if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
-						{
-							OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Error: Could not find BO3 for Tree, BO3: " + this.treeNames.get(treeNumber));
-						}
+						OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Error: Could not find BO3 for Tree, BO3: {}", this.treeNames.get(treeNumber));
 						continue;
 					}
-					
+
 					params = params[1].split(";");
 					sMinHeight = params[0].toLowerCase().replace("minheight=", "");
-					sMaxHeight = params[1].toLowerCase().replace("maxheight=", "");				
+					sMaxHeight = params[1].toLowerCase().replace("maxheight=", "");
 					try
 					{
 						minHeight = Integer.parseInt(sMinHeight);
 						maxHeight = Integer.parseInt(sMaxHeight);
 						this.treeObjectMinChances[treeNumber] = minHeight;
-						this.treeObjectMaxChances[treeNumber] = maxHeight;					
+						this.treeObjectMaxChances[treeNumber] = maxHeight;
 					} catch(NumberFormatException ignored) { /* Not a number, treating as tree name */ }
 				} else {
-					tree = customObjectManager.getGlobalObjects().getObjectByName(treeName, presetFolderName, otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker);				
+					tree = customObjectManager.getGlobalObjects().getObjectByName(treeName, presetFolderName, otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker);
 					this.treeObjects[treeNumber] = tree;
 					if(tree == null)
 					{
-						if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
-						{
-							OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Error: Could not find BO3 for Tree, BO3: " + this.treeNames.get(treeNumber));
-						}
+						OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Error: Could not find BO3 for Tree, BO3: {}", this.treeNames.get(treeNumber));
 						continue;
 					}
 				}
@@ -228,5 +222,5 @@ public class TreeResource extends BiomeResourceBase implements ICustomObjectReso
 			output.append(",true,").append(this.maxSpawn);
 		}
 		return output + ")";
-	}	
+	}
 }

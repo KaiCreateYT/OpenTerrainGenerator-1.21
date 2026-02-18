@@ -21,7 +21,7 @@ import com.pg85.otg.util.logging.LogLevel;
 class BranchDataItem
 {
 	private static int BranchDataItemCounter = -1;
-	
+
 	final BO4CustomStructureCoordinate branch;
 	final ChunkCoordinate chunkCoordinate;
 	final BranchDataItem parent;
@@ -34,7 +34,7 @@ class BranchDataItem
 	int branchNumber;
 	int currentDepth;
 	int maxDepth;
-	
+
 	private boolean minimumSize;
 	private final Random random;
 	private final Stack<BranchDataItem> children = new Stack<>();
@@ -53,12 +53,12 @@ class BranchDataItem
 
 		BranchDataItem.BranchDataItemCounter += 1; // TODO: Reset this somewhere for each new world created?
 		branchNumber = BranchDataItem.BranchDataItemCounter;
-	}	
-	
+	}
+
 	Stack<BranchDataItem> getChildren(boolean dontSpawn, IWorldGenRegion worldGenRegion, ChunkCoordinate chunkBeingDecorated, Path otgRootFolder,  CustomObjectManager customObjectManager, IMaterialReader materialReader, CustomObjectResourcesManager manager, IModLoadedChecker modLoadedChecker)
 	{
 		// We may target unloaded/ungenerated chunks, so we'll use shadowgen when doing height/material checks.
-		
+
 		if(worldGenRegion == null)
 		{
 			throw new RuntimeException();
@@ -91,10 +91,7 @@ class BranchDataItem
 						!childCoordObject.isRequiredBranch
 					)
 					{
-						if(OTGLog.getLogCategoryEnabled(LogCategory.STRUCTURE_PLOTTING))
-						{
-							OTGLog.log(LogLevel.ERROR, LogCategory.STRUCTURE_PLOTTING, "canOverride optional branches cannot be in a branch group, ignoring branch: " + childBO3.getName() + " in BO3: " + this.branch.bo3Name);
-						}
+						OTGLog.error(LogCategory.STRUCTURE_PLOTTING, "canOverride optional branches cannot be in a branch group, ignoring branch: {} in BO3: {}", childBO3.getName(), this.branch.bo3Name);
 						continue;
 					}
 

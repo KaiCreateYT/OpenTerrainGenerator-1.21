@@ -28,7 +28,7 @@ public abstract class EntityFunction<T extends CustomObjectConfigFile> extends C
 	public NamedBinaryTag namedBinaryTag = null;
 	public int rotation = 0;
 	private String metaDataTag;
-	
+
 	@Override
 	public double getX()
 	{
@@ -38,22 +38,22 @@ public abstract class EntityFunction<T extends CustomObjectConfigFile> extends C
 	public int getY()
 	{
 		return this.y;
-	}	
+	}
 	@Override
 	public double getZ()
 	{
 		return this.z;
-	}	
+	}
 	@Override
 	public int getGroupSize()
 	{
 		return this.groupSize;
-	}	
+	}
 	@Override
 	public String getNameTagOrNBTFileName()
 	{
 		return this.nameTagOrNBTFileName;
-	}	
+	}
 	@Override
 	public String getResourceLocation()
 	{
@@ -64,7 +64,7 @@ public abstract class EntityFunction<T extends CustomObjectConfigFile> extends C
 	{
 		return this.namedBinaryTag;
 	}
-	
+
 	@Override
 	public void load(List<String> args,  IMaterialReader materialReader) throws InvalidConfigException
 	{
@@ -99,10 +99,7 @@ public abstract class EntityFunction<T extends CustomObjectConfigFile> extends C
 			this.resourceLocation = EntityNames.toInternalName(name);
 			if (!this.resourceLocation.contains(":"))
 			{
-				if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
-				{
-					OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Could not find entity '" + name + "', are you sure you spelled it correctly?");
-				}
+				OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Could not find entity '{}', are you sure you spelled it correctly?", name);
 			}
 		}
 		this.name = this.resourceLocation.split(":")[1];
@@ -126,10 +123,7 @@ public abstract class EntityFunction<T extends CustomObjectConfigFile> extends C
 					FileInputStream stream = new FileInputStream(this.nameTagOrNBTFileName);
 					this.namedBinaryTag = NamedBinaryTag.readFrom(stream, true);
 				} catch (FileNotFoundException e) {
-					if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
-					{
-						OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Could not find file: " + this.nameTagOrNBTFileName);
-					}
+					OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Could not find file: {}", this.nameTagOrNBTFileName);
 					// Set it to null so we don't go looking for this later
 					this.nameTagOrNBTFileName = null;
 				} catch (IOException e) {

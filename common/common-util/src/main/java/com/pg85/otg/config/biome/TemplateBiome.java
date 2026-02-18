@@ -7,10 +7,6 @@ import com.pg85.otg.interfaces.ILogger;
 import com.pg85.otg.config.settings.preset.PresetSettings;
 import com.pg85.otg.util.helpers.StringHelper;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
-
-
-import java.text.MessageFormat;
 import java.util.*;
 
 public final class TemplateBiome extends ConfigFunction<PresetSettings>
@@ -97,10 +93,7 @@ public final class TemplateBiome extends ConfigFunction<PresetSettings>
 					continue;
 				}
 				// Invalid biome name, remove
-				if(logger.getLogCategoryEnabled(LogCategory.CONFIGS))
-				{
-					logger.log(LogLevel.ERROR, LogCategory.CONFIGS, MessageFormat.format("Invalid tag name {0} in TemplateBiome() {1}", biomeName, this.name));
-				}
+				logger.error(LogCategory.CONFIGS, "Invalid tag name {} in TemplateBiome() {}", biomeName, this.name);
 			}
 			it.remove();
 		}

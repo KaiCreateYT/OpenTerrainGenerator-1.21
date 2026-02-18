@@ -37,16 +37,16 @@ public class SaplingResource extends ISaplingSpawner
 	}
 
 	// wideTrunk and saplingMaterial are used by custom saplings only
-	private final String biomeName;	
+	private final String biomeName;
 	private List<Double> treeChances;
 	private List<String> treeNames;
 	private List<CustomObject> trees;
 	private boolean treesLoaded = false;
-	
+
 	public final SaplingType saplingType;
 	public LocalMaterialData saplingMaterial;
 	public boolean wideTrunk;
-	
+
 	public SaplingResource(BiomeSettings biomeConfig, List<String> args) throws InvalidConfigException
 	{
 		assureSize(3, args);
@@ -58,11 +58,8 @@ public class SaplingResource extends ISaplingSpawner
 			try {
 				this.saplingMaterial = OTGMaterialReader.get().readMaterial(args.get(1));
 			} catch (InvalidConfigException e) {
-				if(OTGLog.getLogCategoryEnabled(LogCategory.DECORATION))
-				{
-					OTGLog.log(LogLevel.ERROR, LogCategory.DECORATION,
-							"Invalid custom sapling configuration! Syntax: Sapling(Custom, material, widetrunk, TreeName, TreeChance, ...)");
-				}
+				OTGLog.error(LogCategory.DECORATION,
+						"Invalid custom sapling configuration! Syntax: Sapling(Custom, material, widetrunk, TreeName, TreeChance, ...)");
 			}
 		}
 		if (this.saplingType == null && this.saplingMaterial == null)
@@ -142,7 +139,7 @@ public class SaplingResource extends ISaplingSpawner
 	public boolean growSapling(IWorldGenRegion worldGenRegion, Random random, boolean isWideTree, int x, int y, int z, String presetFolderName, Path otgRootFolder,  CustomObjectManager customObjectManager, IMaterialReader materialReader, CustomObjectResourcesManager manager, IModLoadedChecker modLoadedChecker)
 	{
 		loadTreeObjects(presetFolderName, otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker);
-		
+
 		CustomObject tree;
 		Rotation rotation;
 		int spawnX;
@@ -181,7 +178,7 @@ public class SaplingResource extends ISaplingSpawner
 		if(!this.treesLoaded)
 		{
 			this.treesLoaded = true;
-			
+
 			for(String treeName : this.treeNames)
 			{
 				CustomObject tree;
@@ -190,17 +187,14 @@ public class SaplingResource extends ISaplingSpawner
 					this.trees.add(tree);
 				} catch (InvalidConfigException e) {
 					this.trees.add(null);
-					if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
-					{
-						OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Could not find Object " + treeName + " for Sapling() resource in biome " + this.biomeName);
-					}
+					OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Could not find Object {} for Sapling() resource in biome {}", treeName, this.biomeName);
 				}
 			}
-			
+
 			ArrayList<CustomObject> newTrees = new ArrayList<>();
 			ArrayList<String> newTreeNames = new ArrayList<>();
 			ArrayList<Double> newTreeChances = new ArrayList<>();
-			
+
 			for(int i = 0; i < this.trees.size(); i++)
 			{
 				if(this.trees.get(i) != null)
@@ -210,13 +204,13 @@ public class SaplingResource extends ISaplingSpawner
 					newTreeChances.add(this.treeChances.get(i));
 				}
 			}
-			
+
 			this.trees = newTrees;
 			this.treeNames = newTreeNames;
 			this.treeChances = newTreeChances;
 		}
 	}
-	
+
 	@Override
 	public String toString()
 	{
@@ -224,11 +218,11 @@ public class SaplingResource extends ISaplingSpawner
 		if (this.saplingType == SaplingType.Custom)
 		{
 			sb.append(",").append(this.saplingMaterial.getName()).append(",").append(this.wideTrunk);
-		}		
+		}
 		for (int i = 0; i < this.treeNames.size(); i++)
 		{
 			sb.append(",").append(this.treeNames.get(i)).append(",").append(this.treeChances.get(i));
-		}		
+		}
 		return sb.append(')').toString();
 	}
 }

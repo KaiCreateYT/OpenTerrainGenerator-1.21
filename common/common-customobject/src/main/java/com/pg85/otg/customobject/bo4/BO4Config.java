@@ -288,7 +288,7 @@ public class BO4Config extends CustomObjectConfigFile
 				}
 				catch (InvalidConfigException e)
 				{
-					if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
+					if(OTGLog.isEnabled(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS))
 					{
 						OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Error fetching smoothing heightmap for BO4 " + start.getName() + ": " + e.getMessage());
 					}
@@ -298,7 +298,7 @@ public class BO4Config extends CustomObjectConfigFile
 					try {
 						bo4Config.readFromBO4DataFile(true,  materialReader);
 					} catch (InvalidConfigException e) {
-						if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
+						if(OTGLog.isEnabled(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS))
 						{
 							OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Error fetching smoothing heightmap for BO4Data " + start.getName() + ": " + e.getMessage());
 						}
@@ -413,7 +413,7 @@ public class BO4Config extends CustomObjectConfigFile
 			}
 			catch (InvalidConfigException e)
 			{
-				if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
+				if(OTGLog.isEnabled(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS))
 				{
 					OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, " Error fetching blocks for BO4 " + this.getName() + ": " + e.getMessage());
 				}
@@ -423,7 +423,7 @@ public class BO4Config extends CustomObjectConfigFile
 				try {
 					bo4Config.readFromBO4DataFile(true,  materialReader);
 				} catch (InvalidConfigException e) {
-					if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
+					if(OTGLog.isEnabled(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS))
 					{
 						OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, " Error fetching blocks for BO4Data " + this.getName() + ": " + e.getMessage());
 					}
@@ -594,7 +594,7 @@ public class BO4Config extends CustomObjectConfigFile
 			}
 			if(!this.inheritedBO3Loaded)
 			{
-				if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
+				if(OTGLog.isEnabled(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS))
 				{
 					OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "could not load BO4 parent for InheritBO3: " + this.inheritBO3 + " in BO4 " + this.getName());
 				}
@@ -649,7 +649,7 @@ public class BO4Config extends CustomObjectConfigFile
 		int zSize = Math.abs(minZ - maxZ);
 		if(xSize > 15 || zSize > 15)
 		{
-			if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
+			if(OTGLog.isEnabled(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS))
 			{
 				OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "BO4 " + this.getName() + " was too large (" + xSize + "x" + zSize + "), BO4's can be max 16x16 blocks.");
 			}
@@ -851,7 +851,7 @@ public class BO4Config extends CustomObjectConfigFile
 		}
 		this.entityDataBO4 = tempEntitiesList.toArray(new BO4EntityFunction[0]);
 
-		if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
+		if(OTGLog.isEnabled(LogLevel.WARN, LogCategory.CUSTOM_OBJECTS))
 		{
 			if(illegalBlock)
 			{
@@ -1604,7 +1604,7 @@ public class BO4Config extends CustomObjectConfigFile
 					try {
 						blocksArr[i] = materialReader.readMaterial(materialName);
 					} catch (InvalidConfigException e) {
-						if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
+						if(OTGLog.isEnabled(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS))
 						{
 							OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Could not read material \"" + materialName + "\" for BO4 \"" + this.getName() + "\"");
 							OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e);

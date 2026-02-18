@@ -31,14 +31,14 @@ public class BO4BranchFunction extends BranchFunction<BO4Config>
 	ArrayList<BO4BranchNode> branchesBO4;
 	String branchGroup = "";
 	boolean isRequiredBranch = false;
-	
+
 	public BO4BranchFunction() { }
-	
+
 	BO4BranchFunction(BO4Config holder)
 	{
 		this.holder = holder;
 	}
-	
+
 	public BO4BranchFunction rotate(Rotation rotation, String presetFolderName, Path otgRootFolder,  CustomObjectManager customObjectManager, IMaterialReader materialReader, CustomObjectResourcesManager manager, IModLoadedChecker modLoadedChecker)
 	{
 		BO4BranchFunction rotatedBranch = new BO4BranchFunction(this.getHolder());
@@ -110,14 +110,14 @@ public class BO4BranchFunction extends BranchFunction<BO4Config>
 			double branchChance = readDouble(args.get(i + 2), 0, Double.MAX_VALUE);
 			if(this.isRequiredBranch && args.size() > 9)
 			{
-				if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
+				if(OTGLog.isEnabled(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS))
 				{
 					StringBuilder branchString = new StringBuilder();
 					for(String arg : args)
 					{
 						branchString.append(", ").append(arg);
 					}
-					OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "isRequired:true branches cannot have multiple BO4's with a rarity, only one BO4 per isRequired:true branch is allowed and the branch automatically has a 100% chance to spawn. Using only the first BO3 for branch: Branch(" + branchString.substring(0, branchString.length()  - 1) + ")");
+					OTGLog.error(LogCategory.CUSTOM_OBJECTS, "isRequired:true branches cannot have multiple BO4's with a rarity, only one BO4 per isRequired:true branch is allowed and the branch automatically has a 100% chance to spawn. Using only the first BO3 for branch: Branch({})", branchString.substring(0, branchString.length()  - 1));
 				}
 				this.branchesBO4.add(new BO4BranchNode(readInt(args.get(i + 3), -32, 32), this.isRequiredBranch, false, Rotation.getRotation(args.get(i + 1)), 100.0, null, args.get(i), null));
 				break;
@@ -158,7 +158,7 @@ public class BO4BranchFunction extends BranchFunction<BO4Config>
 		}
 		return cumulativeChance;
 	}
-	
+
 	@Override
 	public String makeString()
 	{
@@ -200,8 +200,8 @@ public class BO4BranchFunction extends BranchFunction<BO4Config>
             }
         }
 		return null;
-	}	
-	
+	}
+
 	@Override
 	public Class<BO4Config> getHolderType()
 	{
@@ -212,10 +212,10 @@ public class BO4BranchFunction extends BranchFunction<BO4Config>
 	{
 		StreamHelper.writeStringToStream(stream, makeString());
 	}
-	
+
 	public static BO4BranchFunction fromStream(BO4Config holder, ByteBuffer buffer,  IMaterialReader materialReader) throws IOException, InvalidConfigException
 	{
-		BO4BranchFunction branchFunction = new BO4BranchFunction(holder);		
+		BO4BranchFunction branchFunction = new BO4BranchFunction(holder);
 		String configFunctionString = StreamHelper.readStringFromBuffer(buffer);
 		int bracketIndex = configFunctionString.indexOf('(');
 		String parameters = configFunctionString.substring(bracketIndex + 1, configFunctionString.length() - 1);

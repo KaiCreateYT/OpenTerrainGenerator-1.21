@@ -1,15 +1,11 @@
 package com.pg85.otg.shared.util;
 
-import com.pg85.otg.OTG;
 import com.pg85.otg.util.OTGLog;
-import com.pg85.otg.util.gen.LocalWorldGenRegion;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.nbt.LocalNBTHelper;
 import com.pg85.otg.util.nbt.NamedBinaryTag;
 import net.minecraft.nbt.*;
 
-import java.text.MessageFormat;
 import java.util.Set;
 
 /**
@@ -64,16 +60,8 @@ public abstract class SharedNBTHelper extends LocalNBTHelper {
                     listTag.addTag(getNBTFromNMSTagCompound(null, (CompoundTag) nmsChildTag));
                     break;
                 default:
-                    if (OTGLog.getLogger().getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS)) {
-                        OTGLog.log(
-                                LogLevel.ERROR,
-                                LogCategory.CUSTOM_OBJECTS,
-                                MessageFormat.format(
-                                        "Cannot convert list subtype {0} from its NMS value",
-                                        listType
-                                )
-                        );
-                    }
+                    OTGLog.error(LogCategory.CUSTOM_OBJECTS,
+                        "Cannot convert list subtype {} from its NMS value", listType);
                     break;
             }
         }
@@ -101,11 +89,8 @@ public abstract class SharedNBTHelper extends LocalNBTHelper {
 
             if (nmsChildTag == null)
             {
-                if(OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
-                {
-                    OTG.getEngine().getLogger().log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS,
-                            "Failed to read NBT property " + key + " from tag " + nmsCompoundTag.getId());
-                }
+                OTGLog.error(LogCategory.CUSTOM_OBJECTS,
+                    "Failed to read NBT property {} from tag {}", key, nmsCompoundTag.getId());
                 continue;
             }
 

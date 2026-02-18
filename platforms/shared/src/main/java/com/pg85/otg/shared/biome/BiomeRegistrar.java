@@ -1,6 +1,5 @@
 package com.pg85.otg.shared.biome;
 
-import com.pg85.otg.OTG;
 import com.pg85.otg.biome.BiomePlan;
 import com.pg85.otg.config.biome.BiomeConfig;
 import com.pg85.otg.config.settings.biome.BiomeSettings;
@@ -8,9 +7,9 @@ import com.pg85.otg.config.settings.biome.BiomeStructureTagConfig;
 import com.pg85.otg.config.settings.preset.PresetSettings;
 import com.pg85.otg.interfaces.IBiome;
 import com.pg85.otg.interfaces.IBiomeResourceLocation;
+import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.biome.OTGBiomeResourceLocation;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistrationInfo;
@@ -69,25 +68,22 @@ public final class BiomeRegistrar {
             if (biomeSettings.getIdentitySettings().isTemplateForBiome()) {
                 biome = biomeRegistry.get(resourceLocation);
                 if (biome == null) {
-                    if (OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.BIOME_REGISTRY)) {
-                        OTG.log(LogLevel.ERROR, LogCategory.BIOME_REGISTRY, "Could not find biome " + resourceLocation + " for biomeconfig " + biomeSettings.getIdentitySettings().getBiomeName());
-                    }
+                    OTGLog.error(LogCategory.BIOME_REGISTRY,
+                        "Could not find biome {} for biomeconfig {}", resourceLocation, biomeSettings.getIdentitySettings().getBiomeName());
                     continue;
                 }
                 Optional<ResourceKey<Biome>> key = biomeRegistry.getResourceKey(biome);
                 resourceKey = key.orElse(null);
                 if (resourceKey == null) {
-                    if (OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.BIOME_REGISTRY)) {
-                        OTG.getEngine().getLogger().log(LogLevel.ERROR, LogCategory.BIOME_REGISTRY, "Could not find resource key for biome " + resourceLocation + " for biomeconfig " + biomeSettings.getIdentitySettings().getBiomeName());
-                    }
+                    OTGLog.error(LogCategory.BIOME_REGISTRY,
+                        "Could not find resource key for biome {} for biomeconfig {}", resourceLocation, biomeSettings.getIdentitySettings().getBiomeName());
                     continue;
                 }
                 ref = biomeRegistry.getHolder(resourceKey).orElseThrow();
             } else {
                 if (!(iBiomeResourceLocation instanceof OTGBiomeResourceLocation)) {
-                    if (OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.BIOME_REGISTRY)) {
-                        OTG.getEngine().getLogger().log(LogLevel.ERROR, LogCategory.BIOME_REGISTRY, "Could not process template biomeconfig " + biomeSettings.getIdentitySettings().getBiomeName() + ", did you set TemplateForBiome:true in the BiomeConfig?");
-                    }
+                    OTGLog.error(LogCategory.BIOME_REGISTRY,
+                        "Could not process template biomeconfig {}, did you set TemplateForBiome:true in the BiomeConfig?", biomeSettings.getIdentitySettings().getBiomeName());
                     continue;
                 }
                 resourceKey = ResourceKey.create(Registries.BIOME, resourceLocation);
@@ -104,9 +100,8 @@ public final class BiomeRegistrar {
             IBiome otgBiome = platformBiomeCreator.create(biomeSettings, biome, ref);
             presetIdMapping[otgBiomeId] = otgBiome;
 
-            if (OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.BIOME_REGISTRY)) {
-                OTG.getEngine().getLogger().log(LogLevel.INFO, LogCategory.BIOME_REGISTRY, "Registered biome " + resourceLocation + " | " + biomeSettings.getIdentitySettings().getBiomeName() + " with OTG id " + otgBiomeId);
-            }
+            OTGLog.info(LogCategory.BIOME_REGISTRY,
+                "Registered biome {} | {} with OTG id {}", resourceLocation, biomeSettings.getIdentitySettings().getBiomeName(), otgBiomeId);
         }
 
         // If no ocean biome was defined, shift array to fill ID 0

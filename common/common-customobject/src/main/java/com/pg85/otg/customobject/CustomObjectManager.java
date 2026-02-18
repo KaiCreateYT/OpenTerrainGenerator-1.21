@@ -83,10 +83,7 @@ public class CustomObjectManager implements ICustomObjectManager
                         globalCustomObjects.indexPresetObjectsFolder(presetFolderName, otgRootFolder);
                     }
                 }
-                if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
-                {
-                    OTGLog.log(LogLevel.INFO, LogCategory.CUSTOM_OBJECTS, "All CustomObject files indexed.");
-                }
+                OTGLog.info(LogCategory.CUSTOM_OBJECTS, "All CustomObject files indexed.");
             }).start();
 		}
 	}

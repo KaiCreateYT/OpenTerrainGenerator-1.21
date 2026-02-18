@@ -5,13 +5,11 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
 
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 
 public class NBTHelper
 {
@@ -31,10 +29,7 @@ public class NBTHelper
 			metadata = NamedBinaryTag.readFrom(stream, true);
 		} catch (FileNotFoundException e) {
 			// File not found
-			if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
-			{
-				OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, MessageFormat.format("NBT file {0} not found", path));
-			}
+			OTGLog.error(LogCategory.CUSTOM_OBJECTS, "NBT file {} not found", path);
 			return null;
 		} catch (IOException e)
 		{
@@ -51,20 +46,14 @@ public class NBTHelper
 			}			 
 			catch (java.lang.ArrayIndexOutOfBoundsException corruptFile)
 			{
-				if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
-				{
-					OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Failed to read NBT meta file: " + e.getMessage());
-					OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, corruptFile);
-				}
+				OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Failed to read NBT meta file: {}", e.getMessage());
+				OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Exception", corruptFile);
 				return null;
 			}
 			catch (IOException corruptFile)
 			{
-				if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
-				{
-					OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Failed to read NBT meta file: " + e.getMessage());
-					OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, corruptFile);
-				}
+				OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Failed to read NBT meta file: {}", e.getMessage());
+				OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Exception", corruptFile);
 				return null;
 			} finally
 			{
@@ -99,10 +88,7 @@ public class NBTHelper
 			}
 		}
 		// Unknown/bad structure
-		if(OTGLog.getLogCategoryEnabled(LogCategory.CUSTOM_OBJECTS))
-		{
-			OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Structure of NBT file is incorrect: " + path);
-		}
+		OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Structure of NBT file is incorrect: {}", path);
 		return null;
 	}	
 	

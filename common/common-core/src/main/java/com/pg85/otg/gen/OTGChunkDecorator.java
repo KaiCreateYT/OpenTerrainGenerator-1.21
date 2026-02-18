@@ -28,7 +28,6 @@ import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.logging.LogLevel;
 
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -200,19 +199,12 @@ public class OTGChunkDecorator implements IChunkDecorator
 	{
 		if (biomeConfig == null)
 		{
-			if(OTGLog.getLogCategoryEnabled(LogCategory.DECORATION))
-			{
-				OTGLog.log(
-					LogLevel.ERROR,
-					LogCategory.DECORATION,
-					MessageFormat.format(
-						"Unknown biome at {0},{1}  (chunk {2}). Could not decorate chunk.",
-						chunkCoord.getChunkX(),
-						chunkCoord.getChunkZ(),
-						chunkCoord
-					)
-				);
-			}
+			OTGLog.error(LogCategory.DECORATION,
+				"Unknown biome at {},{} (chunk {}). Could not decorate chunk.",
+				chunkCoord.getChunkX(),
+				chunkCoord.getChunkZ(),
+				chunkCoord
+			);
 			return;
 		}
 
@@ -253,9 +245,9 @@ public class OTGChunkDecorator implements IChunkDecorator
 				long elapsed = System.currentTimeMillis() - startTime;
 				totalCustomObjectTimeMs.addAndGet(elapsed);
 				trackResourceType(resourceType, elapsed);
-				if(OTGLog.getLogCategoryEnabled(LogCategory.PERFORMANCE) && elapsed > 50)
+				if (OTGLog.isEnabled(LogLevel.WARN, LogCategory.PERFORMANCE) && elapsed > 50)
 				{
-					OTGLog.log(LogLevel.WARN, LogCategory.PERFORMANCE, "Warning: Processing resource " + res.toString() + " in biome " + biomeConfig.getIdentitySettings().getBiomeName() + " took " + elapsed + " Ms.");
+					OTGLog.warn(LogCategory.PERFORMANCE, "Processing resource {} in biome {} took {}ms", res, biomeConfig.getIdentitySettings().getBiomeName(), elapsed);
 				}
 			}
 			else if (res instanceof ICustomStructureResource)
@@ -264,9 +256,9 @@ public class OTGChunkDecorator implements IChunkDecorator
 				long elapsed = System.currentTimeMillis() - startTime;
 				totalCustomStructureTimeMs.addAndGet(elapsed);
 				trackResourceType(resourceType, elapsed);
-				if(OTGLog.getLogCategoryEnabled(LogCategory.PERFORMANCE) && elapsed > 50)
+				if (OTGLog.isEnabled(LogLevel.WARN, LogCategory.PERFORMANCE) && elapsed > 50)
 				{
-					OTGLog.log(LogLevel.WARN, LogCategory.PERFORMANCE, "Warning: Processing resource " + res.toString() + " in biome " + biomeConfig.getIdentitySettings().getBiomeName() + " took " + elapsed + " Ms.");
+					OTGLog.warn(LogCategory.PERFORMANCE, "Processing resource {} in biome {} took {}ms", res, biomeConfig.getIdentitySettings().getBiomeName(), elapsed);
 				}
 			}
 			else if (res instanceof IBasicResource)
@@ -275,19 +267,19 @@ public class OTGChunkDecorator implements IChunkDecorator
 				long elapsed = System.currentTimeMillis() - startTime;
 				totalBasicResourceTimeMs.addAndGet(elapsed);
 				trackResourceType(resourceType, elapsed);
-				if(OTGLog.getLogCategoryEnabled(LogCategory.PERFORMANCE) && elapsed > 50)
+				if (OTGLog.isEnabled(LogLevel.WARN, LogCategory.PERFORMANCE) && elapsed > 50)
 				{
-					OTGLog.log(LogLevel.WARN, LogCategory.PERFORMANCE, "Warning: Processing resource " + res.toString() + " in biome " + biomeConfig.getIdentitySettings().getBiomeName() + " took " + elapsed + " Ms.");
+					OTGLog.warn(LogCategory.PERFORMANCE, "Processing resource {} in biome {} took {}ms", res, biomeConfig.getIdentitySettings().getBiomeName(), elapsed);
 				}
 			}
 			else if(res instanceof ErroredFunction)
 			{
-				if(OTGLog.getLogCategoryEnabled(LogCategory.DECORATION))
+				if (OTGLog.isEnabled(LogLevel.ERROR, LogCategory.DECORATION))
 				{
 					if(!((ErroredFunction<BiomeSettings>)res).isLogged)
 					{
 						((ErroredFunction<BiomeSettings>)res).isLogged = true;
-						OTGLog.log(LogLevel.ERROR, LogCategory.DECORATION, "Errored setting ignored for biome " + biomeConfig.getIdentitySettings().getBiomeName() + " : " + toString());
+						OTGLog.error(LogCategory.DECORATION, "Errored setting ignored for biome {} : {}", biomeConfig.getIdentitySettings().getBiomeName(), toString());
 					}
 				}
 			}
@@ -295,9 +287,9 @@ public class OTGChunkDecorator implements IChunkDecorator
 		long resourcesTime = System.currentTimeMillis() - resourcesStart;
 		totalResourceTimeMs.addAndGet(resourcesTime);
 
-		if(OTGLog.getLogCategoryEnabled(LogCategory.PERFORMANCE) && resourcesTime > 50)
+		if (OTGLog.isEnabled(LogLevel.WARN, LogCategory.PERFORMANCE) && resourcesTime > 50)
 		{
-			OTGLog.log(LogLevel.WARN, LogCategory.PERFORMANCE, "Warning: Processing resources in biome " + biomeConfig.getIdentitySettings().getBiomeName() + " took " + resourcesTime + " Ms.");
+			OTGLog.warn(LogCategory.PERFORMANCE, "Processing resources in biome {} took {}ms", biomeConfig.getIdentitySettings().getBiomeName(), resourcesTime);
 		}
 	}
 
