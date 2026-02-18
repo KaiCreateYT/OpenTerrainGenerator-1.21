@@ -415,6 +415,9 @@ public abstract class SharedWorldGenRegion extends LocalWorldGenRegion {
     // to use 3x3, make them use the decoration cache and remove this method.
     @Override
     public void setBlockDirect(int x, int y, int z, LocalMaterialData material) {
+        if (material == null || material.isEmpty()) {
+            return;
+        }
         BiomeSettings biomeConfig = this.getCachedBiomeProvider().getBiomeConfig(x, z, true);
         if (biomeConfig.getSurfaceSettings().getReplacedBlocks() != null) {
             material = material.parseWithBiomeAndHeight(
@@ -423,7 +426,11 @@ public abstract class SharedWorldGenRegion extends LocalWorldGenRegion {
                 y
             );
         }
-        this.worldGenLevel.setBlock(new BlockPos(x, y, z), toBlockState(material), 18);
+        BlockState state = toBlockState(material);
+        if (state == null) {
+            return;
+        }
+        this.worldGenLevel.setBlock(new BlockPos(x, y, z), state, 18);
     }
 
     @Override
@@ -453,6 +460,9 @@ public abstract class SharedWorldGenRegion extends LocalWorldGenRegion {
         if (isOutsideWorldHeight(y)) {
             return;
         }
+        if (material == null || material.isEmpty()) {
+            return;
+        }
         if (replaceBlocksMatrix != null) {
             material = material.parseWithBiomeAndHeight(
                 this.presetConfig.isBiomeConfigsHaveReplacement(),
@@ -462,6 +472,9 @@ public abstract class SharedWorldGenRegion extends LocalWorldGenRegion {
         }
         BlockPos pos = new BlockPos(x, y, z);
         BlockState placedState = toBlockState(material);
+        if (placedState == null) {
+            return;
+        }
         // Notify world: (2 | 16) == update client, don't update observers
         this.worldGenLevel.setBlock(pos, placedState, 18);
 
