@@ -2,142 +2,124 @@ package com.pg85.otg.util;
 
 import com.pg85.otg.interfaces.ILogger;
 import com.pg85.otg.util.logging.LogCategory;
+import com.pg85.otg.util.logging.LogFormatter;
 import com.pg85.otg.util.logging.LogLevel;
 
+import java.util.EnumSet;
+
 public final class OTGLog {
-    private static ILogger logger = new BasicLogger();
-    public static void setLogger(ILogger logger) {
-        OTGLog.logger = logger;
-    }
-    public static ILogger getLogger() {
-        return OTGLog.logger;
-    }
-    
-    public static void log(LogLevel level, LogCategory category, String message) {
-        logger.log(level, category, message);
-    }
-    
-    public static void printStackTrace(LogLevel marker, LogCategory category, Exception e) {
-        logger.printStackTrace(marker, category, e);
-    }
-    
-    public static boolean canLogForPreset(String presetFolderName) {
-        return logger.canLogForPreset(presetFolderName);
-    }
+	private static ILogger logger = new FallbackLogger();
 
-    public static void info(LogCategory category, String message, Object... objects) {
-        log(LogLevel.INFO, category, String.format(message, objects));
-    }
+	public static void setLogger(ILogger logger) {
+		OTGLog.logger = logger;
+	}
 
-    public static void warn(LogCategory category, String message, Object... objects) {
-        log(LogLevel.WARN, category, String.format(message, objects));
-    }
+	public static ILogger getLogger() {
+		return OTGLog.logger;
+	}
 
-    public static void error(LogCategory category, String message, Object... objects) {
-        log(LogLevel.ERROR, category, String.format(message, objects));
-    }
+	// --- Core ---
 
-    public static void fatal(LogCategory category, String message, Object... objects) {
-        log(LogLevel.FATAL, category, String.format(message, objects));
-    }
+	public static void log(LogLevel level, LogCategory category, String message) {
+		logger.log(level, category, message);
+	}
 
-    public static void info(String message, Object... objects) {
-        info(LogCategory.MAIN, message, objects);
-    }
+	public static boolean isEnabled(LogLevel level, LogCategory category) {
+		return logger.isEnabled(level, category);
+	}
 
-    public static void warn(String message, Object... objects) {
-        warn(LogCategory.MAIN, message, objects);
-    }
+	public static boolean canLogForPreset(String presetFolderName) {
+		return logger.canLogForPreset(presetFolderName);
+	}
 
-    public static void error(String message, Object... objects) {
-        error(LogCategory.MAIN, message, objects);
-    }
+	// --- Convenience: with category ---
 
-    public static void fatal(String message, Object... objects) {
-        fatal(LogCategory.MAIN, message, objects);
-    }
+	public static void info(LogCategory category, String message, Object... args) {
+		logger.info(category, message, args);
+	}
 
-    public static boolean getLogCategoryEnabled(LogCategory logCategory) {
-        return logger.getLogCategoryEnabled(logCategory);
-    }
+	public static void warn(LogCategory category, String message, Object... args) {
+		logger.warn(category, message, args);
+	}
 
-    // Not for use by platform code; it's a fallback for when code is executed and the engine isn't running
-    // like when generating YAML schema from settings
-    private static class BasicLogger implements ILogger
-    {
-        private LogLevel level = LogLevel.INFO;
-        private boolean logCustomObjects;
-        private boolean logStructurePlotting;
-        private boolean logConfigs = true;
-        private boolean logPerformance;
-        private boolean logBiomeRegistry;
-        private boolean logDecoration;
-        private boolean logMobs;
+	public static void error(LogCategory category, String message, Object... args) {
+		logger.error(category, message, args);
+	}
 
-        @Override
-        public void init(LogLevel level, boolean logCustomObjects, boolean logStructurePlotting, boolean logConfigs, boolean logPerformance, boolean logBiomeRegistry, boolean logDecoration, boolean logMobs, String logPresets) {
-            this.level = level;
-            this.logCustomObjects = logCustomObjects;
-            this.logStructurePlotting = logStructurePlotting;
-            this.logConfigs = logConfigs;
-            this.logPerformance = logPerformance;
-            this.logBiomeRegistry = logBiomeRegistry;
-            this.logDecoration = logDecoration;
-            this.logMobs = logMobs;
-        }
+	public static void fatal(LogCategory category, String message, Object... args) {
+		logger.fatal(category, message, args);
+	}
 
-        @Override
-        public boolean getLogCategoryEnabled(LogCategory category) {
-            switch (category) {
-                case MAIN -> {
-                    return true;
-                }
-                case CUSTOM_OBJECTS -> {
-                    return logCustomObjects;
-                }
-                case STRUCTURE_PLOTTING -> {
-                    return logStructurePlotting;
-                }
-                case CONFIGS -> {
-                    return logConfigs;
-                }
-                case BIOME_REGISTRY -> {
-                    return logBiomeRegistry;
-                }
-                case DECORATION -> {
-                    return logDecoration;
-                }
-                case PERFORMANCE -> {
-                    return logPerformance;
-                }
-                case MOBS -> {
-                    return logMobs;
-                }
-            }
-            return false;
-        }
+	// --- Convenience: implicit MAIN ---
 
-        @Override
-        public void log(LogLevel level, LogCategory category, String message) {
-            if (level.ordinal() >= this.level.ordinal()) {
-                if (level.ordinal() >= LogLevel.WARN.ordinal()) {
-                    System.err.println(level.name() + " " + category.name() + " " + message);
-                } else {
-                    System.out.println(level.name() + " " + category.name() + " " + message);
-                }
-            }
-        }
+	public static void info(String message, Object... args) {
+		logger.info(message, args);
+	}
 
-        @Override
-        public void printStackTrace(LogLevel marker, LogCategory category, Exception e) {
-            if (marker.ordinal() >= this.level.ordinal()) {
-                e.printStackTrace(System.err);
-            }
-        }
+	public static void warn(String message, Object... args) {
+		logger.warn(message, args);
+	}
 
-        @Override
-        public boolean canLogForPreset(String presetFolderName) {
-            return true;
-        }
-    }
+	public static void error(String message, Object... args) {
+		logger.error(message, args);
+	}
+
+	public static void fatal(String message, Object... args) {
+		logger.fatal(message, args);
+	}
+
+	// --- Exception logging ---
+
+	public static void error(LogCategory category, String message, Exception e) {
+		logger.error(category, message, e);
+	}
+
+	public static void error(String message, Exception e) {
+		logger.error(message, e);
+	}
+
+	// --- Deprecated: remove after full migration ---
+
+	/** @deprecated Use {@link #isEnabled(LogLevel, LogCategory)} */
+	@Deprecated
+	public static boolean getLogCategoryEnabled(LogCategory category) {
+		return logger.isEnabled(LogLevel.INFO, category);
+	}
+
+	/** @deprecated Use {@link #error(LogCategory, String, Exception)} */
+	@Deprecated
+	public static void printStackTrace(LogLevel level, LogCategory category, Exception e) {
+		logger.error(category, "Exception", e);
+	}
+
+	// --- Fallback logger (pre-engine startup) ---
+
+	private static class FallbackLogger implements ILogger {
+		private LogLevel minLevel = LogLevel.INFO;
+
+		@Override
+		public void init(LogLevel level, EnumSet<LogCategory> enabledCategories, String logPresets) {
+			this.minLevel = level;
+		}
+
+		@Override
+		public boolean isEnabled(LogLevel level, LogCategory category) {
+			return level.ordinal() >= minLevel.ordinal();
+		}
+
+		@Override
+		public boolean canLogForPreset(String presetFolderName) {
+			return true;
+		}
+
+		@Override
+		public void log(LogLevel level, LogCategory category, String message) {
+			if (!isEnabled(level, category)) return;
+			if (level.ordinal() >= LogLevel.WARN.ordinal()) {
+				System.err.println("[OTG] " + level.name() + " " + category.getLogTag() + " " + message);
+			} else {
+				System.out.println("[OTG] " + level.name() + " " + category.getLogTag() + " " + message);
+			}
+		}
+	}
 }

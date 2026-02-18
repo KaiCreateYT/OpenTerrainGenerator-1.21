@@ -1,20 +1,18 @@
 package com.pg85.otg;
 
-import com.pg85.otg.interfaces.ILogger;
+import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.logging.LogLevel;
-import lombok.Getter;
 
 /**
- * Main entry-point. Used for logging and to access OTGEngine.
- * OTGEngine is implemented and provided by the platform-specific 
- * layer and holds any objects and methods used during a session. 
+ * Main entry-point. Used to access OTGEngine.
+ * OTGEngine is implemented and provided by the platform-specific
+ * layer and holds any objects and methods used during a session.
+ * For logging, use {@link OTGLog} directly.
  */
 public class OTG
 {
 	private static OTGEngine Engine;
-	@Getter
-	private static ILogger logger;
 
 	private OTG() { }
 
@@ -29,7 +27,6 @@ public class OTG
 
 		Engine = engine;
 		engine.onStart();
-		logger = Engine.getLogger();
 	}
 
 	public static OTGEngine getEngine()
@@ -47,23 +44,15 @@ public class OTG
 		Engine = null;
 	}
 
-	// Logging
-	public static void log(LogLevel logLevel, LogCategory logCategory, String message)
-	{
-		if (logger != null)
-		{
-			logger.log(logLevel, logCategory, message);
-		}
-		if (Engine == null)
-		{
-			throw new IllegalStateException("Engine is not started, tried to log: " + message);
-		}
-		logger = Engine.getLogger();
+	/** @deprecated Use {@link OTGLog#log(LogLevel, LogCategory, String)} directly */
+	@Deprecated
+	public static void log(LogLevel logLevel, LogCategory logCategory, String message) {
+		OTGLog.log(logLevel, logCategory, message);
 	}
 
-	public static void log(String message)
-	{
-		log(LogLevel.INFO, LogCategory.MAIN, message);
+	/** @deprecated Use {@link OTGLog#info(String, Object...)} directly */
+	@Deprecated
+	public static void log(String message) {
+		OTGLog.info(message);
 	}
-
 }

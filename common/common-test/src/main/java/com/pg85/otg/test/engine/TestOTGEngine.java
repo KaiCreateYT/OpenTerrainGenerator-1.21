@@ -6,9 +6,13 @@ import com.pg85.otg.interfaces.IBiome;
 import com.pg85.otg.interfaces.IModLoadedChecker;
 import com.pg85.otg.presets.LocalPresetLoader;
 
+import com.pg85.otg.util.logging.LogCategory;
+import com.pg85.otg.util.logging.LogLevel;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Map;
 
 /**
@@ -35,13 +39,7 @@ public class TestOTGEngine extends OTGEngine {
     @Override
     public void onStart() {
         // Minimal startup - skip preset unpacking and file creation
-        // Just initialize the logger
-        // Params: level, logCustomObjects, logStructurePlotting, logConfigs, logPerformance,
-        //         logBiomeRegistry, logDecoration, logMobs, logPresets
-        getLogger().init(
-                com.pg85.otg.util.logging.LogLevel.INFO,
-                false, false, true, false, false, false, false, ""
-        );
+        getLogger().init(LogLevel.INFO, EnumSet.of(LogCategory.MAIN, LogCategory.CONFIGS), "");
         // Note: We don't call presetLoader.loadPresetsFromDisk() here
         // because TestPresetLoader.loadPresets() does this separately
     }

@@ -1,61 +1,98 @@
 package com.pg85.otg.interfaces;
 
 import com.pg85.otg.util.logging.LogCategory;
+import com.pg85.otg.util.logging.LogFormatter;
 import com.pg85.otg.util.logging.LogLevel;
 
-/**
- * The logger supports different log levels and categories. The log levels are
- * (in order of increasing severity): INFO, WARN, ERROR, FATAL. The log
- * categories are used to group related log messages together, for example
- * MAIN, CONFIGS, PERFORMANCE, etc.
- * <p>
- * The logger also supports formatting messages with parameters, similar to
- * String.format(). This allows for more flexible and readable log messages.
- * The format string uses %s as parameter placeholders, and will use tostring()
- * on the provided objects to convert them to strings.
- */
-public interface ILogger
-{
-	void init(LogLevel level, boolean logCustomObjects, boolean logStructurePlotting, boolean logConfigs, boolean logPerformance, boolean logBiomeRegistry, boolean logDecoration, boolean logMobs, String logPresets);
-	boolean getLogCategoryEnabled(LogCategory category);
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.EnumSet;
+
+public interface ILogger {
+
+	void init(LogLevel level, EnumSet<LogCategory> enabledCategories, String logPresets);
+
 	void log(LogLevel level, LogCategory category, String message);
-	void printStackTrace(LogLevel marker, LogCategory category, Exception e);
+
+	boolean isEnabled(LogLevel level, LogCategory category);
+
 	boolean canLogForPreset(String presetFolderName);
 
-	default void info(LogCategory category, String message, Object... objects) {
-		log(LogLevel.INFO, category, String.format(message, objects));
+	// --- Convenience: with category ---
+
+	default void info(LogCategory category, String message, Object... args) {
+		if (isEnabled(LogLevel.INFO, category)) {
+			log(LogLevel.INFO, category, LogFormatter.format(message, args));
+		}
 	}
 
-	default void warn(LogCategory category, String message, Object... objects) {
-		log(LogLevel.WARN, category, String.format(message, objects));
+	default void warn(LogCategory category, String message, Object... args) {
+		if (isEnabled(LogLevel.WARN, category)) {
+			log(LogLevel.WARN, category, LogFormatter.format(message, args));
+		}
 	}
 
-	default void error(LogCategory category, String message, Object... objects) {
-		log(LogLevel.ERROR, category, String.format(message, objects));
+	default void error(LogCategory category, String message, Object... args) {
+		if (isEnabled(LogLevel.ERROR, category)) {
+			log(LogLevel.ERROR, category, LogFormatter.format(message, args));
+		}
 	}
 
-	default void fatal(LogCategory category, String message, Object... objects) {
-		log(LogLevel.FATAL, category, String.format(message, objects));
+	default void fatal(LogCategory category, String message, Object... args) {
+		if (isEnabled(LogLevel.FATAL, category)) {
+			log(LogLevel.FATAL, category, LogFormatter.format(message, args));
+		}
 	}
 
-	default void info(String message, Object... objects) {
-		info(LogCategory.MAIN, message, objects);
+	// --- Convenience: implicit MAIN category ---
+
+	default void info(String message, Object... args) {
+		info(LogCategory.MAIN, message, args);
 	}
 
-	default void warn(String message, Object... objects) {
-		warn(LogCategory.MAIN, message, objects);
+	default void warn(String message, Object... args) {
+		warn(LogCategory.MAIN, message, args);
 	}
 
-	default void error(String message, Object... objects) {
-		error(LogCategory.MAIN, message, objects);
+	default void error(String message, Object... args) {
+		error(LogCategory.MAIN, message, args);
 	}
 
-	default void fatal(String message, Object... objects) {
-		fatal(LogCategory.MAIN, message, objects);
+	default void fatal(String message, Object... args) {
+		fatal(LogCategory.MAIN, message, args);
 	}
 
+	// --- Exception logging ---
+
+	default void error(LogCategory category, String message, Exception e) {
+		if (isEnabled(LogLevel.ERROR, category)) {
+			StringWriter sw = new StringWriter();
+			e.printStackTrace(new PrintWriter(sw));
+			log(LogLevel.ERROR, category, message + "\n" + sw);
+		}
+	}
+
+	default void error(String message, Exception e) {
+		error(LogCategory.MAIN, message, e);
+	}
+
+	// --- Deprecated: remove after Phase 2 migration ---
+
+	/** @deprecated Use {@link #isEnabled(LogLevel, LogCategory)} */
+	@Deprecated
+	default boolean getLogCategoryEnabled(LogCategory category) {
+		return isEnabled(LogLevel.INFO, category);
+	}
+
+	/** @deprecated Use {@link #error(LogCategory, String, Exception)} */
+	@Deprecated
+	default void printStackTrace(LogLevel level, LogCategory category, Exception e) {
+		error(category, "Exception", e);
+	}
+
+	/** @deprecated Use {@link #error(String, Exception)} */
+	@Deprecated
 	default void printStackTrace(Exception e) {
-		printStackTrace(LogLevel.ERROR, LogCategory.MAIN, e);
+		error(LogCategory.MAIN, "Exception", e);
 	}
-
 }

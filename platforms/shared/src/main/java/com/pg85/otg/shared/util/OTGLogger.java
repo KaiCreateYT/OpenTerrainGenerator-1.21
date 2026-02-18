@@ -1,41 +1,51 @@
 package com.pg85.otg.shared.util;
 
 import com.pg85.otg.constants.Constants;
+import com.pg85.otg.interfaces.ILogger;
 import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.logging.LogLevel;
-import com.pg85.otg.util.logging.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import java.util.EnumSet;
 import java.util.Locale;
 
-public class OTGLogger extends Logger {
-    private final String modId = Constants.MOD_ID_SHORT.toUpperCase(Locale.ROOT);
-    private final org.apache.logging.log4j.Logger logger = LogManager.getLogger(modId);
-    @Override
-    public void log(LogLevel level, LogCategory category, String message)
-    {
-        if (level.ordinal() < this.minimumLevel.ordinal())
-        {
-            return;
-        }
+public class OTGLogger implements ILogger {
+	private final org.apache.logging.log4j.Logger logger =
+			LogManager.getLogger(Constants.MOD_ID_SHORT.toUpperCase(Locale.ROOT));
 
-        switch (level)
-        {
-            case FATAL:
-                this.logger.fatal("{} {}", category.getLogTag(), message);
-                break;
-            case ERROR:
-                this.logger.error("{} {}", category.getLogTag(), message);
-                break;
-            case WARN:
-                this.logger.warn("{} {}", category.getLogTag(), message);
-                break;
-            case INFO:
-                this.logger.info("{} {}", category.getLogTag(), message);
-                break;
-            default:
-                break;
-        }
+	private LogLevel minLevel = LogLevel.INFO;
+	private final EnumSet<LogCategory> enabledCategories = EnumSet.of(LogCategory.MAIN);
+	private String logPresets = "all";
 
-    }
+	@Override
+	public void init(LogLevel level, EnumSet<LogCategory> enabledCategories, String logPresets) {
+		this.minLevel = level;
+		this.enabledCategories.clear();
+		this.enabledCategories.add(LogCategory.MAIN);
+		this.enabledCategories.addAll(enabledCategories);
+		this.logPresets = logPresets;
+	}
+
+	@Override
+	public boolean isEnabled(LogLevel level, LogCategory category) {
+		return level.ordinal() >= minLevel.ordinal() && enabledCategories.contains(category);
+	}
+
+	@Override
+	public boolean canLogForPreset(String presetFolderName) {
+		return "all".equalsIgnoreCase(logPresets) || logPresets.equalsIgnoreCase(presetFolderName);
+	}
+
+	@Override
+	public void log(LogLevel level, LogCategory category, String message) {
+		if (!isEnabled(level, category)) return;
+
+		String taggedMessage = category.getLogTag() + " " + message;
+		switch (level) {
+			case FATAL -> logger.fatal(taggedMessage);
+			case ERROR -> logger.error(taggedMessage);
+			case WARN -> logger.warn(taggedMessage);
+			case INFO -> logger.info(taggedMessage);
+		}
+	}
 }

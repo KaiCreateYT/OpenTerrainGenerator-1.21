@@ -3,6 +3,9 @@ package com.pg85.otg.config;
 import com.pg85.otg.constants.settings.ConfigMode;
 import com.pg85.otg.constants.settings.LogLevels;
 import com.pg85.otg.interfaces.IPluginConfig;
+import com.pg85.otg.util.logging.LogCategory;
+
+import java.util.EnumSet;
 
 /**
  * OTG.ini / PluginConfig classes
@@ -116,5 +119,17 @@ public abstract class PluginConfigBase implements IPluginConfig, ConfigFile {
 	public ConfigMode getSettingsMode()
 	{
 		return this.settingsMode;
+	}
+
+	public EnumSet<LogCategory> getEnabledLogCategories() {
+		EnumSet<LogCategory> categories = EnumSet.of(LogCategory.MAIN);
+		if (logCustomObjects) categories.add(LogCategory.CUSTOM_OBJECTS);
+		if (logStructurePlotting) categories.add(LogCategory.STRUCTURE_PLOTTING);
+		if (logConfigs) categories.add(LogCategory.CONFIGS);
+		if (logBiomeRegistry) categories.add(LogCategory.BIOME_REGISTRY);
+		if (logPerformance) categories.add(LogCategory.PERFORMANCE);
+		if (logDecoration) categories.add(LogCategory.DECORATION);
+		if (logMobs) categories.add(LogCategory.MOBS);
+		return categories;
 	}
 }

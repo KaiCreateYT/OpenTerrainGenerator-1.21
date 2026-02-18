@@ -83,14 +83,8 @@ public abstract class OTGEngine
 				pluginConfigFile.toPath()
 		);
 		this.logger.init(
-			this.pluginConfig.getLogLevel().getLevel(), 
-			this.pluginConfig.logCustomObjects(), 
-			this.pluginConfig.logStructurePlotting(), 
-			this.pluginConfig.logConfigs(),
-			this.pluginConfig.logBiomeRegistry(),
-			this.pluginConfig.logPerformance(),
-			this.pluginConfig.logDecoration(),
-			this.pluginConfig.logMobs(),
+			this.pluginConfig.getLogLevel().getLevel(),
+			this.pluginConfig.getEnabledLogCategories(),
 			this.pluginConfig.logPresets()
 		);
 		FileSettingsWriter.writeToFile(this.pluginConfig.getSettingsAsMap(), pluginConfigFile, this.pluginConfig.getSettingsMode());
