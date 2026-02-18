@@ -740,18 +740,13 @@ public class BO4Config extends CustomObjectConfigFile
 					this.maxZ = res.z;
 				}					
 			} else {
-				if (res instanceof BO4WeightedBranchFunction)
-				{
-					tempBranchesList.add((BO4WeightedBranchFunction) res);
-				}
-				else if (res instanceof BO4BranchFunction)
-				{
-					tempBranchesList.add((BO4BranchFunction) res);
-				}
-				else if (res instanceof BO4EntityFunction)
-				{
-					tempEntitiesList.add((BO4EntityFunction) res);
-				}
+                switch (res) {
+                    case BO4WeightedBranchFunction bo4WeightedBranchFunction -> tempBranchesList.add(bo4WeightedBranchFunction);
+                    case BO4BranchFunction bo4BranchFunction -> tempBranchesList.add(bo4BranchFunction);
+                    case BO4EntityFunction bo4EntityFunction -> tempEntitiesList.add(bo4EntityFunction);
+                    default -> {
+                    }
+                }
 			}
 		}
 
@@ -1084,16 +1079,13 @@ public class BO4Config extends CustomObjectConfigFile
 		if(this.branchFrequencyGroup != null && !this.branchFrequencyGroup.trim().isEmpty())
 		{
 			String[] groupStrings = this.branchFrequencyGroup.split(",");
-			if(groupStrings.length > 0)
-			{
-                for (String string : groupStrings) {
-                    String[] groupString = string.trim().length() > 0 ? string.split(":") : null;
-                    if (groupString != null && groupString.length == 2) {
-                        this.branchFrequencyGroups.put(groupString[0].trim(), Integer.parseInt(groupString[1].trim()));
-                    }
+            for (String string : groupStrings) {
+                String[] groupString = !string.trim().isEmpty() ? string.split(":") : null;
+                if (groupString != null && groupString.length == 2) {
+                    this.branchFrequencyGroups.put(groupString[0].trim(), Integer.parseInt(groupString[1].trim()));
                 }
-			}
-		}
+            }
+        }
 		
 		this.heightOffset = readSettings(BO4Settings.HEIGHT_OFFSET,  materialReader, manager);
 		this.inheritBO3Rotation = readSettings(BO4Settings.INHERITBO3ROTATION,  materialReader, manager);
@@ -1116,16 +1108,13 @@ public class BO4Config extends CustomObjectConfigFile
 		if(this.bo3Group != null && !this.bo3Group.trim().isEmpty())
 		{
 			String[] groupStrings = this.bo3Group.split(",");
-			if(groupStrings.length > 0)
-			{
-                for (String string : groupStrings) {
-                    String[] groupString = string.trim().length() > 0 ? string.split(":") : null;
-                    if (groupString != null && groupString.length == 2) {
-                        this.bo4Groups.put(groupString[0].trim(), Integer.parseInt(groupString[1].trim()));
-                    }
+            for (String string : groupStrings) {
+                String[] groupString = !string.trim().isEmpty() ? string.split(":") : null;
+                if (groupString != null && groupString.length == 2) {
+                    this.bo4Groups.put(groupString[0].trim(), Integer.parseInt(groupString[1].trim()));
                 }
-			}
-		}
+            }
+        }
 		
 		this.canOverride = readSettings(BO4Settings.CANOVERRIDE,  materialReader, manager);
 		this.mustBeBelowOther = readSettings(BO4Settings.MUSTBEBELOWOTHER,  materialReader, manager);
@@ -1136,48 +1125,39 @@ public class BO4Config extends CustomObjectConfigFile
 		if(this.mustBeInside != null && !this.mustBeInside.trim().isEmpty())
 		{
 			String[] mustBeInsideStrings = this.mustBeInside.split(",");
-			if(mustBeInsideStrings.length > 0)
-			{
-                for (String beInsideString : mustBeInsideStrings) {
-                    String mustBeInsideString = beInsideString.trim();
-                    if (!mustBeInsideString.isEmpty()) {
-                        this.mustBeInsideBranches.add(mustBeInsideString);
-                    }
+            for (String beInsideString : mustBeInsideStrings) {
+                String mustBeInsideString = beInsideString.trim();
+                if (!mustBeInsideString.isEmpty()) {
+                    this.mustBeInsideBranches.add(mustBeInsideString);
                 }
-			}
-		}
+            }
+        }
 		
 		this.cannotBeInside =  readSettings(BO4Settings.CANNOTBEINSIDE,  materialReader, manager);
 		this.cannotBeInsideBranches = new ArrayList<>();
 		if(this.cannotBeInside != null && !this.cannotBeInside.trim().isEmpty())
 		{
 			String[] cannotBeInsideStrings = this.cannotBeInside.split(",");
-			if(cannotBeInsideStrings.length > 0)
-			{
-                for (String beInsideString : cannotBeInsideStrings) {
-                    String cannotBeInsideString = beInsideString.trim();
-                    if (!cannotBeInsideString.isEmpty()) {
-                        this.cannotBeInsideBranches.add(cannotBeInsideString);
-                    }
+            for (String beInsideString : cannotBeInsideStrings) {
+                String cannotBeInsideString = beInsideString.trim();
+                if (!cannotBeInsideString.isEmpty()) {
+                    this.cannotBeInsideBranches.add(cannotBeInsideString);
                 }
-			}
-		}
+            }
+        }
 		
 		this.replacesBO3 = readSettings(BO4Settings.REPLACESBO3,  materialReader, manager);
 		this.replacesBO3Branches = new ArrayList<>();
 		if(this.replacesBO3 != null && !this.replacesBO3.trim().isEmpty())
 		{
 			String[] replacesBO3Strings = replacesBO3.split(",");
-			if(replacesBO3Strings.length > 0)
-			{
-                for (String bo3String : replacesBO3Strings) {
-                    String replacesBO3String = bo3String.trim();
-                    if (!replacesBO3String.isEmpty()) {
-                        this.replacesBO3Branches.add(replacesBO3String);
-                    }
+            for (String bo3String : replacesBO3Strings) {
+                String replacesBO3String = bo3String.trim();
+                if (!replacesBO3String.isEmpty()) {
+                    this.replacesBO3Branches.add(replacesBO3String);
                 }
-			}
-		}
+            }
+        }
 
 		//smoothHeightOffset = readSettings(BO3Settings.SMOOTH_HEIGHT_OFFSET).equals("HeightOffset") ? heightOffset : Integer.parseInt(readSettings(BO3Settings.SMOOTH_HEIGHT_OFFSET));
 		this.smoothHeightOffset = readSettings(BO4Settings.SMOOTH_HEIGHT_OFFSET,  materialReader, manager);
@@ -1252,26 +1232,15 @@ public class BO4Config extends CustomObjectConfigFile
 			{
 				if (res.isValid())
 				{
-					if(res instanceof BO4RandomBlockFunction)
-					{
-						blocksList.add((BO4RandomBlockFunction)res);
-					}
-					else if(res instanceof BO4BlockFunction)
-					{
-						blocksList.add((BO4BlockFunction)res);
-					}
-					else if (res instanceof BO4WeightedBranchFunction)
-					{
-						branchesList.add((BO4WeightedBranchFunction) res);
-					}
-					else if (res instanceof BO4BranchFunction)
-					{
-						branchesList.add((BO4BranchFunction) res);
-					}
-					else if (res instanceof BO4EntityFunction)
-					{
-						entitiesList.add((BO4EntityFunction) res);
-					}
+                    switch (res) {
+                        case BO4RandomBlockFunction bo4RandomBlockFunction -> blocksList.add(bo4RandomBlockFunction);
+                        case BO4BlockFunction bo4BlockFunction -> blocksList.add(bo4BlockFunction);
+                        case BO4WeightedBranchFunction bo4WeightedBranchFunction -> branchesList.add(bo4WeightedBranchFunction);
+                        case BO4BranchFunction bo4BranchFunction -> branchesList.add(bo4BranchFunction);
+                        case BO4EntityFunction bo4EntityFunction -> entitiesList.add(bo4EntityFunction);
+                        default -> {
+                        }
+                    }
 				}
 			}
 		}

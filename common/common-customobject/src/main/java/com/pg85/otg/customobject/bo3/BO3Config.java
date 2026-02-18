@@ -35,6 +35,8 @@ import com.pg85.otg.exceptions.InvalidConfigException;
 import com.pg85.otg.interfaces.ICustomObjectManager;
 import com.pg85.otg.interfaces.IMaterialReader;
 import com.pg85.otg.interfaces.IModLoadedChecker;
+import com.pg85.otg.util.OTGLog;
+import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.nbt.NamedBinaryTag;
 import com.pg85.otg.util.materials.LocalMaterialData;
 import com.pg85.otg.util.materials.MaterialSet;
@@ -182,22 +184,15 @@ public class BO3Config extends CustomObjectConfigFile
                     box.expandToFit(block.x, block.y, block.z);
 					tempBlocksList.add(block);
 				} else {
-					if (res instanceof BO3Check)
-					{
-						tempChecksList.add((BO3Check) res);
-					}
-					else if (res instanceof BO3WeightedBranchFunction)
-					{
-						tempBranchesList.add((BO3WeightedBranchFunction) res);
-					}
-					else if (res instanceof BO3BranchFunction)
-					{
-						tempBranchesList.add((BO3BranchFunction) res);
-					}
-					else if (res instanceof BO3EntityFunction)
-					{
-						tempEntitiesList.add((BO3EntityFunction) res);
-					}
+                    switch (res) {
+                        case BO3Check bo3Check -> tempChecksList.add(bo3Check);
+                        case BO3WeightedBranchFunction bo3WeightedBranchFunction -> tempBranchesList.add(bo3WeightedBranchFunction);
+                        case BO3BranchFunction bo3BranchFunction -> tempBranchesList.add(bo3BranchFunction);
+                        case BO3EntityFunction bo3EntityFunction -> tempEntitiesList.add(bo3EntityFunction);
+                        default -> {
+                            OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Invalid resource " + res.getClass().getName() + " in " + this.getName() + ": " + res.getError());
+                        }
+                    }
 				}
 			}
 		}
@@ -446,6 +441,7 @@ public class BO3Config extends CustomObjectConfigFile
 
 		if (this.isOTGPlus)
 		{
+			OTGLog.error(LogCategory.CUSTOM_OBJECTS, "bo3 file with isOTGPlus enabled is not valid, this was probably meant to be bo4 file. " + this.getName());
 			throw new InvalidConfigException("isOTGPlus: true for a .bo3 file, file must be .bo4.");
 		}
 
