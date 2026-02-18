@@ -7,7 +7,7 @@ import com.pg85.otg.customobject.config.CustomObjectResourcesManager;
 import com.pg85.otg.interfaces.ICustomObjectManager;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
+
 
 import java.io.File;
 import java.nio.file.Path;
@@ -71,7 +71,7 @@ public class CustomObjectManager implements ICustomObjectManager
 
 				File[] presetFolder = otgPresetsFolder.toFile().listFiles();
 				if (presetFolder == null) {
-					OTGLog.fatal(LogCategory.MAIN, "Failed to index custom object presets folder.");
+					OTGLog.fatal("Failed to index custom object presets folder.");
 					return;
 				}
 

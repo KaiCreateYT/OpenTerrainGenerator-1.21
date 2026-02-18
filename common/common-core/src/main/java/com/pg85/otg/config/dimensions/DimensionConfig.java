@@ -49,7 +49,7 @@ public class DimensionConfig
 		try {
 			return mapper.writeValueAsString(this);
 		} catch (JsonProcessingException e) {
-			OTGLog.error(LogCategory.CONFIGS, "Failed to serialize dimension config to YAML: %s", e.getMessage());
+			OTGLog.error(LogCategory.CONFIGS, "Failed to serialize dimension config to YAML: {}", e.getMessage());
 		}
 		return null;
 	}

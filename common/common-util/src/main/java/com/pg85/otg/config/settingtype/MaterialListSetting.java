@@ -48,7 +48,7 @@ public class MaterialListSetting extends Setting<ArrayList<LocalMaterialData>>
 				try {
 					material = OTGMaterialReader.get().readMaterial(defaultMaterial);
 				} catch (InvalidConfigException e) {
-					OTGLog.error(LogCategory.CONFIGS, "Failed to read default material: %s", e.getMessage());
+					OTGLog.error(LogCategory.CONFIGS, "Failed to read default material: {}", e.getMessage());
 				}
 				if(material != null)
 				{

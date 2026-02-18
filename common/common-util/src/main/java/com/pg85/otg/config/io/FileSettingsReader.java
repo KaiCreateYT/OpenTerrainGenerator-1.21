@@ -3,7 +3,6 @@ package com.pg85.otg.config.io;
 import com.pg85.otg.config.io.RawSettingValue.ValueType;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -36,7 +35,7 @@ public class FileSettingsReader
 		{
 			readIntoMap(settings, reader);
 		} catch (IOException e) {
-			OTGLog.getLogger().log(LogLevel.ERROR, LogCategory.CONFIGS, String.format("Could not read file, exception: ", (Object[])e.getStackTrace()));
+			OTGLog.error(LogCategory.CONFIGS, "Could not read file", e);
 		}
 		return settings;
 	}
@@ -70,7 +69,7 @@ public class FileSettingsReader
 			}
 			else
 			{
-				OTGLog.getLogger().log(LogLevel.WARN, LogCategory.CONFIGS, "Invalid line: " + thisLine + " in file " + settings.getName() + " on line " + lineNumber);
+				OTGLog.warn(LogCategory.CONFIGS, "Invalid line: {} in file {} on line {}", thisLine, settings.getName(), lineNumber);
 			}
 		}
 	}

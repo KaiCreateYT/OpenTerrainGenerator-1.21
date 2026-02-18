@@ -47,13 +47,13 @@ public class DimensionStorage {
         try {
             String json = Files.readString(storagePath);
             data = mapper.readValue(json, StorageData.class);
-            OTGLog.info("Loaded %d OTG dimensions from storage", data.getDimensions().size());
+            OTGLog.info("Loaded {} OTG dimensions from storage", data.getDimensions().size());
         } catch (IOException e) {
-            OTGLog.error("Failed to load dimension storage, starting fresh: %s", e.getMessage());
+            OTGLog.error("Failed to load dimension storage, starting fresh: {}", e.getMessage());
             // Backup corrupt file
             try {
                 Files.move(storagePath, storagePath.resolveSibling(STORAGE_FILE + ".backup"));
-            } catch (IOException ignored) { OTGLog.error("Failed to backup corrupt storage file: %s", ignored.getMessage()); }
+            } catch (IOException ignored) { OTGLog.error("Failed to backup corrupt storage file: {}", ignored.getMessage()); }
             data = new StorageData();
         }
     }
@@ -64,7 +64,7 @@ public class DimensionStorage {
             String json = mapper.writeValueAsString(data);
             Files.writeString(storagePath, json);
         } catch (IOException e) {
-            OTGLog.error("Failed to save dimension storage: %s", e.getMessage());
+            OTGLog.error("Failed to save dimension storage: {}", e.getMessage());
         }
     }
 

@@ -14,7 +14,6 @@ import com.pg85.otg.shared.util.OTGLogger;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.OTGMaterialReader;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -31,7 +30,7 @@ public class OTGPlugin implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		OTGLog.setLogger(new OTGLogger());
-		OTGLog.getLogger().log(LogLevel.INFO, LogCategory.MAIN, "OTG Engine starting");
+		OTGLog.info("OTG Engine starting");
 		OTGMaterialReader.set(new SharedMaterialReader());
 		OTG.startEngine(new FabricEngine());
 
@@ -40,14 +39,14 @@ public class OTGPlugin implements ModInitializer {
 		registerServerEvents();
 		registerPortals();
 
-		OTG.log("OTG Engine started, presets loaded");
+		OTGLog.info("OTG Engine started, presets loaded");
 	}
 
 	void registerWorldSave() {
 		WorldSaveCallback.EVENT.register((serverLevel) -> {
 			ChunkGenerator chunkGenerator = serverLevel.getChunkSource().getGenerator();
 			if (chunkGenerator instanceof OTGFabricChunkGenerator fabricChunkGenerator) {
-				OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "Saving structure cache for world " + fabricChunkGenerator.getPreset().getFolderName());
+				OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "Saving structure cache for world {}", fabricChunkGenerator.getPreset().getFolderName());
 				fabricChunkGenerator.saveStructureCache();
 			}
 		});

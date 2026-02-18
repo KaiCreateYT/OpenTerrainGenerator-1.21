@@ -1,6 +1,5 @@
 package com.pg85.otg.neoforge;
 
-import com.pg85.otg.OTG;
 import com.pg85.otg.OTGEngine;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.shared.biome.SharedBiomePlatformAdapter;
@@ -8,8 +7,6 @@ import com.pg85.otg.shared.biome.SharedPresetBiomeLoader;
 import com.pg85.otg.shared.materials.SharedMaterials;
 import com.pg85.otg.neoforge.util.NeoForgeModLoadedChecker;
 import com.pg85.otg.util.OTGLog;
-import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLPaths;
 
@@ -41,7 +38,7 @@ public class NeoForgeEngine extends OTGEngine {
             jarFiles.add(modFile.getFilePath().toFile());
         });
         if (jarFiles.isEmpty()) {
-            OTG.log(LogLevel.WARN, LogCategory.MAIN, "Could not find mod jar file");
+            OTGLog.warn("Could not find mod jar file");
             return null;
         }
         return jarFiles.get(0);

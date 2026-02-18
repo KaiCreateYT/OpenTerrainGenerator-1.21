@@ -2,7 +2,6 @@ package com.pg85.otg.util;
 
 import com.pg85.otg.interfaces.ILogger;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogFormatter;
 import com.pg85.otg.util.logging.LogLevel;
 
 import java.util.EnumSet;
@@ -76,20 +75,6 @@ public final class OTGLog {
 
 	public static void error(String message, Exception e) {
 		logger.error(message, e);
-	}
-
-	// --- Deprecated: remove after full migration ---
-
-	/** @deprecated Use {@link #isEnabled(LogLevel, LogCategory)} */
-	@Deprecated
-	public static boolean getLogCategoryEnabled(LogCategory category) {
-		return logger.isEnabled(LogLevel.INFO, category);
-	}
-
-	/** @deprecated Use {@link #error(LogCategory, String, Exception)} */
-	@Deprecated
-	public static void printStackTrace(LogLevel level, LogCategory category, Exception e) {
-		logger.error(category, "Exception", e);
 	}
 
 	// --- Fallback logger (pre-engine startup) ---

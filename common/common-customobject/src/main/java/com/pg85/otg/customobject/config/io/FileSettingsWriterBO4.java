@@ -11,13 +11,11 @@ import com.pg85.otg.customobject.config.CustomObjectResourcesManager;
 import com.pg85.otg.interfaces.IMaterialReader;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,11 +65,7 @@ public class FileSettingsWriterBO4 implements SettingsWriterBO4
 			SettingsWriterBO4 writer = new FileSettingsWriterBO4(file);
 			config.write(writer, configMode,  materialReader, manager);
 		} catch (IOException e) {
-			OTGLog.log(
-				LogLevel.ERROR,
-				LogCategory.CONFIGS,
-				String.format("Failed to write to file " + file + ", error: ",(Object[])e.getStackTrace())
-			);
+			OTGLog.error(LogCategory.CONFIGS, "Failed to write to file", e);
 		}
 	}
 
@@ -96,11 +90,7 @@ public class FileSettingsWriterBO4 implements SettingsWriterBO4
 					manager
 				);
 		} catch (IOException e) {
-			OTGLog.log(
-				LogLevel.ERROR,
-				LogCategory.CONFIGS,
-				String.format("Failed to write BO4 config " + config.getName() + ", error: ",(Object[])e.getStackTrace())
-			);
+			OTGLog.error(LogCategory.CONFIGS, "Failed to write BO4 config", e);
 		}
 	}
 
@@ -158,15 +148,7 @@ public class FileSettingsWriterBO4 implements SettingsWriterBO4
 		}
 		catch (IOException e)
 		{
-			OTGLog.log(
-				LogLevel.ERROR,
-				LogCategory.CONFIGS,
-				MessageFormat.format(
-					"Failed to close file {0} ({1})", 
-					file.getAbsolutePath(), 
-					e.getMessage()
-				)
-			);
+			OTGLog.error(LogCategory.CONFIGS, "Failed to close file {}", file.getAbsolutePath(), e);
 		}
 		writer = null;
 	}

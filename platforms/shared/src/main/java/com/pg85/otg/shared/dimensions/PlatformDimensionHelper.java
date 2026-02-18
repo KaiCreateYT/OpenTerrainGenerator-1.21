@@ -53,7 +53,7 @@ public interface PlatformDimensionHelper {
 
                     safe = findSafeY(level, dx, dz);
                     if (safe != null) {
-                        OTGLog.info("Found safe spawn at %d, %d, %d", safe.getX(), safe.getY(), safe.getZ());
+                        OTGLog.info("Found safe spawn at {}, {}, {}", safe.getX(), safe.getY(), safe.getZ());
                         return safe;
                     }
                 }
@@ -81,7 +81,7 @@ public interface PlatformDimensionHelper {
 
                     safe = findSafeY(level, searchCenter.getX() + dx, searchCenter.getZ() + dz);
                     if (safe != null) {
-                        OTGLog.info("Found safe location at %d, %d, %d (near %d, %d)",
+                        OTGLog.info("Found safe location at {}, {}, {} (near {}, {})",
                                 safe.getX(), safe.getY(), safe.getZ(),
                                 searchCenter.getX(), searchCenter.getZ());
                         return safe;

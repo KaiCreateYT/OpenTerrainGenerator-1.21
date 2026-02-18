@@ -37,10 +37,10 @@ public class DimensionManager {
                 try {
                     datapack.createDimensionFiles(info, preset.getPresetConfig().getDimensionSettings());
                 } catch (Exception e) {
-                    OTGLog.error("Failed to regenerate datapack for %s: %s", info.getName(), e.getMessage());
+                    OTGLog.error("Failed to regenerate datapack for {}: {}", info.getName(), e.getMessage());
                 }
             } else {
-                OTGLog.warn("Preset %s not found for dimension %s", info.getPreset(), info.getName());
+                OTGLog.warn("Preset {} not found for dimension {}", info.getPreset(), info.getName());
             }
         }
     }
@@ -66,11 +66,11 @@ public class DimensionManager {
             helper.createDimensionRuntime(server, normalizedName, presetName, seed);
             return CreateResult.success(info);
         } catch (Exception e) {
-            OTGLog.error("Failed to create dimension: %s", e.getMessage());
+            OTGLog.error("Failed to create dimension: {}", e.getMessage());
             try {
                 datapack.deleteDimensionFiles(normalizedName);
                 storage.removeDimension(normalizedName);
-            } catch (Exception ignored) { OTGLog.error("Failed to cleanup after failed dimension creation: %s", ignored.getMessage()); }
+            } catch (Exception ignored) { OTGLog.error("Failed to cleanup after failed dimension creation: {}", ignored.getMessage()); }
             return CreateResult.error("Failed to create dimension: " + e.getMessage());
         }
     }
@@ -108,7 +108,7 @@ public class DimensionManager {
 
             return DeleteResult.success(normalizedName, playerCount, purge);
         } catch (Exception e) {
-            OTGLog.error("Failed to delete dimension: %s", e.getMessage());
+            OTGLog.error("Failed to delete dimension: {}", e.getMessage());
             return DeleteResult.error("Failed to delete dimension: " + e.getMessage());
         }
     }
@@ -136,7 +136,7 @@ public class DimensionManager {
             helper.createDimensionRuntime(server, normalizedName, info.get().getPreset(), info.get().getSeed());
             return true;
         } catch (Exception e) {
-            OTGLog.error("Failed to load dimension %s at runtime: %s", normalizedName, e.getMessage());
+            OTGLog.error("Failed to load dimension {} at runtime: {}", normalizedName, e.getMessage());
             return false;
         }
     }

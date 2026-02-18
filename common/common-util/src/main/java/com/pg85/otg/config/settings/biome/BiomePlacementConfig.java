@@ -9,7 +9,6 @@ import com.pg85.otg.config.settings.biome.generated.BiomePlacementSettings;
 import com.pg85.otg.util.Color;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -174,7 +173,7 @@ public class BiomePlacementConfig extends ConfigSection {
                 // TODO: Add context to log messages like this, perhaps by making the file extend ConfigFile and adding context there
                 var invalid = new HashSet<>(isleInBiomes);
                 output.forEach(invalid::remove);
-                OTGLog.getLogger().log(LogLevel.WARN, LogCategory.CONFIGS, "invalid value(s) in isleInBiomes: "+invalid);
+                OTGLog.warn(LogCategory.CONFIGS, "invalid value(s) in isleInBiomes: {}", invalid);
             }
             isleInBiomes = output;
         }
@@ -183,7 +182,7 @@ public class BiomePlacementConfig extends ConfigSection {
             if (output.size() != borderInBiomes.size()) {
                 var invalid = new HashSet<>(borderInBiomes);
                 output.forEach(invalid::remove);
-                OTGLog.getLogger().log(LogLevel.WARN, LogCategory.CONFIGS, "invalid value(s) in borderInBiomes: "+invalid);
+                OTGLog.warn(LogCategory.CONFIGS, "invalid value(s) in borderInBiomes: {}", invalid);
             }
             borderInBiomes = output;
         }
@@ -192,7 +191,7 @@ public class BiomePlacementConfig extends ConfigSection {
             if (output.size() != onlyBorderNear.size()) {
                 var invalid = new HashSet<>(onlyBorderNear);
                 output.forEach(invalid::remove);
-                OTGLog.getLogger().log(LogLevel.WARN, LogCategory.CONFIGS, "invalid value(s) in onlyBorderNear: "+invalid);
+                OTGLog.warn(LogCategory.CONFIGS, "invalid value(s) in onlyBorderNear: {}", invalid);
             }
             onlyBorderNear = output;
         }
@@ -201,7 +200,7 @@ public class BiomePlacementConfig extends ConfigSection {
             if (output.size() != notBorderNear.size()) {
                 var invalid = new HashSet<>(notBorderNear);
                 output.forEach(invalid::remove);
-                OTGLog.getLogger().log(LogLevel.WARN, LogCategory.CONFIGS, "invalid value(s) in notBorderNear: "+invalid);
+                OTGLog.warn(LogCategory.CONFIGS, "invalid value(s) in notBorderNear: {}", invalid);
             }
             notBorderNear = output;
         }

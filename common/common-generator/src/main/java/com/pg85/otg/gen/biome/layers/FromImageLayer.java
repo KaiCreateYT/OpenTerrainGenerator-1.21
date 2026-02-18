@@ -14,7 +14,6 @@ import com.pg85.otg.interfaces.ILayerSampler;
 import com.pg85.otg.interfaces.ILogger;
 import com.pg85.otg.config.settings.preset.ImageSettings;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 
 public class FromImageLayer implements ParentedLayer
 {
@@ -93,7 +92,7 @@ public class FromImageLayer implements ParentedLayer
 		final File image = new File(data.presetDir.toFile(), imageSettings.getImageFile());
 		if (!image.exists())
 		{
-			logger.log(LogLevel.FATAL, LogCategory.CONFIGS, String.format("FromImageLayer encountered a critical error: %s does not exist", image.getAbsolutePath()));
+			logger.fatal(LogCategory.CONFIGS, "FromImageLayer encountered a critical error: {} does not exist", image.getAbsolutePath());
 			throw new RuntimeException("FromImageLayer encountered a critical error: File does not exist");
 		}
 
@@ -124,8 +123,7 @@ public class FromImageLayer implements ParentedLayer
 			map = ImageIO.read(image);
 		} catch (IOException e)
 		{
-			logger.log(LogLevel.FATAL, LogCategory.CONFIGS, String.format("FromImageLayer encountered a critical error: %s", e.getMessage()));
-			e.printStackTrace(System.err);
+			logger.error(LogCategory.CONFIGS, "FromImageLayer encountered a critical error", e);
 			throw new RuntimeException("FromImageLayer encountered a critical error", e);
 		}
 

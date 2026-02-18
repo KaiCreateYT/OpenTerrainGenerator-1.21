@@ -31,7 +31,6 @@ import com.pg85.otg.util.bo3.Rotation;
 import com.pg85.otg.util.helpers.StreamHelper;
 import com.pg85.otg.util.helpers.StringHelper;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.materials.LocalMaterialData;
 import com.pg85.otg.util.minecraft.DefaultStructurePart;
 
@@ -288,20 +287,14 @@ public class BO4Config extends CustomObjectConfigFile
 				}
 				catch (InvalidConfigException e)
 				{
-					if(OTGLog.isEnabled(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS))
-					{
-						OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Error fetching smoothing heightmap for BO4 " + start.getName() + ": " + e.getMessage());
-					}
+					OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Error fetching smoothing heightmap for BO4 {}: {}", start.getName(), e.getMessage());
 				}
 				if(bo4Config != null)
 				{
 					try {
 						bo4Config.readFromBO4DataFile(true,  materialReader);
 					} catch (InvalidConfigException e) {
-						if(OTGLog.isEnabled(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS))
-						{
-							OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Error fetching smoothing heightmap for BO4Data " + start.getName() + ": " + e.getMessage());
-						}
+						OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Error fetching smoothing heightmap for BO4Data {}: {}", start.getName(), e.getMessage());
 						this.heightMap = new BO4BlockFunction[16][16];
 						return this.heightMap;
 					}
@@ -413,20 +406,14 @@ public class BO4Config extends CustomObjectConfigFile
 			}
 			catch (InvalidConfigException e)
 			{
-				if(OTGLog.isEnabled(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS))
-				{
-					OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, " Error fetching blocks for BO4 " + this.getName() + ": " + e.getMessage());
-				}
+				OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Error fetching blocks for BO4 {}: {}", this.getName(), e.getMessage());
 			}
 			if(bo4Config != null)
 			{
 				try {
 					bo4Config.readFromBO4DataFile(true,  materialReader);
 				} catch (InvalidConfigException e) {
-					if(OTGLog.isEnabled(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS))
-					{
-						OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, " Error fetching blocks for BO4Data " + this.getName() + ": " + e.getMessage());
-					}
+					OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Error fetching blocks for BO4Data {}: {}", this.getName(), e.getMessage());
 					return null;
 				}
 				return bo4Config.getBlocks(false, presetFolderName, otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker);
@@ -594,10 +581,7 @@ public class BO4Config extends CustomObjectConfigFile
 			}
 			if(!this.inheritedBO3Loaded)
 			{
-				if(OTGLog.isEnabled(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS))
-				{
-					OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "could not load BO4 parent for InheritBO3: " + this.inheritBO3 + " in BO4 " + this.getName());
-				}
+				OTGLog.error(LogCategory.CUSTOM_OBJECTS, "could not load BO4 parent for InheritBO3: {} in BO4 {}", this.inheritBO3, this.getName());
 			}
 		}
 	}
@@ -649,10 +633,7 @@ public class BO4Config extends CustomObjectConfigFile
 		int zSize = Math.abs(minZ - maxZ);
 		if(xSize > 15 || zSize > 15)
 		{
-			if(OTGLog.isEnabled(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS))
-			{
-				OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "BO4 " + this.getName() + " was too large (" + xSize + "x" + zSize + "), BO4's can be max 16x16 blocks.");
-			}
+			OTGLog.error(LogCategory.CUSTOM_OBJECTS, "BO4 {} was too large ({}x{}), BO4's can be max 16x16 blocks.", this.getName(), xSize, zSize);
 			throw new InvalidConfigException("BO4 " + this.getName() + " was too large, BO4's can be max 16x16 blocks.");
 		}
 		
@@ -851,16 +832,13 @@ public class BO4Config extends CustomObjectConfigFile
 		}
 		this.entityDataBO4 = tempEntitiesList.toArray(new BO4EntityFunction[0]);
 
-		if(OTGLog.isEnabled(LogLevel.WARN, LogCategory.CUSTOM_OBJECTS))
+		if(illegalBlock)
 		{
-			if(illegalBlock)
-			{
-				OTGLog.log(LogLevel.WARN, LogCategory.CUSTOM_OBJECTS, "Warning: BO4 contains Blocks or RandomBlocks that are placed outside the chunk(s) that the BO3 will be placed in. This can slow down world generation. BO4: " + this.getName());
-			}
-			if(illegalEntityData)
-			{
-				OTGLog.log(LogLevel.WARN, LogCategory.CUSTOM_OBJECTS, "Warning: BO4 contains an Entity() that may be placed outside the chunk(s) that the BO3 will be placed in. This can slow down world generation. BO4: " + this.getName());
-			}
+			OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Warning: BO4 contains Blocks or RandomBlocks that are placed outside the chunk(s) that the BO3 will be placed in. This can slow down world generation. BO4: {}", this.getName());
+		}
+		if(illegalEntityData)
+		{
+			OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Warning: BO4 contains an Entity() that may be placed outside the chunk(s) that the BO3 will be placed in. This can slow down world generation. BO4: {}", this.getName());
 		}
 
 		this.branchesBO4 = tempBranchesList.toArray(new BO4BranchFunction[0]);
@@ -1604,11 +1582,7 @@ public class BO4Config extends CustomObjectConfigFile
 					try {
 						blocksArr[i] = materialReader.readMaterial(materialName);
 					} catch (InvalidConfigException e) {
-						if(OTGLog.isEnabled(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS))
-						{
-							OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Could not read material \"" + materialName + "\" for BO4 \"" + this.getName() + "\"");
-							OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e);
-						}
+						OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Could not read material \"{}\" for BO4 \"{}\"", materialName, this.getName(), e);
 					}
 				}
 
@@ -1688,7 +1662,7 @@ public class BO4Config extends CustomObjectConfigFile
 		}
 		catch (FileNotFoundException e)
 		{
-			OTGLog.error(LogCategory.CUSTOM_OBJECTS, "BO4 data file not found for %s: %s", this.reader.getName(), e.getMessage());
+			OTGLog.error(LogCategory.CUSTOM_OBJECTS, "BO4 data file not found for {}: {}", this.reader.getName(), e.getMessage());
 			return null;
 		}
 		catch (InvalidConfigException e)
@@ -1697,7 +1671,7 @@ public class BO4Config extends CustomObjectConfigFile
 		}
 		catch (Exception e)
 		{
-			OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e);
+			OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Exception reading BO4Data file", e);
 			throw new InvalidConfigException("Could not read BO4Data file " + this.reader.getName() + ", it may be outdated or corrupted. Delete and re-export BO4Data files to fix this, or delete and reinstall your OTG preset.");
 		}
 

@@ -21,10 +21,9 @@ import com.pg85.otg.interfaces.IModLoadedChecker;
 import com.pg85.otg.interfaces.IStructuredCustomObject;
 import com.pg85.otg.presets.Preset;
 import com.pg85.otg.util.OTGLog;
+import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.bo3.Rotation;
 import com.pg85.otg.util.gen.LocalWorldGenRegion;
-import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -115,8 +114,7 @@ public class ExportBO4DataCommand {
                     exportOnBackground(bgPreset, bgStructureCache, bgAccessor, bgLevel, bgSeed);
                 } catch (Exception e) {
                     errorMessage = e.getClass().getSimpleName() + ": " + e.getMessage();
-                    OTGLog.log(LogLevel.ERROR, LogCategory.MAIN, "Error during BO4Data export: " + e.getMessage());
-                    OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.MAIN, e);
+                    OTGLog.error("Error during BO4Data export", e);
                 } finally {
                     isDone = true;
                     isRunning.set(false);
@@ -162,7 +160,7 @@ public class ExportBO4DataCommand {
         Path otgRootFolder = OTG.getEngine().getOTGRootFolder();
         String presetFolderName = preset.getFolderName();
 
-        OTGLog.log(LogLevel.INFO, LogCategory.MAIN, "Initializing and exporting structure starts");
+        OTGLog.info("Initializing and exporting structure starts");
 
         // Phase 1: Export structure starts from biome configs
         // Make sure all structure starts have been initialised (getMinimumSize computed)
@@ -214,8 +212,7 @@ public class ExportBO4DataCommand {
                             bo4.isInvalidConfig = true;
                         }
 
-                        OTGLog.log(LogLevel.INFO, LogCategory.MAIN,
-                            "Exporting .BO4Data for structure start " + bo4.getName());
+                        OTGLog.info(LogCategory.MAIN, "Exporting .BO4Data for structure start {}", bo4.getName());
                         currentBoName = bo4.getName();
 
                         BO4Data.generateBO4Data(
@@ -235,8 +232,8 @@ public class ExportBO4DataCommand {
             .getAllBONamesForPreset(presetFolderName, otgRootFolder);
 
         if (boNames == null) {
-            OTGLog.log(LogLevel.INFO, LogCategory.MAIN, "No BO objects found for preset " + presetFolderName);
-            OTGLog.log(LogLevel.INFO, LogCategory.MAIN, "Exporting .BO4Data done.");
+            OTGLog.info(LogCategory.MAIN, "No BO objects found for preset {}", presetFolderName);
+            OTGLog.info(LogCategory.MAIN, "Exporting .BO4Data done.");
             return;
         }
 
@@ -252,8 +249,7 @@ public class ExportBO4DataCommand {
             );
 
             if (bo instanceof BO4 bo4 && !BO4Data.bo4DataExists(bo4.getConfig())) {
-                OTGLog.log(LogLevel.INFO, LogCategory.MAIN,
-                    "Exporting .BO4Data " + current + "/" + total + " " + boName);
+                OTGLog.info(LogCategory.MAIN, "Exporting .BO4Data {}/{} {}", current, total, boName);
 
                 BO4Data.generateBO4Data(
                     bo4.getConfig(), presetFolderName,
@@ -265,7 +261,7 @@ public class ExportBO4DataCommand {
             }
         }
 
-        OTGLog.log(LogLevel.INFO, LogCategory.MAIN, "Exporting .BO4Data done.");
+        OTGLog.info(LogCategory.MAIN, "Exporting .BO4Data done.");
     }
 
 }

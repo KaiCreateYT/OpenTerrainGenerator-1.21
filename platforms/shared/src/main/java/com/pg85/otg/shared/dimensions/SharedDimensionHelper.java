@@ -91,7 +91,7 @@ public abstract class SharedDimensionHelper implements PlatformDimensionHelper {
             BlockPos safeSpawn = PlatformDimensionHelper.findSafeSpawn(level);
             player.teleportTo(level, safeSpawn.getX() + 0.5, safeSpawn.getY(), safeSpawn.getZ() + 0.5, player.getYRot(), player.getXRot());
         } else {
-            OTGLog.warn("Cannot teleport to dimension %s - not loaded (server restart may be required)", dimensionName);
+            OTGLog.warn("Cannot teleport to dimension {} - not loaded (server restart may be required)", dimensionName);
         }
     }
 
@@ -125,7 +125,7 @@ public abstract class SharedDimensionHelper implements PlatformDimensionHelper {
         ResourceKey<DimensionType> dimTypeKey = ResourceKey.create(Registries.DIMENSION_TYPE, dimLocation);
 
         if (server.getLevel(levelKey) != null) {
-            OTGLog.warn("Dimension %s already loaded", name);
+            OTGLog.warn("Dimension {} already loaded", name);
             return;
         }
 
@@ -142,12 +142,12 @@ public abstract class SharedDimensionHelper implements PlatformDimensionHelper {
             Holder<DimensionType> dimTypeHolder;
             if (dimTypeRegistry.containsKey(dimTypeKey)) {
                 dimTypeHolder = dimTypeRegistry.getHolderOrThrow(dimTypeKey);
-                OTGLog.info("Using existing dimension type: %s", dimTypeKey.location());
+                OTGLog.info("Using existing dimension type: {}", dimTypeKey.location());
             } else {
                 DimensionType dimensionType = createDimensionType(dimSettings);
                 if (dimTypeRegistry instanceof MappedRegistry<DimensionType> mappedRegistry) {
                     mappedRegistry.register(dimTypeKey, dimensionType, RegistrationInfo.BUILT_IN);
-                    OTGLog.info("Registered new dimension type: %s", dimTypeKey.location());
+                    OTGLog.info("Registered new dimension type: {}", dimTypeKey.location());
                 }
                 dimTypeHolder = dimTypeRegistry.getHolderOrThrow(dimTypeKey);
             }
@@ -188,7 +188,7 @@ public abstract class SharedDimensionHelper implements PlatformDimensionHelper {
 
             getLevels(server).put(levelKey, serverLevel);
 
-            OTGLog.info("Created dimension %s at runtime - no restart required!", name);
+            OTGLog.info("Created dimension {} at runtime - no restart required!", name);
 
         } finally {
             if (wasFrozen && dimTypeRegistry instanceof MappedRegistry<DimensionType> mappedRegistry) {
@@ -231,7 +231,7 @@ public abstract class SharedDimensionHelper implements PlatformDimensionHelper {
 
         ServerLevel level = server.getLevel(dimKey);
         if (level == null) {
-            OTGLog.info("Dimension %s not currently loaded", name);
+            OTGLog.info("Dimension {} not currently loaded", name);
             return;
         }
 
@@ -244,12 +244,12 @@ public abstract class SharedDimensionHelper implements PlatformDimensionHelper {
         try {
             level.getChunkSource().close();
         } catch (IOException e) {
-            OTGLog.error("Error closing chunk source: %s", e.getMessage());
+            OTGLog.error("Error closing chunk source: {}", e.getMessage());
         }
 
         getLevels(server).remove(dimKey);
 
-        OTGLog.info("Dimension %s unloaded", name);
+        OTGLog.info("Dimension {} unloaded", name);
     }
 
     @Override
@@ -266,10 +266,10 @@ public abstract class SharedDimensionHelper implements PlatformDimensionHelper {
                         try {
                             Files.delete(path);
                         } catch (IOException e) {
-                            OTGLog.error("Failed to delete %s: %s", path, e.getMessage());
+                            OTGLog.error("Failed to delete {}: {}", path, e.getMessage());
                         }
                     });
-            OTGLog.info("Purged world data for dimension %s", name);
+            OTGLog.info("Purged world data for dimension {}", name);
         }
     }
 }

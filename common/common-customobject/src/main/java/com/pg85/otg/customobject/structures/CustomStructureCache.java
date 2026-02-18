@@ -261,7 +261,7 @@ public class CustomStructureCache
 
 	public void saveToDisk(IChunkDecorator chunkPopulator)
 	{
-		OTGLog.log(LogLevel.INFO, LogCategory.MAIN, "Saving structure and pregenerator data.");
+		OTGLog.info("Saving structure and pregenerator data.");
 		boolean firstLog = false;
 		long starTime = System.currentTimeMillis();
 		while(true)
@@ -278,7 +278,7 @@ public class CustomStructureCache
             int interval = 300;
 			if(System.currentTimeMillis() - starTime > (interval * 1000))
 			{
-				OTGLog.log(LogLevel.FATAL, LogCategory.MAIN, "SaveToDisk waited on decorate longer than " + interval + " seconds, something went wrong!");
+				OTGLog.fatal("SaveToDisk waited on decorate longer than " + interval + " seconds, something went wrong!");
 				throw new RuntimeException("SaveToDisk waited on decorate longer than " + interval + " seconds, something went wrong!");
 			}
 		}
@@ -289,7 +289,7 @@ public class CustomStructureCache
 		{
 			chunkPopulator.endSave();
 		}
-		OTGLog.log(LogLevel.INFO, LogCategory.MAIN, "Structure and pregenerator data saved.");
+		OTGLog.info("Structure and pregenerator data saved.");
 	}
 
 	private void saveStructureCache()
@@ -304,7 +304,7 @@ public class CustomStructureCache
 
 	private void loadStructureCache(Path otgRootFolder, CustomObjectManager customObjectManager, IMaterialReader materialReader, CustomObjectResourcesManager manager, IModLoadedChecker modLoadedChecker)
 	{		
-		OTGLog.log(LogLevel.INFO, LogCategory.MAIN, "Loading structure data");
+		OTGLog.info("Loading structure data");
 
 		this.worldInfoChunks = new HashMap<>();
 		
@@ -330,6 +330,6 @@ public class CustomStructureCache
 			}
 		}
 
-		OTGLog.log(LogLevel.INFO, LogCategory.MAIN, "Loading done");
+		OTGLog.info("Loading done");
 	}
 }

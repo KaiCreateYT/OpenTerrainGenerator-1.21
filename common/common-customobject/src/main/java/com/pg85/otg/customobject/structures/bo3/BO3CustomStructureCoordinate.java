@@ -5,7 +5,6 @@ import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.bo3.Rotation;
 import com.pg85.otg.util.gen.DecorationArea;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 
 import java.nio.file.Path;
 

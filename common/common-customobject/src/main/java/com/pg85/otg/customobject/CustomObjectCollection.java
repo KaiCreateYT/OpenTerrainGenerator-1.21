@@ -6,7 +6,6 @@ import com.pg85.otg.interfaces.IMaterialReader;
 import com.pg85.otg.interfaces.IModLoadedChecker;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.minecraft.TreeType;
 import java.io.File;
 import java.nio.file.Path;
@@ -67,7 +66,7 @@ public class CustomObjectCollection {
                 return object;
             }
             removeLoadedObject(presetFolderName, object);
-            OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Failed to load custom object '%s' — rejected by both %s and BO4 loaders", objectName, objectType.toUpperCase());
+            OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Failed to load custom object '{}' — rejected by both {} and BO4 loaders", objectName, objectType.toUpperCase());
             return null;
         }
     }
@@ -235,7 +234,7 @@ public class CustomObjectCollection {
                 return;
             }
 
-            OTGLog.log(LogLevel.INFO, LogCategory.CUSTOM_OBJECTS, "Indexing GlobalObjects folder.");
+            OTGLog.info(LogCategory.CUSTOM_OBJECTS, "Indexing GlobalObjects folder.");
 
             this.customObjectFilesGlobalObjects = new HashMap<>();
             this.globalTemplates = new HashMap<>();
@@ -249,7 +248,7 @@ public class CustomObjectCollection {
                 addLoadedGlobalObject(new TreeObject(type));
             }
 
-            OTGLog.log(LogLevel.INFO, LogCategory.CUSTOM_OBJECTS, "GlobalObjects folder indexed.");
+            OTGLog.info(LogCategory.CUSTOM_OBJECTS, "GlobalObjects folder indexed.");
         }
     }
 
@@ -259,7 +258,7 @@ public class CustomObjectCollection {
                 return;
             }
 
-            OTGLog.log(LogLevel.INFO, LogCategory.CUSTOM_OBJECTS, "Indexing Objects folder for preset " + presetFolderName);
+            OTGLog.info(LogCategory.CUSTOM_OBJECTS, "Indexing Objects folder for preset {}", presetFolderName);
 
             HashMap<String, File> presetCustomObjectFiles = new HashMap<>();
             this.customObjectFilesPerPreset.put(presetFolderName, presetCustomObjectFiles);
@@ -276,7 +275,7 @@ public class CustomObjectCollection {
                 indexAllCustomObjectFilesInDir(objectsDir, presetCustomObjectFiles, templateFiles);
             }
 
-            OTGLog.log(LogLevel.INFO, LogCategory.CUSTOM_OBJECTS, "Objects folder for preset " + presetFolderName + " indexed.");
+            OTGLog.info(LogCategory.CUSTOM_OBJECTS, "Objects folder for preset {} indexed.", presetFolderName);
         }
     }
 
@@ -330,7 +329,7 @@ public class CustomObjectCollection {
                         this.objectsByNamePerPreset.computeIfAbsent(presetFolderName, k -> new HashMap<>()).put(nameLower, object);
                         return object;
                     }
-                    OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Could not load custom object, it likely contains errors: " + file);
+                    OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Could not load custom object, it likely contains errors: {}", file);
                     return null;
                 }
 
@@ -349,18 +348,18 @@ public class CustomObjectCollection {
                         this.objectsByNameGlobalObjects.put(nameLower, object);
                         return object;
                     }
-                    OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Could not load custom object, it likely contains errors: " + file);
+                    OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Could not load custom object, it likely contains errors: {}", file);
                     return null;
                 }
 
                 this.objectsNotFoundGlobalObjects.add(name);
             }
 
-            OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS,
-                    "Could not find BO2/BO3 " + name + " in " +
-                    (presetFolderName != null ? "Objects and GlobalObjects" : "GlobalObjects") +
-                    " directory" +
-                    (presetFolderName != null ? " for preset " + presetFolderName : "") + ".");
+            OTGLog.error(LogCategory.CUSTOM_OBJECTS,
+                    "Could not find BO2/BO3 {} in {} directory{}.",
+                    name,
+                    presetFolderName != null ? "Objects and GlobalObjects" : "GlobalObjects",
+                    presetFolderName != null ? " for preset " + presetFolderName : "");
             return null;
         }
     }
@@ -393,8 +392,8 @@ public class CustomObjectCollection {
             // .bo4data gets priority — it's the pre-compiled format
             if (ext.equals(".bo4data") || !customObjectFiles.containsKey(name)) {
                 customObjectFiles.put(name, file);
-            } else if (OTGLog.isEnabled(LogLevel.WARN, LogCategory.CUSTOM_OBJECTS)) {
-                OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Duplicate file found: %s", file.getName());
+            } else {
+                OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Duplicate file found: {}", file.getName());
             }
         } else if (ext.equals(".bo3template") || ext.equals(".bo4template")) {
             templateFiles.put(name, file);

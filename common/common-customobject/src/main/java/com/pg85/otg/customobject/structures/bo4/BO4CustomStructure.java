@@ -219,13 +219,13 @@ public class BO4CustomStructure extends CustomStructure
 			BO4Config bo4Config = ((BO4)this.start.getObject(otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker)).getConfig();
 			calculateBranches(bo4Config, false, structureCache, worldGenRegion, targetBiomes, chunkBeingDecorated, otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker);
 		} catch (InvalidConfigException ex) {
-			OTGLog.log(LogLevel.FATAL, LogCategory.STRUCTURE_PLOTTING, "An unknown error occurred while calculating branches for BO4 " + this.start.bo3Name + ". This is probably an error in the BO4's branch configuration, not a bug. If you can track this down, please tell us what caused it!");
+			OTGLog.fatal(LogCategory.STRUCTURE_PLOTTING, "An unknown error occurred while calculating branches for BO4 {}. This is probably an error in the BO4's branch configuration, not a bug. If you can track this down, please tell us what caused it!", this.start.bo3Name);
 			throw new RuntimeException("An unknown error occurred while calculating branches for BO4 " + this.start.bo3Name + ". This is probably an error in the BO4's branch configuration, not a bug. If you can track this down, please tell us what caused it!");
 		}
 		
-		if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.PERFORMANCE) && (System.currentTimeMillis() - startTime) > 50)
+		if((System.currentTimeMillis() - startTime) > 50)
 		{
-			OTGLog.log(LogLevel.WARN, LogCategory.PERFORMANCE, "Warning: Plotting branches for BO4 " +  this.start.bo3Name + " at " + (chunkBeingDecorated.getBlockX() + DecorationArea.BO_CHUNK_CENTER_X) + " ~ " + (chunkBeingDecorated.getBlockZ() + DecorationArea.BO_CHUNK_CENTER_Z)  + " took " + (System.currentTimeMillis() - startTime) + " Ms.");
+			OTGLog.warn(LogCategory.PERFORMANCE, "Warning: Plotting branches for BO4 {} at {} ~ {} took {} Ms.", this.start.bo3Name, (chunkBeingDecorated.getBlockX() + DecorationArea.BO_CHUNK_CENTER_X), (chunkBeingDecorated.getBlockZ() + DecorationArea.BO_CHUNK_CENTER_Z), (System.currentTimeMillis() - startTime));
 		}
 
 		for(Entry<ChunkCoordinate, Stack<BO4CustomStructureCoordinate>> chunkCoordSet : this.objectsToSpawn.entrySet())
@@ -303,7 +303,7 @@ public class BO4CustomStructure extends CustomStructure
 					totalBO3sSpawned += this.objectsToSpawn.get(entry).size();
 				}
 
-				OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, this.start.getObject(otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker).getName() + " " + totalBO3sSpawned + " object(s) plotted in " + (System.currentTimeMillis() - startTime) + " Ms and " + Cycle + " cycle(s), " + (branchesTried + 1) + " object(s) tried.");
+				OTGLog.info(LogCategory.STRUCTURE_PLOTTING, this.start.getObject(otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker).getName() + " " + totalBO3sSpawned + " object(s) plotted in " + (System.currentTimeMillis() - startTime) + " Ms and " + Cycle + " cycle(s), " + (branchesTried + 1) + " object(s) tried.");
 			}
 		}
 	}
@@ -537,8 +537,8 @@ public class BO4CustomStructure extends CustomStructure
 
 		if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 		{
-			OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "");
-			OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, bo4.getName() + " minimum size: Width " + ((Integer)returnValue[1] + (Integer)returnValue[3] + 1) + " Length " + ((Integer)returnValue[0] + (Integer)returnValue[2] + 1) + " top " + (Integer)returnValue[0] + " right " + (Integer)returnValue[1] + " bottom " + (Integer)returnValue[2] + " left " + (Integer)returnValue[3]);
+			OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "");
+			OTGLog.info(LogCategory.STRUCTURE_PLOTTING, bo4.getName() + " minimum size: Width " + ((Integer)returnValue[1] + (Integer)returnValue[3] + 1) + " Length " + ((Integer)returnValue[0] + (Integer)returnValue[2] + 1) + " top " + (Integer)returnValue[0] + " right " + (Integer)returnValue[1] + " bottom " + (Integer)returnValue[2] + " left " + (Integer)returnValue[3]);
 		}
 
 		this.objectsToSpawn.clear();
@@ -551,17 +551,17 @@ public class BO4CustomStructure extends CustomStructure
 		if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 		{
 			String sminimumSize = minimumSize ? " (minimumSize)" : "";
-			OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "");
-			OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "-------- CalculateBranches " + this.start.bo3Name + sminimumSize +" --------");
+			OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "");
+			OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "-------- CalculateBranches " + this.start.bo3Name + sminimumSize +" --------");
 		}
 
 		BranchDataItem branchData = new BranchDataItem(random, null, (BO4CustomStructureCoordinate)this.start, null, 0, 0, minimumSize);
 
 		if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 		{
-			OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "");
-			OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "---- Cycle 0 ----");
-			OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "Plotted X" + branchData.chunkCoordinate.getChunkX() + " Z" + branchData.chunkCoordinate.getChunkZ() + " - " + branchData.branch.getObject(otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker).getName());
+			OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "");
+			OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "---- Cycle 0 ----");
+			OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "Plotted X" + branchData.chunkCoordinate.getChunkX() + " Z" + branchData.chunkCoordinate.getChunkZ() + " - " + branchData.branch.getObject(otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker).getName());
 		}
 
 		addToCaches(branchData, ((BO4)branchData.branch.getObject(otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker)));		
@@ -579,15 +579,15 @@ public class BO4CustomStructure extends CustomStructure
 
 			if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 			{
-				OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "");
-				OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "---- Cycle " + Cycle + " ----");
+				OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "");
+				OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "---- Cycle " + Cycle + " ----");
 			}
 
 			traverseAndSpawnChildBranches(startBO4Config, branchData, minimumSize, true, structureCache, worldGenRegion, targetBiomes, chunkBeingDecorated, otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker);
 
 			if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 			{
-				OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "All branch groups with required branches only have been processed for cycle " + Cycle + ", plotting branch groups with optional branches.");
+				OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "All branch groups with required branches only have been processed for cycle " + Cycle + ", plotting branch groups with optional branches.");
 			}
 			traverseAndSpawnChildBranches(startBO4Config, branchData, minimumSize, false, structureCache, worldGenRegion, targetBiomes, chunkBeingDecorated, otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker);
 
@@ -641,7 +641,7 @@ public class BO4CustomStructure extends CustomStructure
 				{
 					if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 					{
-						OTGLog.log(LogLevel.FATAL, LogCategory.STRUCTURE_PLOTTING, "Error: Branching BO4 " + this.start.bo3Name + " could not be spawned in minimum configuration (isRequiredBranch branches only).");
+						OTGLog.fatal(LogCategory.STRUCTURE_PLOTTING, "Error: Branching BO4 " + this.start.bo3Name + " could not be spawned in minimum configuration (isRequiredBranch branches only).");
 					}
 					throw new InvalidConfigException("Error: Branching BO4 " + this.start.bo3Name + " could not be spawned in minimum configuration (isRequiredBranch branches only).");
 				}
@@ -782,7 +782,7 @@ public class BO4CustomStructure extends CustomStructure
 						{
 							if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 							{
-								OTGLog.log(LogLevel.ERROR, LogCategory.STRUCTURE_PLOTTING, "Error: Could not find BO4 file: " + childBranchDataItem.branch.bo3Name + ".BO4/.BO4Data which is a branch of " + branchDataItem.branch.bo3Name + ".BO4/.BO4Data");
+								OTGLog.error(LogCategory.STRUCTURE_PLOTTING, "Error: Could not find BO4 file: " + childBranchDataItem.branch.bo3Name + ".BO4/.BO4Data which is a branch of " + branchDataItem.branch.bo3Name + ".BO4/.BO4Data");
 							}
 						}
 					}
@@ -986,7 +986,7 @@ public class BO4CustomStructure extends CustomStructure
 								tempBranch = tempBranch.parent;
 							}
 
-							OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "Plotted X" + childBranchDataItem.chunkCoordinate.getChunkX() + " Z" + childBranchDataItem.chunkCoordinate.getChunkZ() + (minimumSize ? "" : " Y" + (childBranchDataItem.branch.getY())) + " " +  childBranchDataItem.branch.bo3Name + ":" + childBranchDataItem.branch.getRotation() + (childBranchDataItem.branch.isRequiredBranch ? " required" : " optional") + " cycle " + Cycle + allParentsString);
+							OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "Plotted X" + childBranchDataItem.chunkCoordinate.getChunkX() + " Z" + childBranchDataItem.chunkCoordinate.getChunkZ() + (minimumSize ? "" : " Y" + (childBranchDataItem.branch.getY())) + " " +  childBranchDataItem.branch.bo3Name + ":" + childBranchDataItem.branch.getRotation() + (childBranchDataItem.branch.isRequiredBranch ? " required" : " optional") + " cycle " + Cycle + allParentsString);
 						}
 
 						if(childBranchDataItem.getChildren(false, worldGenRegion, chunkBeingDecorated, otgRootFolder, customObjectManager, materialReader, manager, modLoadedChecker).isEmpty())
@@ -1023,7 +1023,7 @@ public class BO4CustomStructure extends CustomStructure
 						{
 							if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 							{
-								OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "Plotting all required child branches that are not in a branch group with optional branches.");
+								OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "Plotting all required child branches that are not in a branch group with optional branches.");
 							}
 
 							spawningRequiredChildrenForOptionalBranch = true;
@@ -1050,7 +1050,7 @@ public class BO4CustomStructure extends CustomStructure
 
 							if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 							{
-								OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "Done spawning required children for optional branch X" + childBranchDataItem.chunkCoordinate.getChunkX() + " Z" + childBranchDataItem.chunkCoordinate.getChunkZ() + (minimumSize ? "" : " Y" + (childBranchDataItem.branch.getY())) + " " +  childBranchDataItem.branch.bo3Name + ":" + childBranchDataItem.branch.getRotation());
+								OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "Done spawning required children for optional branch X" + childBranchDataItem.chunkCoordinate.getChunkX() + " Z" + childBranchDataItem.chunkCoordinate.getChunkZ() + (minimumSize ? "" : " Y" + (childBranchDataItem.branch.getY())) + " " +  childBranchDataItem.branch.bo3Name + ":" + childBranchDataItem.branch.getRotation());
 							}
 						}
 						// If AddBranches was called during a rollback then only traverse branches for children that spawn during this call
@@ -1141,7 +1141,7 @@ public class BO4CustomStructure extends CustomStructure
 									}
 
 									String reason = (branchFrequencyGroupsNotPassed ? "BranchFrequencyGroupNotPassed " : "") + (branchFrequencyNotPassed ? "BranchFrequencyNotPassed " : "") + (wasntBelowOther ? "WasntBelowOther " : "") + (wasntInsideOther ? "WasntInsideOther " : "") + (cannotSpawnInsideOther ? "CannotSpawnInsideOther " : "") + (wasntOnWater ? "WasntOnWater " : "") + (wasOnWater ? "WasOnWater " : "") + (!branchFrequencyGroupsNotPassed && !branchFrequencyNotPassed && !wasntBelowOther && !cannotSpawnInsideOther && !wasntOnWater && !wasOnWater && !chunkIsIneligible && spaceIsOccupied ? "SpaceIsOccupied by" + occupiedByObjectsString : "") + (wasntBelowOther ? "WasntBelowOther " : "") + (chunkIsIneligible ? "TerrainIsUnsuitable (StartChunkBlockChecks (height or material) not passed or Y < 0 or Frequency/BO3Group checks not passed or BO3 collided with other CustomStructure or smoothing area collided with other CustomStructure or BO3 not in allowed Biome or Smoothing area not in allowed Biome)" : "");
-									OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "Rolling back X" + branchDataItem.branch.getChunkX() + " Z" + branchDataItem.branch.getChunkZ() + " Y" + branchDataItem.branch.getY() + " " + branchDataItem.branch.bo3Name + ":" + branchDataItem.branch.getRotation() + allParentsString + " because required branch "+ childBranchDataItem.branch.bo3Name + " couldn't spawn. Reason: " + reason);
+									OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "Rolling back X" + branchDataItem.branch.getChunkX() + " Z" + branchDataItem.branch.getChunkZ() + " Y" + branchDataItem.branch.getY() + " " + branchDataItem.branch.bo3Name + ":" + branchDataItem.branch.getRotation() + allParentsString + " because required branch "+ childBranchDataItem.branch.bo3Name + " couldn't spawn. Reason: " + reason);
 								}
 
 								rollBackBranch(startBO4Config, branchDataItem, minimumSize, spawningRequiredBranchesOnly, structureCache, worldGenRegion, targetBiomes, chunkBeingDecorated, otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker);
@@ -1240,7 +1240,7 @@ public class BO4CustomStructure extends CustomStructure
                                                             (childBranchDataItem.branch.getY() < 0 ? " WasBelowY0 " : "") +
                                                             (!branchFrequencyGroupsNotPassed && !branchFrequencyNotPassed && !wasntBelowOther && !cannotSpawnInsideOther && !wasntOnWater && !wasOnWater && !chunkIsIneligible && spaceIsOccupied ? "SpaceIsOccupied by" + occupiedByObjectsString : "") + (wasntBelowOther ? "WasntBelowOther " : "") + (chunkIsIneligible ? "ChunkIsIneligible: Either the chunk is occupied by another structure or a default structure, or the BO3/smoothing area is not allowed in the Biome)" : "")
 													;
-													OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "Rolling back X" + branchDataItem.branch.getChunkX() + " Z" + branchDataItem.branch.getChunkZ() + " Y" + branchDataItem.branch.getY() + " " + branchDataItem.branch.bo3Name + ":" + branchDataItem.branch.getRotation() + allParentsString + " because required branch "+ childBranchDataItem.branch.bo3Name + " couldn't spawn. Reason: " + reason);
+													OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "Rolling back X" + branchDataItem.branch.getChunkX() + " Z" + branchDataItem.branch.getChunkZ() + " Y" + branchDataItem.branch.getY() + " " + branchDataItem.branch.bo3Name + ":" + branchDataItem.branch.getRotation() + allParentsString + " because required branch "+ childBranchDataItem.branch.bo3Name + " couldn't spawn. Reason: " + reason);
 												}
 												rollBackBranch(startBO4Config, branchDataItem, minimumSize, spawningRequiredBranchesOnly, structureCache, worldGenRegion, targetBiomes, chunkBeingDecorated, otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker);
 												bBreak = true;
@@ -1434,7 +1434,7 @@ public class BO4CustomStructure extends CustomStructure
 									{
 			 							if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 										{
-			 								OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "CannotBeInside branch " + childBranchDataItem.branch.bo3Name + " was blocked by " + branchDataItem3.branch.bo3Name);
+			 								OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "CannotBeInside branch " + childBranchDataItem.branch.bo3Name + " was blocked by " + branchDataItem3.branch.bo3Name);
 										}
 			 							foundSpawnBlocker = true;
 										break;
@@ -1539,7 +1539,7 @@ public class BO4CustomStructure extends CustomStructure
 					allParentsString.append(" <-- X").append(tempBranch.parent.branch.getChunkX()).append(" Z").append(tempBranch.parent.branch.getChunkZ()).append(" Y").append(tempBranch.parent.branch.getY()).append(" ").append(tempBranch.parent.branch.bo3Name).append(":").append(tempBranch.parent.branch.getRotation());
 					tempBranch = tempBranch.parent;
 				}
-				OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "Deleted X" + branchData.branch.getChunkX() + " Z" + branchData.branch.getChunkZ() + " Y" + branchData.branch.getY() + " " + branchData.branch.bo3Name + ":" + branchData.branch.getRotation()  + (branchData.branch.isRequiredBranch ? " required" : " optional") + " cycle " + Cycle + allParentsString);
+				OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "Deleted X" + branchData.branch.getChunkX() + " Z" + branchData.branch.getChunkZ() + " Y" + branchData.branch.getY() + " " + branchData.branch.bo3Name + ":" + branchData.branch.getRotation()  + (branchData.branch.isRequiredBranch ? " required" : " optional") + " cycle " + Cycle + allParentsString);
 			}
 
 			removeFromCaches(branchData, otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker);		
@@ -1765,7 +1765,7 @@ public class BO4CustomStructure extends CustomStructure
 						tempBranch = tempBranch.parent;
 					}
 
-					OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "Deleted X" + branchDataItem.branch.getChunkX() + " Z" + branchDataItem.branch.getChunkZ() + " Y" + branchDataItem.branch.getY() + " " + branchDataItem.branch.bo3Name + ":" + branchDataItem.branch.getRotation() + (branchDataItem.branch.isRequiredBranch ? " required" : " optional") + " cycle " + Cycle + allParentsString);
+					OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "Deleted X" + branchDataItem.branch.getChunkX() + " Z" + branchDataItem.branch.getChunkZ() + " Y" + branchDataItem.branch.getY() + " " + branchDataItem.branch.bo3Name + ":" + branchDataItem.branch.getRotation() + (branchDataItem.branch.isRequiredBranch ? " required" : " optional") + " cycle " + Cycle + allParentsString);
 				}
 
 				removeFromCaches(branchDataItem, otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker);
@@ -2243,7 +2243,7 @@ public class BO4CustomStructure extends CustomStructure
 				{
 					if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.CUSTOM_OBJECTS))
 					{
-						OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Could not spawn chunk " + coordObject.bo3Name + " for structure " + config.getName());
+						OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Could not spawn chunk " + coordObject.bo3Name + " for structure " + config.getName());
 					}
 					this.objectsToSpawn.remove(chunkCoordinate);
 					this.smoothingAreaManager.clearChunkFromCache(chunkCoordinate);
@@ -2299,7 +2299,7 @@ public class BO4CustomStructure extends CustomStructure
 				{
 					if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.CUSTOM_OBJECTS))
 					{
-						OTGLog.log(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, "Could not spawn chunk " + coordObject.bo3Name + " for structure " + config.getName());
+						OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Could not spawn chunk " + coordObject.bo3Name + " for structure " + config.getName());
 					}
 					this.objectsToSpawn.remove(chunkCoordinate);
 					this.smoothingAreaManager.clearChunkFromCache(chunkCoordinate);

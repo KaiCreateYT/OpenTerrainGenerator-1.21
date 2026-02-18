@@ -17,8 +17,6 @@ import com.pg85.otg.test.snapshot.TerrainSnapshotComparator.ValueDiff;
 import com.pg85.otg.test.snapshot.TerrainSnapshotGenerator;
 import com.pg85.otg.util.gen.OTGWorldInfo;
 import com.pg85.otg.util.OTGLog;
-import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 
 import java.io.File;
 import java.io.IOException;
@@ -220,7 +218,7 @@ public class SnapshotCli {
             return EXIT_SUCCESS;
         } catch (Exception e) {
             System.err.println("Error generating snapshot: " + e.getMessage());
-            OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.MAIN, e);
+            OTGLog.error("Exception", e);
             return EXIT_ERROR;
         }
     }
@@ -369,7 +367,7 @@ public class SnapshotCli {
             current = generateSnapshot(seed, presetName, otgRoot);
         } catch (Exception e) {
             System.err.println("Error generating snapshot: " + e.getMessage());
-            OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.MAIN, e);
+            OTGLog.error("Exception", e);
             return EXIT_ERROR;
         }
 
@@ -604,7 +602,7 @@ public class SnapshotCli {
             return executeBenchmark(seed, presetName, otgRoot, chunksPerIteration, warmupIterations, measureIterations);
         } catch (Exception e) {
             System.err.println("Benchmark failed: " + e.getMessage());
-            OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.MAIN, e);
+            OTGLog.error("Exception", e);
             return EXIT_ERROR;
         }
     }
@@ -797,7 +795,7 @@ public class SnapshotCli {
             return executeStressTest(seed, presetName, otgRoot, threads, chunksPerThread);
         } catch (Exception e) {
             System.err.println("Stress test failed: " + e.getMessage());
-            OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.MAIN, e);
+            OTGLog.error("Exception", e);
             return EXIT_ERROR;
         }
     }
@@ -886,7 +884,7 @@ public class SnapshotCli {
                 } catch (Exception e) {
                     errors.incrementAndGet();
                     System.err.println("Thread " + threadId + " error: " + e.getMessage());
-                    OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.MAIN, e);
+                    OTGLog.error("Exception", e);
                 }
             });
         }
@@ -990,7 +988,7 @@ public class SnapshotCli {
             return executeShadowStressTest(seed, presetName, otgRoot, workers, totalChunks);
         } catch (Exception e) {
             System.err.println("Shadow stress test failed: " + e.getMessage());
-            OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.MAIN, e);
+            OTGLog.error("Exception", e);
             return EXIT_ERROR;
         }
     }

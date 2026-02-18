@@ -289,7 +289,7 @@ public class FileSettingsReaderBO4 implements SettingsReaderBO4
 		}
 		catch (IOException e)
 		{
-			OTGLog.log(LogLevel.ERROR, LogCategory.CONFIGS, String.format("Exception when reading file: ", (Object[])e.getStackTrace()));
+			OTGLog.error(LogCategory.CONFIGS, "Exception when reading file", e);
 		} finally {
 			if (settingsReader != null)
 			{
@@ -299,7 +299,7 @@ public class FileSettingsReaderBO4 implements SettingsReaderBO4
 				}
 				catch (IOException localIOException2)
 				{
-					OTGLog.log(LogLevel.ERROR, LogCategory.CONFIGS, String.format("Exception when closing file: ", (Object[])localIOException2.getStackTrace()));
+					OTGLog.error(LogCategory.CONFIGS, "Exception when closing file", localIOException2);
 				}
 			}
 		}

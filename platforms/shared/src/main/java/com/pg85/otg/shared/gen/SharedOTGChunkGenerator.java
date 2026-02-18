@@ -2,6 +2,8 @@ package com.pg85.otg.shared.gen;
 
 import com.pg85.otg.OTG;
 import com.pg85.otg.config.settings.preset.NoiseCaveSettings;
+import com.pg85.otg.util.OTGLog;
+import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.constants.settings.structure.CustomStructureType;
 import com.pg85.otg.customobject.structures.CustomStructureCache;
@@ -193,7 +195,7 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
                     processedRouter.finalDensity()
             );
             this.breakthroughNoise = new SimplexNoise(new WorldgenRandom(new LegacyRandomSource(this.seed ^ 0xCA0EB1A5L)));
-            OTG.log("[OTG] Created cave-only RandomState (terrain-independent density, debug components resolved)");
+            OTGLog.info(LogCategory.MAIN, "Created cave-only RandomState (terrain-independent density, debug components resolved)");
 
             double threshold = caveCfg.getUndergroundBiomeCheeseDensityThreshold();
             otgBiomeProvider.setCheeseCaveDensity(this.caveComponents.cheese(), threshold);
@@ -245,9 +247,9 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
         decorationTotalNs.addAndGet(totalElapsed);
         int count = decorationCount.incrementAndGet();
         if (count % TIMING_LOG_INTERVAL == 0) {
-            OTG.log(String.format("[OTG-TIMING] decoration #%d avg=%.1fms (superDecorate avg=%.1fms)", count,
-                    decorationTotalNs.get() / 1_000_000.0 / count,
-                    superDecorationTotalNs.get() / 1_000_000.0 / count));
+            OTGLog.info(LogCategory.PERFORMANCE, "decoration #{} avg={}ms (superDecorate avg={}ms)", count,
+                    String.format("%.1f", decorationTotalNs.get() / 1_000_000.0 / count),
+                    String.format("%.1f", superDecorationTotalNs.get() / 1_000_000.0 / count));
         }
     }
 
@@ -296,8 +298,8 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
         structuresTotalNs.addAndGet(elapsed);
         int count = structuresCount.incrementAndGet();
         if (count % TIMING_LOG_INTERVAL == 0) {
-            OTG.log(String.format("[OTG-TIMING] createStructures #%d avg=%.1fms", count,
-                    structuresTotalNs.get() / 1_000_000.0 / count));
+            OTGLog.info(LogCategory.PERFORMANCE, "createStructures #{} avg={}ms", count,
+                    String.format("%.1f", structuresTotalNs.get() / 1_000_000.0 / count));
         }
     }
 
@@ -338,8 +340,8 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
             carversTotalNs.addAndGet(elapsed);
             int count = carversCount.incrementAndGet();
             if (count % TIMING_LOG_INTERVAL == 0) {
-                OTG.log(String.format("[OTG-TIMING] applyCarvers(modern) #%d avg=%.1fms", count,
-                        carversTotalNs.get() / 1_000_000.0 / count));
+                OTGLog.info(LogCategory.PERFORMANCE, "applyCarvers(modern) #{} avg={}ms", count,
+                        String.format("%.1f", carversTotalNs.get() / 1_000_000.0 / count));
             }
             return;
         }
@@ -498,10 +500,10 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
         fillNoiseTotalNs.addAndGet(totalElapsed);
         int count = fillNoiseCount.incrementAndGet();
         if (count % TIMING_LOG_INTERVAL == 0) {
-            OTG.log(String.format("[OTG-TIMING] fillFromNoise #%d avg=%.1fms (populateNoise=%.1fms carveWithNoise=%.1fms)", count,
-                    fillNoiseTotalNs.get() / 1_000_000.0 / count,
-                    populateNoiseTotalNs.get() / 1_000_000.0 / count,
-                    carveWithNoiseTotalNs.get() / 1_000_000.0 / count));
+            OTGLog.info(LogCategory.PERFORMANCE, "fillFromNoise #{} avg={}ms (populateNoise={}ms carveWithNoise={}ms)", count,
+                    String.format("%.1f", fillNoiseTotalNs.get() / 1_000_000.0 / count),
+                    String.format("%.1f", populateNoiseTotalNs.get() / 1_000_000.0 / count),
+                    String.format("%.1f", carveWithNoiseTotalNs.get() / 1_000_000.0 / count));
         }
 
         return CompletableFuture.completedFuture(chunkAccess);
@@ -599,7 +601,7 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
         }
 
         if (firstChunk) {
-            OTG.log("[OTG] carveWithNoise chunk(0,0): carved=" + carved + " skippedSolid=" + skippedSolid);
+            OTGLog.info(LogCategory.PERFORMANCE, "carveWithNoise chunk(0,0): carved={} skippedSolid={}", carved, skippedSolid);
         }
     }
 

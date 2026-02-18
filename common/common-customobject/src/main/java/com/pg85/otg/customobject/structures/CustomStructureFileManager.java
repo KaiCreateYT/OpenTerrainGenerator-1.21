@@ -35,7 +35,6 @@ import com.pg85.otg.util.bo3.Rotation;
 import com.pg85.otg.util.helpers.MathHelper;
 import com.pg85.otg.util.helpers.StreamHelper;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 
 public class CustomStructureFileManager
 {
@@ -93,7 +92,7 @@ public class CustomStructureFileManager
 						}
 					}
 				} catch (IOException e1) {
-					OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e1);
+					OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Exception", e1);
 					return;
 				}
 
@@ -114,24 +113,23 @@ public class CustomStructureFileManager
 				}
 				catch (IOException e)
 				{
-					OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e);
-					OTGLog.log(LogLevel.ERROR, LogCategory.MAIN, "OTG encountered an error writing " + occupiedChunksFile.getAbsolutePath() + ", skipping.");
+					OTGLog.error("OTG encountered an error writing " + occupiedChunksFile.getAbsolutePath() + ", skipping.", e);
 				} finally {
 					try {
                         dos.close();
-                    } catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", ignored.getMessage()); }
+                    } catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: {}", ignored.getMessage()); }
 					try {
 						if(dos2 != null)
 						{
 							dos2.close();
 						}
-					} catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", ignored.getMessage()); }
+					} catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: {}", ignored.getMessage()); }
 					try {
 						if(fos != null)
 						{
 							fos.close();
 						}
-					} catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", ignored.getMessage()); }
+					} catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: {}", ignored.getMessage()); }
 				}
 			}
 		}
@@ -232,20 +230,20 @@ public class CustomStructureFileManager
 				}
 				catch (Exception ex)
 				{
-					OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, ex);
-					OTGLog.log(LogLevel.WARN, LogCategory.MAIN, "Failed to load " + occupiedChunksFile.getAbsolutePath() + ", trying to load backup.");
+					OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Exception", ex);
+				OTGLog.warn("Failed to load " + occupiedChunksFile.getAbsolutePath() + ", trying to load backup.");
 				} finally {
 					if(fis != null)
 					{
 						try {
 							fis.getChannel().close();
 						} catch (IOException e) {
-							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
+							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: {}", e.getMessage());
 						}
 						try {
 							fis.close();
 						} catch (IOException e) {
-							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
+							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: {}", e.getMessage());
 						}
 					}
 				}
@@ -255,9 +253,9 @@ public class CustomStructureFileManager
 					output.put(regionCoord, result);
 				}
 			}
-			
+
 			if(!bSuccess && occupiedChunksBackupFile != null && occupiedChunksBackupFile.exists())
-			{			
+			{
 				FileInputStream fis = null;
 				PlottedChunksRegion result = null;
 				try {
@@ -265,10 +263,10 @@ public class CustomStructureFileManager
 					int regionX = Integer.parseInt(chunkCoords[0]);
 					int regionZ = Integer.parseInt(chunkCoords[1]);
 					regionCoord = ChunkCoordinate.fromChunkCoords(regionX, regionZ);
-					
-					fis = new FileInputStream(occupiedChunksBackupFile);			
-					ByteBuffer buffer = fis.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, fis.getChannel().size());				
-					
+
+					fis = new FileInputStream(occupiedChunksBackupFile);
+					ByteBuffer buffer = fis.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, fis.getChannel().size());
+
 					byte[] compressedBytes = new byte[(int) fis.getChannel().size()];
 					buffer.get(compressedBytes);
 					byte[] decompressedBytes = com.pg85.otg.util.CompressionUtils.decompress(compressedBytes);
@@ -277,19 +275,19 @@ public class CustomStructureFileManager
 				}
 				catch (Exception ex)
 				{
-					OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, ex);
+					OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Exception", ex);
 				} finally {
 					if(fis != null)
 					{
 						try {
 							fis.getChannel().close();
 						} catch (IOException e) {
-							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
+							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: {}", e.getMessage());
 						}
 						try {
 							fis.close();
 						} catch (IOException e) {
-							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
+							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: {}", e.getMessage());
 						}
 					}
 				}
@@ -305,16 +303,18 @@ public class CustomStructureFileManager
 				if(regionCoord != null)
 				{
 					output.put(regionCoord, PlottedChunksRegion.getFilledRegion());
-					OTGLog.log(LogLevel.ERROR, LogCategory.MAIN,
-						"OTG encountered an error loading " + occupiedChunksFile.getAbsolutePath() + " and could not load a backup, substituting a default filled region. "
-						+ "This may result in areas with missing BO4's, smoothing areas, /otg structure info and spawners/particles/moddata."
+					OTGLog.error(
+						"OTG encountered an error loading {} and could not load a backup, substituting a default filled region. "
+						+ "This may result in areas with missing BO4's, smoothing areas, /otg structure info and spawners/particles/moddata.",
+						occupiedChunksFile.getAbsolutePath()
 					);
 				} else {
-					OTGLog.log(LogLevel.FATAL, LogCategory.MAIN,
-						"OTG encountered a critical error loading " + occupiedChunksFile.getAbsolutePath() + " and could not load a backup, exiting. "
-						+ "OTG automatically backs up files before writing and will try to use the backup when loading. "				
+					OTGLog.fatal(
+						"OTG encountered a critical error loading {} and could not load a backup, exiting. "
+						+ "OTG automatically backs up files before writing and will try to use the backup when loading. "
 						+ "If your dimension's structure data files and backups have been corrupted, you can delete them,"
-						+ "at the risk of losing data for unspawned structure parts."
+						+ "at the risk of losing data for unspawned structure parts.",
+						occupiedChunksFile.getAbsolutePath()
 					);					
 					throw new RuntimeException(
 						"OTG encountered a critical error loading " + occupiedChunksFile.getAbsolutePath() + " and could not load a backup, exiting. "
@@ -344,7 +344,7 @@ public class CustomStructureFileManager
 				}
 			}
 		} else {
-			OTGLog.log(LogLevel.ERROR, LogCategory.MAIN, "PlottedChunks region files were corrupted or exported with an incompatible version of OTG, ignoring.");
+			OTGLog.error("PlottedChunks region files were corrupted or exported with an incompatible version of OTG, ignoring.");
 			return PlottedChunksRegion.getFilledRegion();
 		}
 		return new PlottedChunksRegion(chunksMatrix);
@@ -566,10 +566,10 @@ public class CustomStructureFileManager
 				}
 			}
 		} catch (IOException e1) {
-			OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e1);
+			OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Exception", e1);
 			return;
 		}
-			
+
 		DataOutputStream dos2 = null;
 		FileOutputStream fos = null;
 		try {
@@ -587,24 +587,23 @@ public class CustomStructureFileManager
 		}
 		catch (IOException e)
 		{
-			OTGLog.log(LogLevel.ERROR, LogCategory.MAIN, "OTG encountered an error writing " + structuresRegionFile.getAbsolutePath() + ", skipping. Exception:");
-			OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e);
+			OTGLog.error("OTG encountered an error writing " + structuresRegionFile.getAbsolutePath() + ", skipping.", e);
 		} finally {
 			try {
                 dos.close();
-            } catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", ignored.getMessage()); }
+            } catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: {}", ignored.getMessage()); }
 			try {
 				if(dos2 != null)
 				{
 					dos2.close();
 				}
-			} catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", ignored.getMessage()); }
+			} catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: {}", ignored.getMessage()); }
 			try {
 				if(fos != null)
 				{
 					fos.close();
 				}
-			} catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", ignored.getMessage()); }
+			} catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: {}", ignored.getMessage()); }
 		}
 	}
 	
@@ -702,20 +701,20 @@ public class CustomStructureFileManager
 				}
 				catch (Exception ex)
 				{
-					OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, ex);
-					OTGLog.log(LogLevel.WARN, LogCategory.MAIN, "Failed to load " + structureDataFile.getAbsolutePath() + ", trying to load backup.");
+					OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Exception", ex);
+				OTGLog.warn("Failed to load " + structureDataFile.getAbsolutePath() + ", trying to load backup.");
 				} finally {
 					if(fis != null)
 					{
 						try {
 							fis.getChannel().close();
 						} catch (IOException e) {
-							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
+							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: {}", e.getMessage());
 						}
 						try {
 							fis.close();
 						} catch (IOException e) {
-							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
+							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: {}", e.getMessage());
 						}
 					}
 				}
@@ -747,19 +746,19 @@ public class CustomStructureFileManager
 				}
 				catch (Exception ex)
 				{
-					OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, ex);
+					OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Exception", ex);
 				} finally {
 					if(fis != null)
 					{
 						try {
 							fis.getChannel().close();
 						} catch (IOException e) {
-							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
+							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: {}", e.getMessage());
 						}
 						try {
 							fis.close();
 						} catch (IOException e) {
-							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
+							OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: {}", e.getMessage());
 						}
 					}
 				}
@@ -771,9 +770,10 @@ public class CustomStructureFileManager
 			}
 			if(!bSuccess)
 			{
-				OTGLog.log(LogLevel.ERROR, LogCategory.MAIN,
-					"OTG encountered an error loading " + structureDataFile.getAbsolutePath() + " and could not load a backup, ignoring. "
-					+ "This may result in areas with missing BO4's, smoothing areas, /otg structure info and spawners/particles/moddata."
+				OTGLog.error(
+					"OTG encountered an error loading {} and could not load a backup, ignoring. "
+					+ "This may result in areas with missing BO4's, smoothing areas, /otg structure info and spawners/particles/moddata.",
+					structureDataFile.getAbsolutePath()
 				);
 			}
 		}
@@ -986,14 +986,14 @@ public class CustomStructureFileManager
 					}
 				}
 			} catch (IOException e1) {
-				OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e1);
+				OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Exception", e1);
 				return;
-			}			
-			
+			}
+
 			DataOutputStream dos2 = null;
 			FileOutputStream fos = null;
 			try
-			{				
+			{
 				if(!occupiedChunksFile.exists())
 				{
 					occupiedChunksFile.getParentFile().mkdirs();
@@ -1005,24 +1005,23 @@ public class CustomStructureFileManager
 				dos2 = new DataOutputStream(fos);
 				dos2.write(compressedBytes, 0, compressedBytes.length);
 			} catch (IOException e) {
-				OTGLog.log(LogLevel.ERROR, LogCategory.MAIN, "OTG encountered an error writing " + occupiedChunksFile.getAbsolutePath() + ", skipping. Exception: ");
-				OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e);
+				OTGLog.error("OTG encountered an error writing " + occupiedChunksFile.getAbsolutePath() + ", skipping.", e);
 			} finally {
 				try {
                     dos.close();
-                } catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", ignored.getMessage()); }
+                } catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: {}", ignored.getMessage()); }
 				try {
 					if(dos2 != null)
 					{
 						dos2.close();
 					}
-				} catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", ignored.getMessage()); }
+				} catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: {}", ignored.getMessage()); }
 				try {
 					if(fos != null)
 					{
 						fos.close();
 					}
-				} catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", ignored.getMessage()); }
+				} catch (Exception ignored) { OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: {}", ignored.getMessage()); }
 			}
 		}
 	}
@@ -1053,20 +1052,20 @@ public class CustomStructureFileManager
 			}
 			catch (Exception ex)
 			{
-				OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, ex);
-				OTGLog.log(LogLevel.WARN, LogCategory.MAIN, "Failed to load " + occupiedChunksFile.getAbsolutePath() + ", trying to load backup.");
+				OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Exception", ex);
+				OTGLog.warn("Failed to load " + occupiedChunksFile.getAbsolutePath() + ", trying to load backup.");
 			} finally {
 				if(fis != null)
 				{
 					try {
 						fis.getChannel().close();
 					} catch (IOException e) {
-						OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
+						OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: {}", e.getMessage());
 					}
 					try {
 						fis.close();
 					} catch (IOException e) {
-						OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
+						OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: {}", e.getMessage());
 					}
 				}
 			}
@@ -1088,25 +1087,25 @@ public class CustomStructureFileManager
 			}
 			catch (Exception ex)
 			{
-				OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, ex);
+				OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Exception", ex);
 			} finally {
 				if(fis != null)
 				{
 					try {
 						fis.getChannel().close();
 					} catch (IOException e) {
-						OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
+						OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: {}", e.getMessage());
 					}
 					try {
 						fis.close();
 					} catch (IOException e) {
-						OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: %s", e.getMessage());
+						OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to close stream: {}", e.getMessage());
 					}
 				}
 			}
 		}
-		
-		OTGLog.log(LogLevel.ERROR, LogCategory.MAIN, "OTG encountered an error loading " + occupiedChunksFile.getAbsolutePath() + " and could not load a backup, skipping. ");
+
+		OTGLog.error("OTG encountered an error loading " + occupiedChunksFile.getAbsolutePath() + " and could not load a backup, skipping. ");
 	}
 
 	private static void parseChunksMapFileFromStream(ByteBuffer buffer, HashMap<String, ArrayList<ChunkCoordinate>> spawnedStructuresByName, HashMap<String, HashMap<ChunkCoordinate, Integer>> spawnedStructuresByGroup) throws IOException

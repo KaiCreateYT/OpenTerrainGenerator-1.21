@@ -19,7 +19,6 @@ import com.pg85.otg.loader.PresetConfigLoader;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.OTGMaterialReader;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 
 /**
  * Base class for preset loading. Loads presets from disk and provides
@@ -82,21 +81,16 @@ public class LocalPresetLoader {
         this.aliasMap.clear();
 
         if (this.presetsDir.exists() && this.presetsDir.isDirectory()) {
-            OTGLog.getLogger().log(
-                    LogLevel.INFO,
-                    LogCategory.CONFIGS,
-                    "Loading presets from " + this.presetsDir
-            );
+            OTGLog.info(LogCategory.CONFIGS, "Loading presets from {}", this.presetsDir);
             for (File presetDir : Objects.requireNonNull(this.presetsDir.listFiles())) {
                 if (presetDir.isDirectory()) {
                     for (File file : Objects.requireNonNull(presetDir.listFiles())) {
                         if (file.getName().equals(Constants.PRESET_CONFIG_FILE) || file.getName().equals(Constants.LEGACY_WORLD_CONFIG_FILE)) {
                             Preset preset = loadPreset(presetDir.toPath());
                             if (this.aliasMap.containsKey(preset.getPresetRegistryName())) {
-                                OTGLog.getLogger().log(LogLevel.ERROR,
-                                        LogCategory.MAIN,
-                                        "Duplicate preset registry name found: " + preset.getPresetRegistryName() + ". Preset " + preset.getFolderName() + " will be ignored."
-                                );
+                                OTGLog.error(LogCategory.MAIN,
+                                        "Duplicate preset registry name found: {}. Preset {} will be ignored.",
+                                        preset.getPresetRegistryName(), preset.getFolderName());
                                 continue;
                             } else {
                                 this.presets.put(preset.getFolderName(), preset);
@@ -108,11 +102,7 @@ public class LocalPresetLoader {
                 }
             }
         } else {
-            OTGLog.getLogger().log(
-                    LogLevel.INFO,
-                    LogCategory.CONFIGS,
-                    "No presets found in " + this.presetsDir
-            );
+            OTGLog.info(LogCategory.CONFIGS, "No presets found in {}", this.presetsDir);
         }
     }
 
@@ -133,11 +123,7 @@ public class LocalPresetLoader {
     public static List<Preset> loadPresetsFromDisk(Path otgRootFolder) {
         Path presetsDir = getPresetsDir(otgRootFolder);
         if (!presetsDir.toFile().exists()) {
-            OTGLog.getLogger().log(
-                    LogLevel.INFO,
-                    LogCategory.CONFIGS,
-                    "No presets found in " + presetsDir
-            );
+            OTGLog.info(LogCategory.CONFIGS, "No presets found in {}", presetsDir);
             return Collections.emptyList();
         }
         List<Path> presetDirectories = PresetConfigLoader.findPresetDirectories(presetsDir);

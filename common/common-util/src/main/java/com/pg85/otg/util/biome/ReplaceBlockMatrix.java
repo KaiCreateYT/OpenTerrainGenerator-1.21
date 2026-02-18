@@ -7,7 +7,6 @@ import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.OTGMaterialReader;
 import com.pg85.otg.util.helpers.StringHelper;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.materials.LocalMaterialData;
 import com.pg85.otg.util.materials.LocalMaterialTag;
 import it.unimi.dsi.fastutil.ints.Int2ObjectAVLTreeMap;
@@ -129,7 +128,7 @@ public class ReplaceBlockMatrix
 							existing.to = instruction.to;
 						}
 					} else {
-						OTGLog.getLogger().log(LogLevel.ERROR, LogCategory.CONFIGS, "Unknown type of material: " + instruction.from.toString());
+						OTGLog.error(LogCategory.CONFIGS, "Unknown type of material: {}", instruction.from);
 					}
 				}
 				targetsAtHeight.add(instruction.copyInstruction());

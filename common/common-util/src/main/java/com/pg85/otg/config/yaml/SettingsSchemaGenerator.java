@@ -61,7 +61,7 @@ public class SettingsSchemaGenerator {
             for (Map.Entry<String, Setting<?>> entry : settings.entrySet()) {
                 Setting<?> setting = entry.getValue();
                 if (setting == null) {
-                    OTGLog.warn("Setting is null: %s", entry.getKey());
+                    OTGLog.warn("Setting is null: {}", entry.getKey());
                     continue;
                 }
                 jsonSchema.append("        \"").append(setting.getName()).append("\": {\n");

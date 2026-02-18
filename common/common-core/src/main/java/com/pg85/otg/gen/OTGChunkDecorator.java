@@ -133,7 +133,7 @@ public class OTGChunkDecorator implements IChunkDecorator
 		boolean loggedWait = false;
 		while (this.saving) {
 			if (!loggedWait) {
-				OTGLog.log(LogLevel.WARN, LogCategory.MAIN, "Decorate waiting on SaveToDisk. Although other mods could be causing this and there may not be any problem, this can potentially cause an endless loop!");
+				OTGLog.warn("Decorate waiting on SaveToDisk. Although other mods could be causing this and there may not be any problem, this can potentially cause an endless loop!");
 				loggedWait = true;
 			}
 			Thread.yield();
@@ -166,7 +166,7 @@ public class OTGChunkDecorator implements IChunkDecorator
 				long basicResMs = totalBasicResourceTimeMs.get();
 				long totalMs = bo4Ms + resMs;
 				if (totalMs > 0) {
-					OTGLog.log(LogLevel.INFO, LogCategory.PERFORMANCE,
+					OTGLog.info(LogCategory.PERFORMANCE,
 						String.format("Decoration stats (%d chunks): BO4=%.1f%% (%dms), Resources=%.1f%% (%dms), Avg=%.2fms/chunk",
 							count,
 							100.0 * bo4Ms / totalMs, bo4Ms,
@@ -175,7 +175,7 @@ public class OTGChunkDecorator implements IChunkDecorator
 
 					// Log resource breakdown
 					if (resMs > 0) {
-						OTGLog.log(LogLevel.INFO, LogCategory.PERFORMANCE,
+						OTGLog.info(LogCategory.PERFORMANCE,
 							String.format("  Resource breakdown: CustomObject=%.1f%% (%dms), CustomStruct=%.1f%% (%dms), Basic=%.1f%% (%dms)",
 								100.0 * customObjMs / resMs, customObjMs,
 								100.0 * customStructMs / resMs, customStructMs,
@@ -188,7 +188,7 @@ public class OTGChunkDecorator implements IChunkDecorator
 						.sorted((a, b) -> Long.compare(b.getValue().get(), a.getValue().get()))
 						.limit(5)
 						.forEach(e -> topResources.append(String.format("%s=%dms, ", e.getKey(), e.getValue().get())));
-					OTGLog.log(LogLevel.INFO, LogCategory.PERFORMANCE, topResources.toString());
+					OTGLog.info(LogCategory.PERFORMANCE, topResources.toString());
 				}
 			}
 		}

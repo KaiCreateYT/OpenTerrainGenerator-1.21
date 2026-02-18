@@ -16,7 +16,6 @@ import com.pg85.otg.util.ChunkCoordinate;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.helpers.RandomHelper;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 
 class BranchDataItem
 {

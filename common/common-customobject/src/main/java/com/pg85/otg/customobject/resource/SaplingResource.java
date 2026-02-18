@@ -5,7 +5,6 @@ import com.pg85.otg.customobject.CustomObjectManager;
 import com.pg85.otg.customobject.config.CustomObjectResourcesManager;
 import com.pg85.otg.exceptions.InvalidConfigException;
 import com.pg85.otg.config.settings.biome.BiomeSettings;
-import com.pg85.otg.interfaces.ILogger;
 import com.pg85.otg.interfaces.IMaterialReader;
 import com.pg85.otg.interfaces.IModLoadedChecker;
 import com.pg85.otg.interfaces.ISaplingSpawner;
@@ -14,7 +13,6 @@ import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.OTGMaterialReader;
 import com.pg85.otg.util.bo3.Rotation;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.materials.LocalMaterialData;
 import com.pg85.otg.util.minecraft.SaplingType;
 
@@ -52,7 +50,6 @@ public class SaplingResource extends ISaplingSpawner
 		assureSize(3, args);
 
 		this.saplingType = SaplingType.get(args.get(0));
-		ILogger logger = OTGLog.getLogger();
 		if (this.saplingType == SaplingType.Custom)
 		{
 			try {

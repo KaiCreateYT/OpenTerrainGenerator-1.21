@@ -76,23 +76,4 @@ public interface ILogger {
 		error(LogCategory.MAIN, message, e);
 	}
 
-	// --- Deprecated: remove after Phase 2 migration ---
-
-	/** @deprecated Use {@link #isEnabled(LogLevel, LogCategory)} */
-	@Deprecated
-	default boolean getLogCategoryEnabled(LogCategory category) {
-		return isEnabled(LogLevel.INFO, category);
-	}
-
-	/** @deprecated Use {@link #error(LogCategory, String, Exception)} */
-	@Deprecated
-	default void printStackTrace(LogLevel level, LogCategory category, Exception e) {
-		error(category, "Exception", e);
-	}
-
-	/** @deprecated Use {@link #error(String, Exception)} */
-	@Deprecated
-	default void printStackTrace(Exception e) {
-		error(LogCategory.MAIN, "Exception", e);
-	}
 }

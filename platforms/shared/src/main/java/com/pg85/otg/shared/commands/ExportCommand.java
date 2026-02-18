@@ -21,8 +21,6 @@ import com.pg85.otg.interfaces.IModLoadedChecker;
 import com.pg85.otg.presets.Preset;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.gen.LocalWorldGenRegion;
-import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.materials.LocalMaterialData;
 import com.pg85.otg.util.nbt.LocalNBTHelper;
 import net.minecraft.commands.CommandSourceStack;
@@ -253,8 +251,7 @@ public class ExportCommand {
             }
         } catch (Exception e) {
             source.sendFailure(Component.literal("Failed to load template: " + e.getMessage()));
-            OTGLog.log(LogLevel.ERROR, LogCategory.MAIN, "Failed to load template for export");
-            OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.MAIN, e);
+            OTGLog.error("Failed to load template for export", e);
             return 0;
         }
 
@@ -345,8 +342,7 @@ public class ExportCommand {
             }
         } catch (Exception e) {
             source.sendFailure(Component.literal("Error during export: " + e.getMessage()));
-            OTGLog.log(LogLevel.ERROR, LogCategory.MAIN, "Error during export command: " + e.getClass().getName());
-            OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.MAIN, e);
+            OTGLog.error("Error during export command", e);
             return 0;
         }
     }

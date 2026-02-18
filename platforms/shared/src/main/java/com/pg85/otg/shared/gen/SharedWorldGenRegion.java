@@ -611,7 +611,7 @@ public abstract class SharedWorldGenRegion extends LocalWorldGenRegion {
                     }
                 );
             } catch (Exception ignored) {
-                OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to load entity from NBT: %s", ignored.getMessage());
+                OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to load entity from NBT: {}", ignored.getMessage());
             }
             if (entity == null) {
                 OTGLog.error(LogCategory.CUSTOM_OBJECTS,

@@ -13,7 +13,6 @@ import com.pg85.otg.config.settings.ConfigSection;
 import com.pg85.otg.constants.settings.BiomeMode;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -233,7 +232,7 @@ public class GenerationSettings extends ConfigSection {
         if (biomeMode == BiomeMode.FromImage) {
             File mapFile = new File(settingsDir.toString(), reader.getSetting(ImageSettings.IMAGE_FILE));
             if (!mapFile.exists()) {
-                OTGLog.getLogger().log(LogLevel.ERROR, LogCategory.MAIN, "Biome map file not found. Switching BiomeMode to Normal");
+                OTGLog.error(LogCategory.MAIN, "Biome map file not found. Switching BiomeMode to Normal");
                 biomeMode = BiomeMode.Normal;
             }
         }

@@ -11,10 +11,8 @@ import com.pg85.otg.interfaces.ILogger;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.helpers.StringHelper;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.*;
 
 /**
@@ -134,16 +132,9 @@ public final class SimpleSettingsMap implements SettingsMap
 		try {
 			return Integer.parseInt(val.getRawValue().split(":", 2)[1].trim());
 		} catch (NumberFormatException e) {
-			OTGLog.getLogger().log(
-				LogLevel.ERROR,
-				LogCategory.CONFIGS,
-				MessageFormat.format(
-					"Failed to parse the version number in {0} on line {1}: {2}",
-					name,
-					val.getLineNumber(),
-					e.getMessage()
-				)
-			);
+			OTGLog.error(LogCategory.CONFIGS,
+				"Failed to parse the version number in {} on line {}: {}",
+				name, val.getLineNumber(), e.getMessage());
 			return 1;
 		}
 	}

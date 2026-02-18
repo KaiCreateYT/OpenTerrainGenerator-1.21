@@ -133,7 +133,7 @@ public final class OTGRegistryHelper {
                     DimensionType dimensionType = getDimensionType(preset.getPresetConfig().getDimensionSettings());
                     WritableRegistry<DimensionType> dimensionTypes = getRegistryOrThrow(loaders, Registries.DIMENSION_TYPE);
                     dimensionTypes.register(dimensionTypeKey, dimensionType, RegistrationInfo.BUILT_IN);
-                    OTGLog.info("Registered dimension type: %s", dimensionTypeKey.location());
+                    OTGLog.info("Registered dimension type: {}", dimensionTypeKey.location());
                     yield dimensionTypeKey;
                 }
             };
@@ -149,14 +149,14 @@ public final class OTGRegistryHelper {
             WritableRegistry<WorldPreset> worldPresets,
             Map<ResourceKey<LevelStem>, LevelStem> levelStems
     ) {
-        OTGLog.info("%s", levelStems.keySet());
-        OTGLog.info("%s", levelStems.values());
+        OTGLog.info("{}", levelStems.keySet());
+        OTGLog.info("{}", levelStems.values());
 
         WorldPreset worldPreset = new WorldPreset(levelStems);
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, preset.getPresetRegistryName().toLowerCase(Locale.ROOT));
         ResourceKey<WorldPreset> key = ResourceKey.create(Registries.WORLD_PRESET, id);
         worldPresets.register(key, worldPreset, RegistrationInfo.BUILT_IN);
-        OTGLog.getLogger().info("Registered world preset: " + key.location());
+        OTGLog.info("Registered world preset: {}", key.location());
     }
 
     // --- Biome registration ---
@@ -186,7 +186,7 @@ public final class OTGRegistryHelper {
         SharedPresetBiomeLoader loader = (SharedPresetBiomeLoader) OTG.getEngine().getPresetLoader();
         WritableRegistry<Biome> biomeWritableRegistry = getRegistry(loaders, Registries.BIOME);
         if (biomeWritableRegistry == null) {
-            OTGLog.getLogger().error("Could not find biome registry");
+            OTGLog.error("Could not find biome registry");
             return;
         }
         loader.registerBiomes(biomeWritableRegistry);
@@ -294,7 +294,7 @@ public final class OTGRegistryHelper {
                     }
                 }
                 if (dimPreset == null) {
-                    OTGLog.getLogger().error("Could not find preset for dimension %s", dim);
+                    OTGLog.error("Could not find preset for dimension {}", dim);
                     continue;
                 }
 
@@ -314,12 +314,12 @@ public final class OTGRegistryHelper {
 
                 Holder.Reference<DimensionType> dimensionReference = dimensionHolders.getOrThrow(dimensionKey);
                 if (!dimensionReference.isBound()) {
-                    OTGLog.getLogger().error("Dimension reference for dimension %s is not bound", dim);
+                    OTGLog.error("Dimension reference for dimension {} is not bound", dim);
                 }
 
                 Holder.Reference<NoiseGeneratorSettings> noiseReference = noiseHolders.getOrThrow(noiseKey);
                 if (!noiseReference.isBound()) {
-                    OTGLog.getLogger().error("Noise reference for dimension %s is not bound", dim);
+                    OTGLog.error("Noise reference for dimension {} is not bound", dim);
                 }
 
                 Registry<Biome> biomeRegistry = getRegistryOrThrow(loaders, Registries.BIOME);
@@ -333,11 +333,11 @@ public final class OTGRegistryHelper {
                 ResourceKey<DimensionType> dimensionKey = ResourceKey.create(Registries.DIMENSION_TYPE, ResourceLocation.parse(dim));
                 Optional<Holder.Reference<DimensionType>> dimensionTypeHolder = dimensionHolders.get(dimensionKey);
                 if (dimensionTypeHolder.isEmpty()) {
-                    OTGLog.getLogger().error("Could not find dimension reference for dimension %s", dimensionKey.location());
+                    OTGLog.error("Could not find dimension reference for dimension {}", dimensionKey.location());
                     continue;
                 }
                 if (!dimensionTypeHolder.get().isBound()) {
-                    OTGLog.getLogger().error("Dimension reference for dimension %s is not bound", dimensionKey.location());
+                    OTGLog.error("Dimension reference for dimension {} is not bound", dimensionKey.location());
                     continue;
                 }
 
@@ -345,7 +345,7 @@ public final class OTGRegistryHelper {
                     Holder<MultiNoiseBiomeSourceParameterList> overworldBiomeSource = getRegistryOrThrow(loaders, Registries.MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST)
                             .asLookup().getOrThrow(MultiNoiseBiomeSourceParameterLists.OVERWORLD);
                     if (!overworldBiomeSource.isBound()) {
-                        OTGLog.getLogger().error("Overworld biome source is not bound");
+                        OTGLog.error("Overworld biome source is not bound");
                     }
                     Holder<NoiseGeneratorSettings> overworldNoise = noiseHolders.getOrThrow(NoiseGeneratorSettings.OVERWORLD);
                     chunkGenerator = new NoiseBasedChunkGenerator(
@@ -356,7 +356,7 @@ public final class OTGRegistryHelper {
                     Holder<MultiNoiseBiomeSourceParameterList> netherBiomeSource = getRegistryOrThrow(loaders, Registries.MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST)
                             .asLookup().getOrThrow(MultiNoiseBiomeSourceParameterLists.NETHER);
                     if (!netherBiomeSource.isBound()) {
-                        OTGLog.getLogger().error("Nether biome source is not bound");
+                        OTGLog.error("Nether biome source is not bound");
                     }
                     Holder<NoiseGeneratorSettings> netherNoise = noiseHolders.getOrThrow(NoiseGeneratorSettings.NETHER);
                     chunkGenerator = new NoiseBasedChunkGenerator(
@@ -371,7 +371,7 @@ public final class OTGRegistryHelper {
                             endNoise
                     );
                 } else {
-                    OTGLog.error("Non-OTG dimension %s not yet supported", dimensionKey.location());
+                    OTGLog.error("Non-OTG dimension {} not yet supported", dimensionKey.location());
                     continue;
                 }
 
@@ -403,7 +403,7 @@ public final class OTGRegistryHelper {
             return;
         }
 
-        OTGLog.getLogger().info("Registering the following OTG presets: %s", OTG.getEngine().getPresetLoader().getAllPresets());
+        OTGLog.info("Registering the following OTG presets: {}", OTG.getEngine().getPresetLoader().getAllPresets());
 
         registerBiomes(loaders);
 
@@ -415,7 +415,7 @@ public final class OTGRegistryHelper {
 
         WritableRegistry<WorldPreset> worldPresets = getRegistry(loaders, Registries.WORLD_PRESET);
         if (worldPresets == null) {
-            OTGLog.getLogger().error("Could not find world preset registry");
+            OTGLog.error("Could not find world preset registry");
             return;
         }
 
@@ -424,7 +424,7 @@ public final class OTGRegistryHelper {
                 continue;
             }
 
-            OTGLog.getLogger().info("Registering world preset: %s", dimensionTypes.get(preset).location());
+            OTGLog.info("Registering world preset: {}", dimensionTypes.get(preset).location());
 
             Map<ResourceKey<LevelStem>, LevelStem> levelStems = createLevelStems(preset, loaders, chunkGeneratorFactory);
 

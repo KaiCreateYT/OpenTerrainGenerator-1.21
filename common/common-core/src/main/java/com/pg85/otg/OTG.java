@@ -1,14 +1,10 @@
 package com.pg85.otg;
 
-import com.pg85.otg.util.OTGLog;
-import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
-
 /**
  * Main entry-point. Used to access OTGEngine.
  * OTGEngine is implemented and provided by the platform-specific
  * layer and holds any objects and methods used during a session.
- * For logging, use {@link OTGLog} directly.
+ * For logging, use {@link com.pg85.otg.util.OTGLog} directly.
  */
 public class OTG
 {
@@ -44,15 +40,4 @@ public class OTG
 		Engine = null;
 	}
 
-	/** @deprecated Use {@link OTGLog#log(LogLevel, LogCategory, String)} directly */
-	@Deprecated
-	public static void log(LogLevel logLevel, LogCategory logCategory, String message) {
-		OTGLog.log(logLevel, logCategory, message);
-	}
-
-	/** @deprecated Use {@link OTGLog#info(String, Object...)} directly */
-	@Deprecated
-	public static void log(String message) {
-		OTGLog.info(message);
-	}
 }

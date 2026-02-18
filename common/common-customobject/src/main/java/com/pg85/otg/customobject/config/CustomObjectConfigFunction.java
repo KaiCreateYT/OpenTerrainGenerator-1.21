@@ -5,7 +5,6 @@ import com.pg85.otg.interfaces.IMaterialReader;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.helpers.StringHelper;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.materials.LocalMaterialData;
 import com.pg85.otg.util.materials.MaterialSet;
 
@@ -66,14 +65,7 @@ public abstract class CustomObjectConfigFunction<T>
 		{
 			configFunction.load(stringArgs,  materialReader);
 		} catch (InvalidConfigException e) {
-			OTGLog.log(
-				LogLevel.ERROR,
-				LogCategory.CUSTOM_OBJECTS,
-				String.format(
-					"Invalid default config function, please report this to team OTG. Class: " + clazz.getName() + ". Error: ", 
-					(Object[])e.getStackTrace()
-				)
-			);
+			OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Invalid default config function, please report this to team OTG. Class: {}", clazz.getName(), e);
 		}
 
 		return configFunction;

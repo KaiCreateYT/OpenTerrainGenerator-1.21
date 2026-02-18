@@ -8,8 +8,6 @@ import com.pg85.otg.neoforge.portals.OTGAttachments;
 import com.pg85.otg.neoforge.portals.PortalIgnitionHandler;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.OTGMaterialReader;
-import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
@@ -20,7 +18,7 @@ public class OTGPlugin {
 
     public OTGPlugin(IEventBus modBus) {
         OTGLog.setLogger(new com.pg85.otg.shared.util.OTGLogger());
-        OTGLog.getLogger().log(LogLevel.INFO, LogCategory.MAIN, "OTG Engine starting");
+        OTGLog.info("OTG Engine starting");
         OTGMaterialReader.set(new SharedMaterialReader());
         OTG.startEngine(new NeoForgeEngine());
 
@@ -35,7 +33,7 @@ public class OTGPlugin {
         NeoForge.EVENT_BUS.register(NeoForgeEventHandler.class);
         NeoForge.EVENT_BUS.register(PortalIgnitionHandler.class);
 
-        OTG.log("OTG Engine started, presets loaded");
+        OTGLog.info("OTG Engine started, presets loaded");
     }
 
     public static NeoForgeEventHandler getEventHandler() {

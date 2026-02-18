@@ -1,6 +1,5 @@
 package com.pg85.otg.fabric;
 
-import com.pg85.otg.OTG;
 import com.pg85.otg.OTGEngine;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.shared.biome.SharedBiomePlatformAdapter;
@@ -8,8 +7,6 @@ import com.pg85.otg.shared.biome.SharedPresetBiomeLoader;
 import com.pg85.otg.shared.materials.SharedMaterials;
 import com.pg85.otg.fabric.util.FabricModLoadedChecker;
 import com.pg85.otg.util.OTGLog;
-import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.File;
@@ -42,7 +39,7 @@ public class FabricEngine extends OTGEngine {
             }
         });
         if (jarFiles.size() > 1) {
-            OTG.log(LogLevel.WARN, LogCategory.MAIN, "Found multiple paths for mod jar, using the first one.");
+            OTGLog.warn("Found multiple paths for mod jar, using the first one.");
         }
         return jarFiles.get(0);
     }

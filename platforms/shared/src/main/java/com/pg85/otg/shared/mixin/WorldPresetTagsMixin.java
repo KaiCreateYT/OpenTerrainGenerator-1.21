@@ -33,7 +33,7 @@ public class WorldPresetTagsMixin {
     private void addOurOwnTags(CallbackInfo ci) {
         ReloadableServerResources self = (ReloadableServerResources) (Object) this;
         RegistryAccess registryAccess = self.fullRegistries().get();
-        OTGLog.getLogger().info("Adding OTG presets to the world preset tags");
+        OTGLog.info("Adding OTG presets to the world preset tags");
         var presets = registryAccess.registryOrThrow(Registries.WORLD_PRESET);
         var tags = presets.getTags();
         HashMap<TagKey<WorldPreset>, List<Holder<WorldPreset>>> collected = tags.collect(
@@ -46,10 +46,10 @@ public class WorldPresetTagsMixin {
             }
             Holder.Reference<WorldPreset> holder = getAsReference(presets, id).orElse(null);
             if (holder == null) {
-                OTGLog.getLogger().error("Preset %s does not exist!", id.toString());
+                OTGLog.error("Preset {} does not exist!", id.toString());
                 return;
             }
-            OTGLog.getLogger().info("Adding preset %s to the tags", id.toString());
+            OTGLog.info("Adding preset {} to the tags", id.toString());
             collected.computeIfAbsent(WorldPresetTags.NORMAL, tag -> new ArrayList<>())
                     .add(holder);
         });
@@ -91,7 +91,7 @@ public class WorldPresetTagsMixin {
 
             Optional<Holder.Reference<Biome>> holderOpt = biomeRegistry.getHolder(biomeKey);
             if (holderOpt.isEmpty()) {
-                OTGLog.getLogger().warn("Could not find holder for biome %s when injecting structure tags", biomeKey.location());
+                OTGLog.warn("Could not find holder for biome {} when injecting structure tags", biomeKey.location());
                 continue;
             }
             Holder.Reference<Biome> holder = holderOpt.get();
@@ -104,7 +104,7 @@ public class WorldPresetTagsMixin {
         }
 
         biomeRegistry.bindTags(biomeTagMap);
-        OTGLog.getLogger().info("Injected %d structure tag entries for %d OTG biomes",
+        OTGLog.info("Injected {} structure tag entries for {} OTG biomes",
                 addedCount, structureConfigs.size());
     }
 

@@ -4,7 +4,6 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.*;
 
-import com.pg85.otg.OTG;
 import com.pg85.otg.biome.BiomePlan;
 import com.pg85.otg.biome.BiomePlanResolver;
 import com.pg85.otg.config.biome.BiomeConfig;
@@ -24,7 +23,6 @@ import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.biome.MCBiomeResourceLocation;
 import com.pg85.otg.util.biome.OTGBiomeResourceLocation;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
@@ -179,8 +177,8 @@ public class SharedPresetBiomeLoader extends LocalPresetLoader {
                 .orElse(null);
 
             if (biomeTemplate == null) {
-                OTG.getEngine().getLogger().log(LogLevel.WARN, LogCategory.BIOME_REGISTRY,
-                    "No BiomeTemplate found for template biome: " + templateBiome.getName());
+                OTGLog.warn(LogCategory.BIOME_REGISTRY,
+                    "No BiomeTemplate found for template biome: {}", templateBiome.getName());
                 continue;
             }
 

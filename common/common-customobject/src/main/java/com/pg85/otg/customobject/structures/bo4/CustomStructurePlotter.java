@@ -243,7 +243,7 @@ public class CustomStructurePlotter
 			}
 			catch (InterruptedException e)
 			{
-				OTGLog.error(LogCategory.STRUCTURE_PLOTTING, "Thread interrupted while waiting for structure plot: %s", e.getMessage());
+				OTGLog.error(LogCategory.STRUCTURE_PLOTTING, "Thread interrupted while waiting for structure plot: {}", e.getMessage());
 				throw new RuntimeException("This shouldn't happen, please ask for help on the OTG Discord or file an issue on the OTG github.");
 			}
 		}
@@ -283,7 +283,7 @@ public class CustomStructurePlotter
 								}
 								else if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 								{
-									OTGLog.log(LogLevel.ERROR, LogCategory.STRUCTURE_PLOTTING, "CustomStructure " + structure.getName() + " in biome " + biomeConfig.getIdentitySettings().getBiomeName() + " has IsOTGPlus:false and/or is not a BO4, ignoring.");
+									OTGLog.error(LogCategory.STRUCTURE_PLOTTING, "CustomStructure " + structure.getName() + " in biome " + biomeConfig.getIdentitySettings().getBiomeName() + " has IsOTGPlus:false and/or is not a BO4, ignoring.");
 								}
 							}
 						}
@@ -910,7 +910,7 @@ public class CustomStructurePlotter
 												structureCoordConfig.getConfig().timesSpawned += 1;
 												if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING))
 												{
-													OTGLog.log(LogLevel.INFO, LogCategory.STRUCTURE_PLOTTING, "Plotted structure " + structureCoordConfig.getName() + " at chunk " + spawnCoordX + " " + spawnCoordZ + " ("+ (spawnCoordX * 16) + " 100 " + (spawnCoordZ * 16) + ")");// + " biome " + biome3.getName());
+													OTGLog.info(LogCategory.STRUCTURE_PLOTTING, "Plotted structure " + structureCoordConfig.getName() + " at chunk " + spawnCoordX + " " + spawnCoordZ + " ("+ (spawnCoordX * 16) + " 100 " + (spawnCoordZ * 16) + ")");// + " biome " + biome3.getName());
 												}
 
 												if(((BO4)currentStructureSpawning[0]).getConfig().frequency > 0 || !((BO4) currentStructureSpawning[0]).getConfig().bo4Groups.isEmpty())
@@ -965,7 +965,7 @@ public class CustomStructurePlotter
 												if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.PERFORMANCE) && (System.currentTimeMillis() - startTime) > 50)
 												{
 													BiomeSettings biomeConfig4 = worldGenRegion.getCachedBiomeProvider().getBiomeConfig(chunkCoord.getBlockX() + DecorationArea.BO_CHUNK_CENTER_X, chunkCoord.getBlockZ() + DecorationArea.BO_CHUNK_CENTER_Z);
-													OTGLog.log(LogLevel.WARN, LogCategory.PERFORMANCE, "Warning: Plotting BO4's for biome " +  biomeConfig4.getIdentitySettings().getBiomeName() + " at " + (chunkCoord.getBlockX() + DecorationArea.BO_CHUNK_CENTER_X) + " ~ " + (chunkCoord.getBlockZ() + DecorationArea.BO_CHUNK_CENTER_Z)  + " took " + (System.currentTimeMillis() - startTime) + " Ms.");
+													OTGLog.warn(LogCategory.PERFORMANCE, "Warning: Plotting BO4's for biome " +  biomeConfig4.getIdentitySettings().getBiomeName() + " at " + (chunkCoord.getBlockX() + DecorationArea.BO_CHUNK_CENTER_X) + " ~ " + (chunkCoord.getBlockZ() + DecorationArea.BO_CHUNK_CENTER_Z)  + " took " + (System.currentTimeMillis() - startTime) + " Ms.");
 													startTime = System.currentTimeMillis(); 
 												}
 												
@@ -999,7 +999,7 @@ public class CustomStructurePlotter
 		if(OTGLog.isEnabled(LogLevel.INFO, LogCategory.PERFORMANCE) && (System.currentTimeMillis() - startTime) > 50)
 		{
 			BiomeSettings biomeConfig4 = worldGenRegion.getCachedBiomeProvider().getBiomeConfig(chunkCoord.getBlockX() + DecorationArea.BO_CHUNK_CENTER_X, chunkCoord.getBlockZ() + DecorationArea.BO_CHUNK_CENTER_Z);
-			OTGLog.log(LogLevel.WARN, LogCategory.PERFORMANCE, "Warning: Plotting BO4's for biome " +  biomeConfig4.getIdentitySettings().getBiomeName() + " at " + (chunkCoord.getBlockX() + DecorationArea.BO_CHUNK_CENTER_X) + " ~ " + (chunkCoord.getBlockZ() + DecorationArea.BO_CHUNK_CENTER_Z)  + " took " + (System.currentTimeMillis() - startTime) + " Ms.");
+			OTGLog.warn(LogCategory.PERFORMANCE, "Warning: Plotting BO4's for biome " +  biomeConfig4.getIdentitySettings().getBiomeName() + " at " + (chunkCoord.getBlockX() + DecorationArea.BO_CHUNK_CENTER_X) + " ~ " + (chunkCoord.getBlockZ() + DecorationArea.BO_CHUNK_CENTER_Z)  + " took " + (System.currentTimeMillis() - startTime) + " Ms.");
 		}
 
 		return null;

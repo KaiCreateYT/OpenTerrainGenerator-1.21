@@ -13,7 +13,6 @@ import com.pg85.otg.interfaces.IModLoadedChecker;
 import com.pg85.otg.interfaces.IWorldGenRegion;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.materials.MaterialSet;
 
 import java.nio.file.Path;

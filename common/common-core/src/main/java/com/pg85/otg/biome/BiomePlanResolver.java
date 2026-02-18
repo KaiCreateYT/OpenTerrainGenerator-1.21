@@ -8,7 +8,6 @@ import com.pg85.otg.gen.biome.layers.BiomeGroup;
 import com.pg85.otg.interfaces.IBiomeResourceLocation;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 
 import java.util.*;
 
@@ -210,7 +209,7 @@ public final class BiomePlanResolver {
             for (String biomeGroupEntry : group.getBiomes()) {
                 BiomeSettings biomeSettings = biomeConfigsByName.get(biomeGroupEntry);
                 if (biomeSettings == null) {
-                    OTGLog.log(LogLevel.ERROR, LogCategory.BIOME_REGISTRY,
+                    OTGLog.error(LogCategory.BIOME_REGISTRY,
                             "Could not find biome " + biomeGroupEntry + " in biome group " + group.getGroupId());
                     continue;
                 }

@@ -3,7 +3,6 @@ package com.pg85.otg.config.io;
 import com.pg85.otg.constants.settings.ConfigMode;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -41,11 +40,7 @@ public final class FileSettingsWriter
 		{
 			return;
 		} else {
-			OTGLog.getLogger().log(
-				LogLevel.INFO,
-				LogCategory.CONFIGS,
-				String.format("Writing to file " + file + " with configMode " + configMode)
-			);
+			OTGLog.info(LogCategory.CONFIGS, "Writing to file {} with configMode {}", file, configMode);
 		}
 
 		boolean writeComments = configMode != ConfigMode.WriteWithoutComments;
@@ -56,11 +51,7 @@ public final class FileSettingsWriter
 		}
 		catch (IOException e)
 		{
-			OTGLog.getLogger().log(
-				LogLevel.ERROR,
-				LogCategory.CONFIGS,
-				String.format("Failed to write to file " + file + ", error: ",(Object[])e.getStackTrace())
-			);
+			OTGLog.error(LogCategory.CONFIGS, "Failed to write to file " + file, e);
 		}
 	}
 

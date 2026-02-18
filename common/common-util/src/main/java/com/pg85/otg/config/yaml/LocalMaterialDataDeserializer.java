@@ -7,7 +7,6 @@ import com.pg85.otg.exceptions.InvalidConfigException;
 import com.pg85.otg.interfaces.IMaterialReader;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.materials.LocalMaterialData;
 
 import java.io.IOException;
@@ -25,7 +24,7 @@ public class LocalMaterialDataDeserializer extends JsonDeserializer<LocalMateria
         try {
             return materialReader.readMaterial(value);
         } catch (InvalidConfigException e) {
-            OTGLog.getLogger().log(LogLevel.ERROR, LogCategory.CONFIGS, "Invalid material " + value + ". Exception: " + e.getMessage());
+            OTGLog.error(LogCategory.CONFIGS, "Invalid material {}. Exception: {}", value, e.getMessage());
             throw new RuntimeException(e);
         }
     }

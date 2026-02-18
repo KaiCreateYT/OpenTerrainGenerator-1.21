@@ -40,7 +40,7 @@ public abstract class ConfigSection {
                     Setting<?> setting = (Setting<?>) field.get(null);
                     settingsMap.put(field.getName(), setting);
                 } catch (IllegalAccessException e) {
-                    OTGLog.error(LogCategory.CONFIGS, "Failed to access setting field: %s", e.getMessage());
+                    OTGLog.error(LogCategory.CONFIGS, "Failed to access setting field: {}", e.getMessage());
                 }
             }
         }

@@ -8,7 +8,6 @@ import com.pg85.otg.interfaces.IMaterialReader;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.nbt.NamedBinaryTag;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.minecraft.EntityNames;
 
 import java.io.*;
@@ -127,7 +126,7 @@ public abstract class EntityFunction<T extends CustomObjectConfigFile> extends C
 					// Set it to null so we don't go looking for this later
 					this.nameTagOrNBTFileName = null;
 				} catch (IOException e) {
-					OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to read NBT for entity function: %s", e.getMessage());
+					OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to read NBT for entity function: {}", e.getMessage());
 				}
 			}
 		} else {
@@ -161,7 +160,7 @@ public abstract class EntityFunction<T extends CustomObjectConfigFile> extends C
                         }
                     }
 				} catch (IOException e1) {
-					OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to read NBT file for entity function: %s", e1.getMessage());
+					OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "Failed to read NBT file for entity function: {}", e1.getMessage());
 				}
 			}
 

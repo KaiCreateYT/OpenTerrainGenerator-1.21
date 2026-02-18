@@ -7,7 +7,6 @@ import com.pg85.otg.interfaces.IWorldGenRegion;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.OTGMaterialReader;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.materials.MaterialGroup;
 import com.pg85.otg.util.materials.MaterialSet;
 import com.pg85.otg.util.minecraft.PlantType;
@@ -108,11 +107,9 @@ public abstract class VegetationResource extends BiomeResourceBase implements IB
     public void logOutOfBounds(IWorldGenRegion world, int outOfBounds)
     {
         if (outOfBounds > 0) {
-            OTGLog.log(
-                LogLevel.WARN, LogCategory.DECORATION,
-                "VegetationResource: " + outOfBounds + " out of bounds placements of " + plant.getName()
-                + " skipped at " + "chunk " + world.getDecorationArea().getChunkBeingDecorated()
-            );
+            OTGLog.warn(LogCategory.DECORATION,
+                "VegetationResource: {} out of bounds placements of {} skipped at chunk {}",
+                outOfBounds, plant.getName(), world.getDecorationArea().getChunkBeingDecorated());
         }
     }
 

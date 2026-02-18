@@ -18,6 +18,7 @@ import com.pg85.otg.presets.Preset;
 import com.pg85.otg.util.ChunkCoordinate;
 import com.pg85.otg.util.gen.*;
 import com.pg85.otg.util.helpers.MathHelper;
+import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.logging.LogLevel;
 import it.unimi.dsi.fastutil.HashCommon;
@@ -380,22 +381,13 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                 cacheZ = z1 + largestRadius;
                 int biomeIndex = cacheX * areaSize + cacheZ;
                 if (biomeIndex < 0 || biomeIndex >= biomes.length) {
-                    OTG.getEngine().getLogger().log(
-                        LogLevel.ERROR,
-                        LogCategory.MAIN,
-                        String.format("Invalid biome index %d (max=%d) at noiseX=%d, noiseZ=%d, x1=%d, z1=%d, areaSize=%d",
-                            biomeIndex, biomes.length, noiseX, noiseZ, x1, z1, areaSize)
-                    );
+                    OTGLog.error("Invalid biome index {} (max={}) at noiseX={}, noiseZ={}, x1={}, z1={}, areaSize={}",
+                        biomeIndex, biomes.length, noiseX, noiseZ, x1, z1, areaSize);
                     continue;
                 }
                 biome = biomes[biomeIndex];
                 if (biome == null) {
-                    OTG.getEngine().getLogger().log(
-                        LogLevel.ERROR,
-                        LogCategory.MAIN,
-                        String.format("Null biome at noiseX=%d, noiseZ=%d, index=%d",
-                            noiseX, noiseZ, biomeIndex)
-                    );
+                    OTGLog.error("Null biome at noiseX={}, noiseZ={}, index={}", noiseX, noiseZ, biomeIndex);
                     continue;
                 }
                 biomeTerrainSettings = biome.getTerrainSettings();

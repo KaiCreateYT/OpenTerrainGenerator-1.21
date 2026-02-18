@@ -48,7 +48,7 @@ public class DimensionDatapack {
         Files.createDirectories(dimPath.getParent());
         Files.writeString(dimPath, generateDimensionJson(info));
 
-        OTGLog.info("Created datapack files for dimension %s", info.getName());
+        OTGLog.info("Created datapack files for dimension {}", info.getName());
     }
 
     public void deleteDimensionFiles(String name) throws IOException {
@@ -59,7 +59,7 @@ public class DimensionDatapack {
 
         Files.deleteIfExists(dimPath);
 
-        OTGLog.info("Deleted datapack files for dimension %s", name);
+        OTGLog.info("Deleted datapack files for dimension {}", name);
     }
 
     private String formatInfiniburn(String infiniburn) {

@@ -49,13 +49,13 @@ public abstract class MinecraftObjectFunction<T extends CustomObjectConfigFile> 
 	@Override
 	public void spawn(IWorldGenRegion worldGenRegion, Random random, int x, int y, int z)
 	{
-		OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "MinecraftObject(%d,%d,%d,%s) is not implemented and will be skipped", x, y, z, structurePart);
+		OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "MinecraftObject({},{},{},{}) is not implemented and will be skipped", x, y, z, structurePart);
 	}
 
 	@Override
 	public void spawn(IWorldGenRegion worldGenRegion, Random random, int x, int y, int z, ReplaceBlockMatrix replaceBlocks)
 	{
-		OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "MinecraftObject(%d,%d,%d,%s) is not implemented and will be skipped", x, y, z, structurePart);
+		OTGLog.warn(LogCategory.CUSTOM_OBJECTS, "MinecraftObject({},{},{},{}) is not implemented and will be skipped", x, y, z, structurePart);
 	}
 
 	@Override

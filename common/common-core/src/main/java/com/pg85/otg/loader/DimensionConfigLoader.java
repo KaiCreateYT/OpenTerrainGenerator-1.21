@@ -29,7 +29,7 @@ public class DimensionConfigLoader {
             }
             catch (IOException e)
             {
-                OTGLog.error(LogCategory.CONFIGS, "Failed to read dimension config file: %s", e.getMessage());
+                OTGLog.error(LogCategory.CONFIGS, "Failed to read dimension config file: {}", e.getMessage());
             }
             DimensionConfig loadedConfig = fromYamlString(content);
             if(loadedConfig != null)
@@ -57,11 +57,11 @@ public class DimensionConfigLoader {
         try {
             dimConfig = mapper.readValue(input, DimensionConfig.class);
         } catch (JsonParseException e) {
-            OTGLog.error(LogCategory.CONFIGS, "Failed to parse dimension config YAML: %s", e.getMessage());
+            OTGLog.error(LogCategory.CONFIGS, "Failed to parse dimension config YAML: {}", e.getMessage());
         } catch (JsonMappingException e) {
-            OTGLog.error(LogCategory.CONFIGS, "Failed to map dimension config YAML: %s", e.getMessage());
+            OTGLog.error(LogCategory.CONFIGS, "Failed to map dimension config YAML: {}", e.getMessage());
         } catch (IOException e) {
-            OTGLog.error(LogCategory.CONFIGS, "Failed to read dimension config input: %s", e.getMessage());
+            OTGLog.error(LogCategory.CONFIGS, "Failed to read dimension config input: {}", e.getMessage());
         }
 
         return dimConfig;

@@ -7,8 +7,8 @@ import com.pg85.otg.gen.biome.layers.BiomeLayers;
 import com.pg85.otg.gen.biome.layers.util.CachingLayerSampler;
 import com.pg85.otg.interfaces.ILayerSampler;
 import com.pg85.otg.interfaces.ILayerSource;
+import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
@@ -53,8 +53,8 @@ public abstract class SharedOTGBiomeProvider extends BiomeSource implements ILay
     protected @NotNull Stream<Holder<Biome>> collectPossibleBiomes() {
         var iBiomes = OTG.getEngine().getPresetLoader().getGlobalIdMapping(presetFolderName);
         if (iBiomes == null) {
-            OTG.getEngine().getLogger().log(LogLevel.ERROR, LogCategory.BIOME_REGISTRY,
-                    "Biome mapping for preset " + presetFolderName + " is null.");
+            OTGLog.error(LogCategory.BIOME_REGISTRY,
+                    "Biome mapping for preset {} is null.", presetFolderName);
             return Stream.empty();
         }
         for (int otgBiomeID = 0; otgBiomeID < iBiomes.length; otgBiomeID++) {
@@ -138,9 +138,9 @@ public abstract class SharedOTGBiomeProvider extends BiomeSource implements ILay
                 return;
             }
             if (this.seed != seed && this.layer != null) {
-                OTG.getEngine().getLogger().log(LogLevel.ERROR, LogCategory.MAIN,
-                        "Biome provider seed changed from " + this.seed + " to " + seed +
-                                ". This is unexpected and may lead to inconsistent biome generation.");
+                OTGLog.error(LogCategory.MAIN,
+                        "Biome provider seed changed from {} to {}. This is unexpected and may lead to inconsistent biome generation.",
+                        this.seed, seed);
             }
             this.seed = seed;
             layer = ThreadLocal.withInitial(() -> BiomeLayers.create(seed, OTG.getEngine().getPresetLoader().getPresetGenerationData().get(presetFolderName), OTG.getEngine().getLogger()));

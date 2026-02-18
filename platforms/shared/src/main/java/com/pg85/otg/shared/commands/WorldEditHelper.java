@@ -1,8 +1,6 @@
 package com.pg85.otg.shared.commands;
 
 import com.pg85.otg.util.OTGLog;
-import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
@@ -81,7 +79,7 @@ public class WorldEditHelper {
 
             return new int[]{minX, minY, minZ, maxX, maxY, maxZ};
         } catch (Exception e) {
-            OTGLog.log(LogLevel.WARN, LogCategory.MAIN, "Failed to get WorldEdit selection via " + adapterClassName + ": " + e.getMessage());
+            OTGLog.warn("Failed to get WorldEdit selection via {}: {}", adapterClassName, e.getMessage());
             return null;
         }
     }

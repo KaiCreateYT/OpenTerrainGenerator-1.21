@@ -26,7 +26,6 @@ import com.pg85.otg.interfaces.IModLoadedChecker;
 import com.pg85.otg.util.ChunkCoordinate;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.nbt.LocalNBTHelper;
 import com.pg85.otg.util.gen.LocalWorldGenRegion;
 import com.pg85.otg.util.materials.LocalMaterialData;
@@ -124,8 +123,7 @@ public class ObjectCreator
 			}
 			catch (IOException e)
 			{
-				OTGLog.log(LogLevel.ERROR, LogCategory.MAIN, "Failed to rename old file "+destinationPath.getFileName());
-				OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.MAIN, e);
+				OTGLog.error("Failed to rename old file " + destinationPath.getFileName(), e);
 			}
 		}
 
@@ -256,7 +254,7 @@ public class ObjectCreator
 				}
 				catch (InvalidConfigException e)
 				{
-					OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Invalid config while creating object: %s", e.getMessage()); OTGLog.printStackTrace(LogLevel.ERROR, LogCategory.CUSTOM_OBJECTS, e);
+					OTGLog.error(LogCategory.CUSTOM_OBJECTS, "Invalid config while creating object", e);
 					return null;
 				}
 				Corner localmin = new Corner(min.x() + (16 * x), min.y(), min.z() + (16 * z));
@@ -287,7 +285,7 @@ public class ObjectCreator
 			addBranch(type, branches, objectName, (coord.getChunkX() * 16), 0, (coord.getChunkZ() * 16),
 				coord.getChunkX(), coord.getChunkZ(),  mr);
 		}
-		OTGLog.log(LogLevel.INFO, LogCategory.MAIN, "Creating structure "+objectName+" with "+branches.size()+" direct branches");
+		OTGLog.info("Creating structure {} with {} direct branches", objectName, branches.size());
 		CustomObjectConfigFile config = makeNewConfig(type, template, objectName,
 			type.getObjectFilePathFromName(objectName, objectPath),
 			min, max, center, null, branches, presetFolderName,  rootPath, boManager, mr, manager, mlc);

@@ -112,11 +112,11 @@ public abstract class OTGEngine
 		var jarFile = getJarFile();
 		if (jarFile == null)
 		{
-			this.logger.log(LogLevel.WARN, LogCategory.MAIN, "Error getting the jar file. Skipping default preset unpack (copy manually for development).");
+			this.logger.warn(LogCategory.MAIN, "Error getting the jar file. Skipping default preset unpack (copy manually for development).");
 		}
 		else if (shouldSkipDefaultPresetUnpack(presetsDir, jarFile))
 		{
-			this.logger.log(LogLevel.INFO, LogCategory.MAIN, "Default preset is up-to-date. Skipping unpacking.");
+			this.logger.info(LogCategory.MAIN, "Default preset is up-to-date. Skipping unpacking.");
 		}
 		else
 		{
@@ -144,14 +144,14 @@ public abstract class OTGEngine
 
 		File jarFileLocation = getJarFileFromModLoader();
 		if (jarFileLocation == null || !jarFileLocation.exists()) {
-			this.logger.log(LogLevel.WARN, LogCategory.MAIN, "Given location for jar file is null or the file does not exist. Location: " + jarFileLocation);
+			this.logger.warn(LogCategory.MAIN, "Given location for jar file is null or the file does not exist. Location: {}", jarFileLocation);
 			return null;
 		}
 
 		try {
 			jarFile = new JarFile(jarFileLocation);
 		} catch (IOException e) {
-			this.logger.log(LogLevel.WARN, LogCategory.MAIN, "Could not open root jar file " + jarFileLocation + ". Error: " + e.getMessage());
+			this.logger.warn(LogCategory.MAIN, "Could not open root jar file {}. Error: {}", jarFileLocation, e.getMessage());
 			return null;
 		}
 
@@ -224,18 +224,14 @@ public abstract class OTGEngine
 		}
 		catch (IOException e)
 		{
-			StringWriter sw = new StringWriter();
-			e.printStackTrace(new PrintWriter(sw));
-			this.logger.log(LogLevel.ERROR, LogCategory.MAIN, "Failed to extract jar file: " + e.getMessage() + "\n" + sw);
+			this.logger.error(LogCategory.MAIN, "Failed to extract jar file", e);
 		} finally {
 			if(jarFile != null)
 			{
 				try {
 					jarFile.close();
 				} catch (IOException e) {
-					StringWriter sw = new StringWriter();
-					e.printStackTrace(new PrintWriter(sw));
-					this.logger.log(LogLevel.ERROR, LogCategory.MAIN, "Failed to close jar file: " + e.getMessage() + "\n" + sw);
+					this.logger.error(LogCategory.MAIN, "Failed to close jar file", e);
 				}
 			}
 		}
@@ -288,7 +284,7 @@ public abstract class OTGEngine
 		}
 		catch (IOException e)
 		{
-			this.logger.log(LogLevel.WARN, LogCategory.MAIN, "Error reading default preset config file " + presetConfigFile + ". Error: " + e.getMessage());
+			this.logger.warn(LogCategory.MAIN, "Error reading default preset config file {}. Error: {}", presetConfigFile, e.getMessage());
 			return false;
 		}
 	}
