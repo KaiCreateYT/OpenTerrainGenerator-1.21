@@ -14,7 +14,7 @@ public class OTGLogger extends Logger {
     @Override
     public void log(LogLevel level, LogCategory category, String message)
     {
-        if (this.minimumLevel.compareTo(level) < 0)
+        if (level.ordinal() < this.minimumLevel.ordinal())
         {
             return;
         }

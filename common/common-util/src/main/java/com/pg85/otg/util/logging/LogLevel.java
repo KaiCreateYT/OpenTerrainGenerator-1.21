@@ -1,9 +1,8 @@
 package com.pg85.otg.util.logging;
 
-public enum LogLevel
-{
-	FATAL,
-	ERROR,
+public enum LogLevel {
+	INFO,
 	WARN,
-	INFO
+	ERROR,
+	FATAL
 }

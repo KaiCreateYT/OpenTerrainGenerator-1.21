@@ -40,8 +40,7 @@ public class TestLogger implements ILogger {
 
     @Override
     public void log(LogLevel level, LogCategory category, String message) {
-        // Compare ordinal - lower ordinal = more severe (FATAL=0, ERROR=1, WARN=2, INFO=3)
-        if (level.ordinal() > minLevel.ordinal()) {
+        if (level.ordinal() < minLevel.ordinal()) {
             return;
         }
         if (!getLogCategoryEnabled(category)) {
