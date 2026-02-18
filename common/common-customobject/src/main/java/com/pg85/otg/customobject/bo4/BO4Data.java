@@ -46,7 +46,7 @@ public class BO4Data
 			try {
 				ByteArrayOutputStream bos = new ByteArrayOutputStream();
 				DataOutputStream dos = new DataOutputStream(bos);
-				config.writeToStream(dos, presetFolderName, otgRootFolder,  customObjectManager, materialReader, manager, modLoadedChecker);
+				BO4DataSerializer.writeToStream(config, dos, presetFolderName, otgRootFolder, customObjectManager, materialReader, manager, modLoadedChecker);
 				byte[] compressedBytes = com.pg85.otg.util.CompressionUtils.compress(bos.toByteArray());
 				dos.close();
 				FileOutputStream fos = new FileOutputStream(file);
