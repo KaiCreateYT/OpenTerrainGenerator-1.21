@@ -19,6 +19,8 @@ public class WorldPresetConfig
 	public boolean isModpackConfig = false;
 	// Use capitals since we're serialising to yaml and want to make it look nice.
 	public int Version;
+	public String DisplayName;
+	public String Description;
 	public String ModpackName;
 	public OTGOverWorld Overworld;
 	public OTGDimension Nether;
@@ -62,6 +64,8 @@ public class WorldPresetConfig
 
 		clone.isModpackConfig = this.isModpackConfig;
 		clone.Version = this.Version;
+		clone.DisplayName = this.DisplayName;
+		clone.Description = this.Description;
 		clone.ModpackName = this.ModpackName;
 		clone.Overworld = this.Overworld == null ? null : this.Overworld.clone();
 		clone.Nether = this.Nether == null ? null : this.Nether.clone();
@@ -96,7 +100,13 @@ public class WorldPresetConfig
 		
 		public OTGOverWorld clone()
 		{
-			return new OTGOverWorld(this.PresetFolderName, this.Seed, this.NonOTGWorldType, this.NonOTGGeneratorSettings);
+			OTGOverWorld clone = new OTGOverWorld(this.PresetFolderName, this.Seed, this.NonOTGWorldType, this.NonOTGGeneratorSettings);
+			clone.PortalBlocks = this.PortalBlocks;
+			clone.PortalColor = this.PortalColor;
+			clone.PortalMob = this.PortalMob;
+			clone.PortalIgnitionSource = this.PortalIgnitionSource;
+			clone.GameRules = this.GameRules == null ? null : this.GameRules.clone();
+			return clone;
 		}
 	}
 
@@ -108,15 +118,16 @@ public class WorldPresetConfig
 		public String PortalColor;
 		public String PortalMob;
 		public String PortalIgnitionSource;
+		public GameRules GameRules;
 
 		public OTGDimension() {}
-		
+
 		public OTGDimension(String presetFolderName, long seed)
 		{
 			this.PresetFolderName = presetFolderName;
 			this.Seed = seed;
 		}
-		
+
 		public OTGDimension clone()
 		{
 			OTGDimension otgDimension = new OTGDimension(this.PresetFolderName, this.Seed);
@@ -124,6 +135,7 @@ public class WorldPresetConfig
 			otgDimension.PortalColor = this.PortalColor;
 			otgDimension.PortalMob = this.PortalMob;
 			otgDimension.PortalIgnitionSource = this.PortalIgnitionSource;
+			otgDimension.GameRules = this.GameRules == null ? null : this.GameRules.clone();
 			return otgDimension;
 		}
 	}
