@@ -29,6 +29,9 @@ public class OTGWorldStorage {
 
         @JsonProperty("gameRules")
         private Map<String, Map<String, Object>> gameRules = new LinkedHashMap<>();
+
+        @JsonProperty("worldPreset")
+        private String worldPreset;
     }
 
     private final Path worldPath;
@@ -153,5 +156,16 @@ public class OTGWorldStorage {
         if (data.getGameRules().remove(dimensionKey) != null) {
             save();
         }
+    }
+
+    // --- WorldPreset tracking ---
+
+    public @javax.annotation.Nullable String getWorldPreset() {
+        return data.getWorldPreset();
+    }
+
+    public void setWorldPreset(String name) {
+        data.setWorldPreset(name);
+        save();
     }
 }

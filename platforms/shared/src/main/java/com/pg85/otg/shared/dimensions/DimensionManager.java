@@ -70,7 +70,10 @@ public class DimensionManager {
             OTGLog.info("Restored GameRules for {} dimensions", storage.getAllGameRules().size());
         }
 
-        // Apply GameRules for overworld if using OTG preset (first-time only)
+        // Apply WorldPreset GameRules (first-time only, per-dimension)
+        applyWorldPresetGameRules(server);
+
+        // Fallback: Apply overworld GameRules from OTG preset if no WorldPreset was used
         if (storage.getGameRules("minecraft:overworld").isEmpty()) {
             applyOverworldGameRulesIfOTG(server);
         }
@@ -191,6 +194,67 @@ public class DimensionManager {
 
     public PlatformDimensionHelper getHelper() {
         return helper;
+    }
+
+    private void applyWorldPresetGameRules(MinecraftServer server) {
+        String worldPresetName = storage.getWorldPreset();
+        if (worldPresetName == null) return;
+
+        List<WorldPresetConfig> configs = WorldPresetConfigLoader.loadAll(
+            OTG.getEngine().getOTGRootFolder());
+        WorldPresetConfig config = configs.stream()
+            .filter(c -> worldPresetName.equals(c.DisplayName))
+            .findFirst().orElse(null);
+
+        if (config == null) {
+            OTGLog.warn("WorldPreset '{}' not found on disk, skipping GameRules", worldPresetName);
+            return;
+        }
+
+        applyWorldPresetDimensionGameRules(config, config.Overworld, Level.OVERWORLD, "minecraft:overworld", server);
+
+        if (config.Nether != null && config.Nether.PresetFolderName != null) {
+            applyWorldPresetDimensionGameRules(config, config.Nether, Level.NETHER, "minecraft:the_nether", server);
+        }
+
+        if (config.End != null && config.End.PresetFolderName != null) {
+            applyWorldPresetDimensionGameRules(config, config.End, Level.END, "minecraft:the_end", server);
+        }
+
+        if (config.Dimensions != null) {
+            for (WorldPresetConfig.OTGDimension dim : config.Dimensions) {
+                if (dim.PresetFolderName == null) continue;
+                String normalizedName = DimensionNameUtils.normalizeName(dim.PresetFolderName);
+                ResourceKey<Level> levelKey = DimensionKeys.otg(normalizedName);
+                applyWorldPresetDimensionGameRules(config, dim, levelKey, "otg:" + normalizedName, server);
+            }
+        }
+    }
+
+    private void applyWorldPresetDimensionGameRules(
+            WorldPresetConfig config,
+            WorldPresetConfig.OTGDimension dimEntry,
+            ResourceKey<Level> levelKey,
+            String storageKey,
+            MinecraftServer server
+    ) {
+        if (!storage.getGameRules(storageKey).isEmpty()) return;
+        if (dimEntry == null || dimEntry.PresetFolderName == null) return;
+
+        DimensionPreset preset = OTG.getEngine().getDimensionPresetLoader()
+            .getDimensionPresetByFolderName(dimEntry.PresetFolderName);
+        if (preset == null) return;
+
+        GameRuleSettings gameRuleSettings = preset.getConfig().getGameRuleSettings();
+        GameRules rules = GameRuleApplier.createGameRules(
+            gameRuleSettings,
+            config.GameRules,         // world-level overrides
+            dimEntry.GameRules,       // per-dimension overrides
+            server);
+
+        GameRuleManager.register(levelKey, rules);
+        storage.putGameRules(storageKey, GameRuleApplier.toMap(rules));
+        OTGLog.info("Applied WorldPreset GameRules for dimension {}", storageKey);
     }
 
     private void applyOverworldGameRulesIfOTG(MinecraftServer server) {
