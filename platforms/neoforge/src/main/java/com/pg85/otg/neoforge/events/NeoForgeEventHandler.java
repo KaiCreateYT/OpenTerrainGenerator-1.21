@@ -42,6 +42,9 @@ public class NeoForgeEventHandler {
 
     @SubscribeEvent
     public static void onServerStopping(ServerStoppingEvent event) {
+        if (dimensionManager != null) {
+            dimensionManager.shutdown();
+        }
         OTGLog.info("Server stopping");
     }
 

@@ -68,6 +68,9 @@ public class OTGPlugin implements ModInitializer {
 		});
 
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+			if (dimensionManager != null) {
+				dimensionManager.shutdown();
+			}
 			OTGLog.info("Server stopping");
 		});
 	}
