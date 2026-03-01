@@ -18,6 +18,9 @@ import java.util.List;
 
 public class WorldPresetConfigLoader {
 
+    private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
     /**
      * Loads all WorldPreset YAML files from the WorldPresets/ folder.
      */
@@ -60,10 +63,8 @@ public class WorldPresetConfigLoader {
      * Parses a WorldPreset YAML string.
      */
     public static @Nullable WorldPresetConfig fromYamlString(String input) {
-        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         try {
-            return mapper.readValue(input, WorldPresetConfig.class);
+            return YAML_MAPPER.readValue(input, WorldPresetConfig.class);
         } catch (IOException e) {
             OTGLog.error(LogCategory.CONFIGS, "Failed to parse WorldPreset YAML: {}", e.getMessage());
             return null;

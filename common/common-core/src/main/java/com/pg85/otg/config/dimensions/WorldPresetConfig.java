@@ -140,7 +140,7 @@ public class WorldPresetConfig
 		}
 	}
 
-	public class Settings
+	public static class Settings
 	{
 		public boolean GenerateStructures;
 		public boolean BonusChest;

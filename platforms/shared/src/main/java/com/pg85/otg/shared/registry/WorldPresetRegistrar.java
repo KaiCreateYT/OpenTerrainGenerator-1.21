@@ -149,10 +149,15 @@ public class WorldPresetRegistrar {
 
         // Custom dimensions
         if (config.Dimensions != null) {
+            Set<String> seenDimKeys = new HashSet<>();
             for (WorldPresetConfig.OTGDimension dim : config.Dimensions) {
                 if (dim.PresetFolderName == null) continue;
                 String normalizedName = dim.PresetFolderName.toLowerCase(Locale.ROOT)
                     .replaceAll("[^a-z0-9_.-]", "_");
+                if (!seenDimKeys.add(normalizedName)) {
+                    OTGLog.warn("WorldPreset has duplicate custom dimension '{}', skipping duplicate", normalizedName);
+                    continue;
+                }
                 ResourceKey<LevelStem> key = ResourceKey.create(
                     Registries.LEVEL_STEM,
                     ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, normalizedName));
@@ -183,25 +188,14 @@ public class WorldPresetRegistrar {
             return null;
         }
 
-        // Determine dimension type key based on stem key and preset config
-        OTGDimensionType otgDimType = preset.getConfig().getDimensionSettings().getDimensionType();
-        ResourceKey<DimensionType> dimTypeKey;
-        if (stemKey.equals(LevelStem.OVERWORLD)) {
-            dimTypeKey = otgDimType == OTGDimensionType.OTG
-                ? ResourceKey.create(Registries.DIMENSION_TYPE,
-                    ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, preset.getRegistryName()))
-                : BuiltinDimensionTypes.OVERWORLD;
-        } else if (stemKey.equals(LevelStem.NETHER)) {
-            dimTypeKey = BuiltinDimensionTypes.NETHER;
-        } else if (stemKey.equals(LevelStem.END)) {
-            dimTypeKey = BuiltinDimensionTypes.END;
-        } else {
-            // Custom dimension — use OTG dimension type if available, else overworld type
-            dimTypeKey = otgDimType == OTGDimensionType.OTG
-                ? ResourceKey.create(Registries.DIMENSION_TYPE,
-                    ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, preset.getRegistryName()))
-                : BuiltinDimensionTypes.OVERWORLD;
-        }
+        // Dimension type: always respect the preset's own config, regardless of which slot it's in
+        ResourceKey<DimensionType> dimTypeKey = switch (preset.getConfig().getDimensionSettings().getDimensionType()) {
+            case OTG -> ResourceKey.create(Registries.DIMENSION_TYPE,
+                ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, preset.getRegistryName()));
+            case OVERWORLD -> BuiltinDimensionTypes.OVERWORLD;
+            case NETHER -> BuiltinDimensionTypes.NETHER;
+            case END -> BuiltinDimensionTypes.END;
+        };
 
         Optional<Holder.Reference<DimensionType>> dimType = dimensionTypes.get(dimTypeKey);
         if (dimType.isEmpty()) {
@@ -209,14 +203,9 @@ public class WorldPresetRegistrar {
             return null;
         }
 
-        // Noise settings key — OTG presets register their own, vanilla types use builtin keys
-        ResourceKey<NoiseGeneratorSettings> noiseKey = switch (otgDimType) {
-            case OVERWORLD -> NoiseGeneratorSettings.OVERWORLD;
-            case NETHER -> NoiseGeneratorSettings.NETHER;
-            case END -> NoiseGeneratorSettings.END;
-            case OTG -> ResourceKey.create(Registries.NOISE_SETTINGS,
-                ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, preset.getRegistryName()));
-        };
+        // Noise key: always use otg:<name> — registerNoiseGenSettings() registers ALL OTG presets there
+        ResourceKey<NoiseGeneratorSettings> noiseKey = ResourceKey.create(Registries.NOISE_SETTINGS,
+            ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, preset.getRegistryName()));
 
         Optional<Holder.Reference<NoiseGeneratorSettings>> noiseRef = noiseSettings.get(noiseKey);
         if (noiseRef.isEmpty()) {

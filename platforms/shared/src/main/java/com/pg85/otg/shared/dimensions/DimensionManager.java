@@ -24,6 +24,7 @@ import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 
@@ -69,6 +70,9 @@ public class DimensionManager {
         if (!storage.getAllGameRules().isEmpty()) {
             OTGLog.info("Restored GameRules for {} dimensions", storage.getAllGameRules().size());
         }
+
+        // Detect which WorldPreset YAML was used to create this world (first start only)
+        detectWorldPreset(server);
 
         // Apply WorldPreset GameRules (first-time only, per-dimension)
         applyWorldPresetGameRules(server);
@@ -196,6 +200,58 @@ public class DimensionManager {
         return helper;
     }
 
+    /**
+     * Heuristically detects which WorldPreset YAML was used to create this world
+     * by matching the OTG preset names of the running overworld/nether/end dimensions
+     * against WorldPreset configs on disk. Only runs on first server start.
+     */
+    private void detectWorldPreset(MinecraftServer server) {
+        if (storage.getWorldPreset() != null) return;
+
+        List<WorldPresetConfig> configs = WorldPresetConfigLoader.loadAll(
+            OTG.getEngine().getOTGRootFolder());
+        if (configs.isEmpty()) return;
+
+        String overworldPreset = getOTGPresetFolderName(server.overworld());
+        ServerLevel netherLevel = server.getLevel(Level.NETHER);
+        String netherPreset = netherLevel != null ? getOTGPresetFolderName(netherLevel) : null;
+        ServerLevel endLevel = server.getLevel(Level.END);
+        String endPreset = endLevel != null ? getOTGPresetFolderName(endLevel) : null;
+
+        if (overworldPreset == null && netherPreset == null && endPreset == null) return;
+
+        for (WorldPresetConfig config : configs) {
+            if (config.DisplayName == null) continue;
+            if (matchesDimensions(config, overworldPreset, netherPreset, endPreset)) {
+                storage.setWorldPreset(config.DisplayName);
+                OTGLog.info("Detected WorldPreset '{}' for this world", config.DisplayName);
+                return;
+            }
+        }
+    }
+
+    private static boolean matchesDimensions(WorldPresetConfig config,
+            String overworldPreset, String netherPreset, String endPreset) {
+        String configOverworld = (config.Overworld != null && config.Overworld.NonOTGWorldType == null)
+            ? config.Overworld.PresetFolderName : null;
+        if (!Objects.equals(configOverworld, overworldPreset)) return false;
+
+        String configNether = (config.Nether != null) ? config.Nether.PresetFolderName : null;
+        if (!Objects.equals(configNether, netherPreset)) return false;
+
+        String configEnd = (config.End != null) ? config.End.PresetFolderName : null;
+        return Objects.equals(configEnd, endPreset);
+    }
+
+    private static @Nullable String getOTGPresetFolderName(ServerLevel level) {
+        ChunkGenerator gen = level.getChunkSource().getGenerator();
+        if (gen instanceof SharedOTGChunkGenerator otgGen) {
+            DimensionPreset preset = otgGen.getPreset();
+            return preset != null ? preset.getFolderName() : null;
+        }
+        return null;
+    }
+
     private void applyWorldPresetGameRules(MinecraftServer server) {
         String worldPresetName = storage.getWorldPreset();
         if (worldPresetName == null) return;
@@ -277,9 +333,10 @@ public class DimensionManager {
     }
 
     private @Nullable WorldPresetConfig.GameRules loadDimensionConfigGameRules(String presetName) {
-        // TODO: Task 11 will replace this with WorldPreset-aware GameRules loading.
-        // The old fromDisk(presetName) lookup was always broken (searched by preset name
-        // but YAMLs are world-level configs, not per-preset). Returns null for now.
+        // This stub exists for the legacy flow (applyOverworldGameRulesIfOTG) where worlds
+        // are NOT created from a WorldPreset YAML. The old fromDisk() lookup was always broken
+        // (searched by preset name but YAMLs are world-level configs, not per-preset).
+        // WorldPreset-aware GameRules go through applyWorldPresetGameRules() instead.
         return null;
     }
 

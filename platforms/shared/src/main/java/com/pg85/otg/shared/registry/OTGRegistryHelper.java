@@ -151,9 +151,6 @@ public final class OTGRegistryHelper {
             WritableRegistry<WorldPreset> worldPresets,
             Map<ResourceKey<LevelStem>, LevelStem> levelStems
     ) {
-        OTGLog.info("{}", levelStems.keySet());
-        OTGLog.info("{}", levelStems.values());
-
         WorldPreset worldPreset = new WorldPreset(levelStems);
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, preset.getRegistryName().toLowerCase(Locale.ROOT));
         ResourceKey<WorldPreset> key = ResourceKey.create(Registries.WORLD_PRESET, id);
