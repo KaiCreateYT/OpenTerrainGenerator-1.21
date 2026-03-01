@@ -16,6 +16,8 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
  */
 public class WorldPresetConfig
 {
+	private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory());
+
 	public boolean isModpackConfig = false;
 	// Use capitals since we're serialising to yaml and want to make it look nice.
 	public int Version;
@@ -48,9 +50,8 @@ public class WorldPresetConfig
 
 	public String toYamlString()
 	{
-		ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 		try {
-			return mapper.writeValueAsString(this);
+			return YAML_MAPPER.writeValueAsString(this);
 		} catch (JsonProcessingException e) {
 			OTGLog.error(LogCategory.CONFIGS, "Failed to serialize world preset config to YAML: {}", e.getMessage());
 		}

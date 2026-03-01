@@ -304,12 +304,10 @@ public final class OTGRegistryHelper {
                     case END -> BuiltinDimensionTypes.END;
                 };
 
-                ResourceKey<NoiseGeneratorSettings> noiseKey = switch (dimPreset.getConfig().getDimensionSettings().getDimensionType()) {
-                    case OVERWORLD -> NoiseGeneratorSettings.OVERWORLD;
-                    case NETHER -> NoiseGeneratorSettings.NETHER;
-                    case END -> NoiseGeneratorSettings.END;
-                    case OTG -> ResourceKey.create(Registries.NOISE_SETTINGS, ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, dimPreset.getRegistryName()));
-                };
+                // Always use otg:<name> — registerNoiseGenSettings() registers ALL OTG presets under this key
+                ResourceKey<NoiseGeneratorSettings> noiseKey = ResourceKey.create(
+                    Registries.NOISE_SETTINGS,
+                    ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, dimPreset.getRegistryName()));
 
                 Holder.Reference<DimensionType> dimensionReference = dimensionHolders.getOrThrow(dimensionKey);
                 if (!dimensionReference.isBound()) {

@@ -71,11 +71,15 @@ public class DimensionManager {
             OTGLog.info("Restored GameRules for {} dimensions", storage.getAllGameRules().size());
         }
 
+        // Load WorldPreset YAMLs once for both detection and GameRules application
+        List<WorldPresetConfig> worldPresetConfigs = WorldPresetConfigLoader.loadAll(
+            OTG.getEngine().getOTGRootFolder());
+
         // Detect which WorldPreset YAML was used to create this world (first start only)
-        detectWorldPreset(server);
+        detectWorldPreset(server, worldPresetConfigs);
 
         // Apply WorldPreset GameRules (first-time only, per-dimension)
-        applyWorldPresetGameRules(server);
+        applyWorldPresetGameRules(server, worldPresetConfigs);
 
         // Fallback: Apply overworld GameRules from OTG preset if no WorldPreset was used
         if (storage.getGameRules("minecraft:overworld").isEmpty()) {
@@ -204,12 +208,14 @@ public class DimensionManager {
      * Heuristically detects which WorldPreset YAML was used to create this world
      * by matching the OTG preset names of the running overworld/nether/end dimensions
      * against WorldPreset configs on disk. Only runs on first server start.
+     *
+     * Known limitation: if two WorldPreset YAMLs reference the same overworld/nether/end
+     * presets but differ in GameRules or custom dimensions, the first match wins.
+     * MC doesn't provide a callback for WorldPreset selection — this heuristic is the
+     * pragmatic workaround.
      */
-    private void detectWorldPreset(MinecraftServer server) {
+    private void detectWorldPreset(MinecraftServer server, List<WorldPresetConfig> configs) {
         if (storage.getWorldPreset() != null) return;
-
-        List<WorldPresetConfig> configs = WorldPresetConfigLoader.loadAll(
-            OTG.getEngine().getOTGRootFolder());
         if (configs.isEmpty()) return;
 
         String overworldPreset = getOTGPresetFolderName(server.overworld());
@@ -252,12 +258,10 @@ public class DimensionManager {
         return null;
     }
 
-    private void applyWorldPresetGameRules(MinecraftServer server) {
+    private void applyWorldPresetGameRules(MinecraftServer server, List<WorldPresetConfig> configs) {
         String worldPresetName = storage.getWorldPreset();
         if (worldPresetName == null) return;
 
-        List<WorldPresetConfig> configs = WorldPresetConfigLoader.loadAll(
-            OTG.getEngine().getOTGRootFolder());
         WorldPresetConfig config = configs.stream()
             .filter(c -> worldPresetName.equals(c.DisplayName))
             .findFirst().orElse(null);
