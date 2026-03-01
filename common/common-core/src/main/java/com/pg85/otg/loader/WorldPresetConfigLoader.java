@@ -1,69 +1,72 @@
 package com.pg85.otg.loader;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.pg85.otg.config.dimensions.WorldPresetConfig;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
-import com.pg85.otg.util.logging.LogLevel;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 public class WorldPresetConfigLoader {
-    public static WorldPresetConfig fromDisk(String fileName, Path otgRootFolder)
-    {
-        File dimensionConfig = new File(otgRootFolder.toFile(), Constants.WORLD_PRESETS_FOLDER + File.separator + fileName + ".yaml");
-        if(dimensionConfig.exists())
-        {
-            WorldPresetConfig dimConfig = new WorldPresetConfig();
-            String content = "";
-            try
-            {
-                content = new String(Files.readAllBytes(dimensionConfig.toPath()));
-            }
-            catch (IOException e)
-            {
-                OTGLog.error(LogCategory.CONFIGS, "Failed to read world preset config file: {}", e.getMessage());
-            }
-            WorldPresetConfig loadedConfig = fromYamlString(content);
-            if(loadedConfig != null)
-            {
-                dimConfig.isModpackConfig = true;
-                dimConfig.Version = loadedConfig.Version;
-                dimConfig.ModpackName = loadedConfig.ModpackName;
-                dimConfig.Overworld = loadedConfig.Overworld;
-                dimConfig.Nether = loadedConfig.Nether;
-                dimConfig.End = loadedConfig.End;
-                dimConfig.Dimensions = loadedConfig.Dimensions;
-                dimConfig.GameRules = loadedConfig.GameRules;
-                dimConfig.Settings = loadedConfig.Settings;
-                return dimConfig;
+
+    /**
+     * Loads all WorldPreset YAML files from the WorldPresets/ folder.
+     */
+    public static List<WorldPresetConfig> loadAll(Path otgRootFolder) {
+        List<WorldPresetConfig> configs = new ArrayList<>();
+        File worldPresetsDir = otgRootFolder.resolve(Constants.WORLD_PRESETS_FOLDER).toFile();
+
+        if (!worldPresetsDir.exists() || !worldPresetsDir.isDirectory()) {
+            return configs;
+        }
+
+        File[] yamlFiles = worldPresetsDir.listFiles((dir, name) -> name.endsWith(".yaml") || name.endsWith(".yml"));
+        if (yamlFiles == null) return configs;
+
+        for (File yamlFile : yamlFiles) {
+            WorldPresetConfig config = fromFile(yamlFile);
+            if (config != null) {
+                configs.add(config);
             }
         }
-        return null;
+
+        return configs;
     }
 
-    public static WorldPresetConfig fromYamlString(String input)
-    {
-        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        WorldPresetConfig dimConfig = null;
-
+    /**
+     * Loads a single WorldPreset YAML file.
+     */
+    public static @Nullable WorldPresetConfig fromFile(File yamlFile) {
         try {
-            dimConfig = mapper.readValue(input, WorldPresetConfig.class);
-        } catch (JsonParseException e) {
-            OTGLog.error(LogCategory.CONFIGS, "Failed to parse world preset config YAML: {}", e.getMessage());
-        } catch (JsonMappingException e) {
-            OTGLog.error(LogCategory.CONFIGS, "Failed to map world preset config YAML: {}", e.getMessage());
+            String content = Files.readString(yamlFile.toPath());
+            return fromYamlString(content);
         } catch (IOException e) {
-            OTGLog.error(LogCategory.CONFIGS, "Failed to read world preset config input: {}", e.getMessage());
+            OTGLog.error(LogCategory.CONFIGS, "Failed to read WorldPreset file {}: {}",
+                yamlFile.getName(), e.getMessage());
+            return null;
         }
+    }
 
-        return dimConfig;
+    /**
+     * Parses a WorldPreset YAML string.
+     */
+    public static @Nullable WorldPresetConfig fromYamlString(String input) {
+        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        try {
+            return mapper.readValue(input, WorldPresetConfig.class);
+        } catch (IOException e) {
+            OTGLog.error(LogCategory.CONFIGS, "Failed to parse WorldPreset YAML: {}", e.getMessage());
+            return null;
+        }
     }
 }

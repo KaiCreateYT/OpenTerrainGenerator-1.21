@@ -213,11 +213,9 @@ public class DimensionManager {
     }
 
     private @Nullable WorldPresetConfig.GameRules loadDimensionConfigGameRules(String presetName) {
-        WorldPresetConfig dimConfig = WorldPresetConfigLoader.fromDisk(
-                presetName, OTG.getEngine().getOTGRootFolder());
-        if (dimConfig != null && dimConfig.GameRules != null) {
-            return dimConfig.GameRules;
-        }
+        // TODO: Task 11 will replace this with WorldPreset-aware GameRules loading.
+        // The old fromDisk(presetName) lookup was always broken (searched by preset name
+        // but YAMLs are world-level configs, not per-preset). Returns null for now.
         return null;
     }
 
