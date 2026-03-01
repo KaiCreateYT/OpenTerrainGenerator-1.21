@@ -1,12 +1,8 @@
-# WorldPreset: defines OTG dimensions for servers and modpacks.
-# Use:
-# Server: Place this file in WorldPresets/ to define your world configuration.
-# Modpack: Name this file Modpack.yaml for auto-detection.
-# Forge SP: Modpacks can use this config to lock the world creation GUI and use the settings in this config instead, so users can create a world with 1 click.
-# - Rename this file to Modpack.yaml, OTG will automatically replace the world creation GUI with a locked custom world creation screen.
-# For more information, see: https://openterraingen.fandom.com/wiki/Dimension_%26_Modpack_Configuration
+# WorldPreset: defines a complete world with OTG dimensions.
+# See "Example 4.yaml" for full documentation and all available options.
 #
-# This config creates an OTG overworld using OTG's "Default" preset, and adds a dimension using the "VanillaVistas" preset.
+# This config creates an OTG overworld using OTG's "Default" preset,
+# and adds a custom dimension using the "VanillaVistas" preset.
 ---
 Overworld:
   PresetFolderName: "Default"
