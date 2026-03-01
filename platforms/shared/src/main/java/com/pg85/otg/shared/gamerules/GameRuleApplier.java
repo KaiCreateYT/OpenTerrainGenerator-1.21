@@ -22,11 +22,28 @@ public final class GameRuleApplier {
 
     /**
      * Creates a new GameRules instance populated from DimensionPresetConfig settings
-     * with optional WorldPresetConfig overrides.
+     * with optional WorldPresetConfig overrides (single layer).
      */
     public static GameRules createGameRules(
             GameRuleSettings presetRules,
             @Nullable WorldPresetConfig.GameRules overrides,
+            MinecraftServer server
+    ) {
+        return createGameRules(presetRules, overrides, null, server);
+    }
+
+    /**
+     * Creates GameRules with 3-layer override hierarchy:
+     * 1. DimensionPresetConfig.ini GameRules (base)
+     * 2. WorldPreset YAML world-level GameRules (override)
+     * 3. WorldPreset YAML per-dimension GameRules (override)
+     *
+     * Each layer only overrides non-null fields.
+     */
+    public static GameRules createGameRules(
+            GameRuleSettings presetRules,
+            @Nullable WorldPresetConfig.GameRules worldLevelOverrides,
+            @Nullable WorldPresetConfig.GameRules dimensionOverrides,
             MinecraftServer server
     ) {
         GameRules rules = new GameRules();
@@ -36,11 +53,17 @@ public final class GameRuleApplier {
             return rules;
         }
 
+        // Layer 1: base from DimensionPresetConfig.ini
         applyFromPreset(rules, presetRules, server);
 
-        if (overrides != null) {
-            OTGLog.info("Applying WorldPresetConfig GameRules overrides");
-            applyFromDimensionConfig(rules, overrides, server);
+        // Layer 2: world-level overrides from WorldPreset YAML
+        if (worldLevelOverrides != null) {
+            applyFromWorldPresetConfig(rules, worldLevelOverrides, server);
+        }
+
+        // Layer 3: per-dimension overrides from WorldPreset YAML
+        if (dimensionOverrides != null) {
+            applyFromWorldPresetConfig(rules, dimensionOverrides, server);
         }
 
         return rules;
@@ -106,7 +129,7 @@ public final class GameRuleApplier {
     }
 
     // Only applies fields explicitly set in YAML (non-null). Unset fields keep preset values.
-    private static void applyFromDimensionConfig(GameRules rules, WorldPresetConfig.GameRules dc, MinecraftServer server) {
+    private static void applyFromWorldPresetConfig(GameRules rules, WorldPresetConfig.GameRules dc, MinecraftServer server) {
         // Boolean overrides — null means "not specified, keep preset value"
         if (dc.DoFireTick != null) rules.getRule(GameRules.RULE_DOFIRETICK).set(dc.DoFireTick, server);
         if (dc.MobGriefing != null) rules.getRule(GameRules.RULE_MOBGRIEFING).set(dc.MobGriefing, server);
