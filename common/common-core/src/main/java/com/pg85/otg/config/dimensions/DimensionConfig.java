@@ -143,62 +143,64 @@ public class DimensionConfig
 		}
 	}
 	
+	// Nullable wrappers — null means "not specified in YAML, don't override".
+	// Jackson deserializes missing YAML fields as null for boxed types.
 	public static class GameRules
 	{
-		public boolean DoFireTick;
-		public boolean MobGriefing;
-		public boolean KeepInventory;
-		public boolean DoMobSpawning;
-		public boolean DoMobLoot;
-		public boolean DoTileDrops;
-		public boolean DoEntityDrops;
-		public boolean CommandBlockOutput;
-		public boolean NaturalRegeneration;
-		public boolean DoDaylightCycle;
-		public boolean LogAdminCommands;
-		public boolean ShowDeathMessages;
-		public int RandomTickSpeed;
-		public boolean SendCommandFeedback;
-		public boolean SpectatorsGenerateChunks;
-		public int SpawnRadius;
-		public boolean DisableElytraMovementCheck;
-		public int MaxEntityCramming;
-		public boolean DoWeatherCycle;
-		public boolean DoLimitedCrafting;
-		public int MaxCommandChainLength;
-		public boolean AnnounceAdvancements;
-		public boolean DisableRaids;
-		public boolean DoInsomnia;
-		public boolean DrowningDamage;
-		public boolean FallDamage;
-		public boolean FireDamage;
-		public boolean DoPatrolSpawning;
-		public boolean DoTraderSpawning;
-		public boolean ForgiveDeadPlayers;
-		public boolean UniversalAnger;
-		public boolean ProjectilesCanBreakBlocks;
-		public boolean ReducedDebugInfo;
-		public boolean DoImmediateRespawn;
-		public boolean FreezeDamage;
-		public boolean DoWardenSpawning;
-		public boolean BlockExplosionDropDecay;
-		public boolean MobExplosionDropDecay;
-		public boolean TntExplosionDropDecay;
-		public boolean WaterSourceConversion;
-		public boolean LavaSourceConversion;
-		public boolean GlobalSoundEvents;
-		public boolean DoVinesSpread;
-		public boolean EnderPearlsVanishOnDeath;
-		public int MaxCommandForkCount;
-		public int CommandModificationBlockLimit;
-		public int PlayersNetherPortalDefaultDelay;
-		public int PlayersNetherPortalCreativeDelay;
-		public int PlayersSleepingPercentage;
-		public int SnowAccumulationHeight;
-		public int SpawnChunkRadius;
+		public Boolean DoFireTick;
+		public Boolean MobGriefing;
+		public Boolean KeepInventory;
+		public Boolean DoMobSpawning;
+		public Boolean DoMobLoot;
+		public Boolean DoTileDrops;
+		public Boolean DoEntityDrops;
+		public Boolean CommandBlockOutput;
+		public Boolean NaturalRegeneration;
+		public Boolean DoDaylightCycle;
+		public Boolean LogAdminCommands;
+		public Boolean ShowDeathMessages;
+		public Integer RandomTickSpeed;
+		public Boolean SendCommandFeedback;
+		public Boolean SpectatorsGenerateChunks;
+		public Integer SpawnRadius;
+		public Boolean DisableElytraMovementCheck;
+		public Integer MaxEntityCramming;
+		public Boolean DoWeatherCycle;
+		public Boolean DoLimitedCrafting;
+		public Integer MaxCommandChainLength;
+		public Boolean AnnounceAdvancements;
+		public Boolean DisableRaids;
+		public Boolean DoInsomnia;
+		public Boolean DrowningDamage;
+		public Boolean FallDamage;
+		public Boolean FireDamage;
+		public Boolean DoPatrolSpawning;
+		public Boolean DoTraderSpawning;
+		public Boolean ForgiveDeadPlayers;
+		public Boolean UniversalAnger;
+		public Boolean ProjectilesCanBreakBlocks;
+		public Boolean ReducedDebugInfo;
+		public Boolean DoImmediateRespawn;
+		public Boolean FreezeDamage;
+		public Boolean DoWardenSpawning;
+		public Boolean BlockExplosionDropDecay;
+		public Boolean MobExplosionDropDecay;
+		public Boolean TntExplosionDropDecay;
+		public Boolean WaterSourceConversion;
+		public Boolean LavaSourceConversion;
+		public Boolean GlobalSoundEvents;
+		public Boolean DoVinesSpread;
+		public Boolean EnderPearlsVanishOnDeath;
+		public Integer MaxCommandForkCount;
+		public Integer CommandModificationBlockLimit;
+		public Integer PlayersNetherPortalDefaultDelay;
+		public Integer PlayersNetherPortalCreativeDelay;
+		public Integer PlayersSleepingPercentage;
+		public Integer SnowAccumulationHeight;
+		public Integer SpawnChunkRadius;
 
 		public GameRules() {}
-		
+
 		public GameRules clone()
 		{
 			GameRules gameRules = new GameRules();
@@ -254,6 +256,6 @@ public class DimensionConfig
 			gameRules.SnowAccumulationHeight = this.SnowAccumulationHeight;
 			gameRules.SpawnChunkRadius = this.SpawnChunkRadius;
 			return gameRules;
-		}				
+		}
 	}
 }

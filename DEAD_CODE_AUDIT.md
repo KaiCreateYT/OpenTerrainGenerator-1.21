@@ -59,7 +59,7 @@ Wszystkie omijają OTGLog, lecą na stderr bez formatowania ani filtrowania.
 ### 7. Puste catch bloki połykające wyjątki
 
 `CustomStructureFileManager.java` — **9x `catch (Exception ignored) {}`** — korupcja danych strukturalnych jest cicho ignorowana. Także:
-- `DimensionStorage.java:56` — `catch (IOException ignored) {}`
+- `OTGWorldStorage.java` — corrupt file handling (now with backup + fallback)
 - `DimensionManager.java:73` — `catch (Exception ignored) {}`
 - `BO4BranchFunction.java:142`, `BO4WeightedBranchFunction.java:67`
 

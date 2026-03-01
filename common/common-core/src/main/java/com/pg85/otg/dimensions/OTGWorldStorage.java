@@ -78,8 +78,12 @@ public class OTGWorldStorage {
             var dimsNode = legacyData.get("dimensions");
             if (dimsNode != null && dimsNode.isArray()) {
                 for (var dimNode : dimsNode) {
-                    DimensionInfo info = mapper.treeToValue(dimNode, DimensionInfo.class);
-                    data.getDimensions().put(info.getName(), info);
+                    try {
+                        DimensionInfo info = mapper.treeToValue(dimNode, DimensionInfo.class);
+                        data.getDimensions().put(info.getName(), info);
+                    } catch (Exception e) {
+                        OTGLog.error("Skipping corrupt dimension entry during v1 migration: {}", e.getMessage());
+                    }
                 }
             }
 

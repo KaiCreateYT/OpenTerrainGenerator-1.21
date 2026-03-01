@@ -66,23 +66,24 @@ GameRules:
   DoTraderSpawning: true
   ForgiveDeadPlayers: true
   UniversalAnger: false
-  ProjectilesCanBreakBlocks: true
-  ReducedDebugInfo: false
-  DoImmediateRespawn: false
-  FreezeDamage: true
-  DoWardenSpawning: true
-  BlockExplosionDropDecay: true
-  MobExplosionDropDecay: true
-  TntExplosionDropDecay: false
-  WaterSourceConversion: true
-  LavaSourceConversion: false
-  GlobalSoundEvents: true
-  DoVinesSpread: true
-  EnderPearlsVanishOnDeath: true
-  MaxCommandForkCount: 65536
-  CommandModificationBlockLimit: 32768
-  PlayersNetherPortalDefaultDelay: 80
-  PlayersNetherPortalCreativeDelay: 1
-  PlayersSleepingPercentage: 100
-  SnowAccumulationHeight: 1
-  SpawnChunkRadius: 2
+  # 1.21.1 rules — only specify rules you want to override (omitted = keep preset value)
+  ProjectilesCanBreakBlocks: true   # Can projectiles (e.g. tridents) break blocks like pointed dripstone
+  ReducedDebugInfo: false           # Hide coordinates and other debug info from F3 screen
+  DoImmediateRespawn: false         # Skip death screen and respawn instantly
+  FreezeDamage: true                # Players take damage from powdered snow freezing
+  DoWardenSpawning: true            # Warden can spawn from sculk shriekers
+  BlockExplosionDropDecay: true     # Block explosion drops decay randomly (not all blocks drop)
+  MobExplosionDropDecay: true       # Mob explosion drops decay randomly
+  TntExplosionDropDecay: false      # TNT explosion drops decay randomly
+  WaterSourceConversion: true       # Flowing water can convert to source blocks
+  LavaSourceConversion: false       # Flowing lava can convert to source blocks
+  GlobalSoundEvents: true           # Sounds like bells and raid horns are heard globally
+  DoVinesSpread: true               # Vines spread to adjacent blocks
+  EnderPearlsVanishOnDeath: true    # Thrown ender pearls vanish when player dies
+  MaxCommandForkCount: 65536        # Max number of forks for /execute
+  CommandModificationBlockLimit: 32768  # Max blocks modified by /fill, /clone, etc.
+  PlayersNetherPortalDefaultDelay: 80   # Ticks before nether portal teleports (survival)
+  PlayersNetherPortalCreativeDelay: 1   # Ticks before nether portal teleports (creative)
+  PlayersSleepingPercentage: 100    # % of players needed sleeping to skip night
+  SnowAccumulationHeight: 1         # Max layers of snow that accumulate
+  SpawnChunkRadius: 2               # Radius of spawn chunks (0-32)

@@ -40,8 +40,6 @@ public final class GameRuleManager {
     public static void clear() {
         int count = dimensionRules.size();
         dimensionRules.clear();
-        if (count > 0) {
-            OTGLog.info("Cleared {} dimension GameRules entries", count);
-        }
+        OTGLog.info("Cleared {} dimension GameRules entries", count);
     }
 }
