@@ -1,15 +1,25 @@
 package com.pg85.otg.shared.dimensions;
 
 import com.pg85.otg.OTG;
+import com.pg85.otg.config.dimensions.DimensionConfig;
+import com.pg85.otg.config.settings.preset.GameRuleSettings;
 import com.pg85.otg.dimensions.DimensionDatapack;
 import com.pg85.otg.dimensions.DimensionInfo;
 import com.pg85.otg.dimensions.OTGWorldStorage;
+import com.pg85.otg.loader.DimensionConfigLoader;
 import com.pg85.otg.presets.Preset;
+import com.pg85.otg.shared.gamerules.GameRuleApplier;
+import com.pg85.otg.shared.gamerules.GameRuleManager;
 import com.pg85.otg.util.DimensionNameUtils;
 import com.pg85.otg.util.OTGLog;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.Level;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -43,6 +53,19 @@ public class DimensionManager {
                 OTGLog.warn("Preset {} not found for dimension {}", info.getPreset(), info.getName());
             }
         }
+
+        // Restore persisted GameRules for all dimensions
+        for (var entry : storage.getAllGameRules().entrySet()) {
+            String dimKeyStr = entry.getKey();
+            ResourceKey<Level> levelKey = parseDimensionKey(dimKeyStr);
+            if (levelKey != null) {
+                GameRules rules = GameRuleApplier.fromMap(entry.getValue());
+                GameRuleManager.register(levelKey, rules);
+            }
+        }
+        if (!storage.getAllGameRules().isEmpty()) {
+            OTGLog.info("Restored GameRules for {} dimensions", storage.getAllGameRules().size());
+        }
     }
 
     public CreateResult createDimension(String presetName) {
@@ -63,6 +86,15 @@ public class DimensionManager {
         try {
             datapack.createDimensionFiles(info, preset.getPresetConfig().getDimensionSettings());
             storage.addDimension(info);
+
+            // Apply GameRules from preset + optional DimensionConfig override
+            GameRuleSettings gameRuleSettings = preset.getPresetConfig().getGameRuleSettings();
+            DimensionConfig.GameRules dimConfigOverrides = loadDimensionConfigGameRules(presetName);
+            GameRules gameRules = GameRuleApplier.createGameRules(gameRuleSettings, dimConfigOverrides, server);
+            ResourceKey<Level> levelKey = DimensionKeys.otg(normalizedName);
+            GameRuleManager.register(levelKey, gameRules);
+            storage.putGameRules("otg:" + normalizedName, GameRuleApplier.toMap(gameRules));
+
             helper.createDimensionRuntime(server, normalizedName, presetName, seed);
             return CreateResult.success(info);
         } catch (Exception e) {
@@ -101,6 +133,8 @@ public class DimensionManager {
 
             datapack.deleteDimensionFiles(normalizedName);
             storage.removeDimension(normalizedName);
+            GameRuleManager.unregister(DimensionKeys.otg(normalizedName));
+            storage.removeGameRules("otg:" + normalizedName);
 
             if (purge) {
                 helper.purgeWorldData(server, normalizedName);
@@ -141,8 +175,34 @@ public class DimensionManager {
         }
     }
 
+    public void shutdown() {
+        GameRuleManager.clear();
+    }
+
     public PlatformDimensionHelper getHelper() {
         return helper;
+    }
+
+    private @Nullable DimensionConfig.GameRules loadDimensionConfigGameRules(String presetName) {
+        DimensionConfig dimConfig = DimensionConfigLoader.fromDisk(
+                presetName, OTG.getEngine().getOTGRootFolder());
+        if (dimConfig != null && dimConfig.GameRules != null) {
+            return dimConfig.GameRules;
+        }
+        return null;
+    }
+
+    private static @Nullable ResourceKey<Level> parseDimensionKey(String dimKeyStr) {
+        int colonIdx = dimKeyStr.indexOf(':');
+        if (colonIdx < 0) {
+            OTGLog.warn("Invalid dimension key in storage: {}", dimKeyStr);
+            return null;
+        }
+        return ResourceKey.create(
+                net.minecraft.core.registries.Registries.DIMENSION,
+                ResourceLocation.fromNamespaceAndPath(
+                        dimKeyStr.substring(0, colonIdx),
+                        dimKeyStr.substring(colonIdx + 1)));
     }
 
     public record CreateResult(boolean success, String error, DimensionInfo info) {
