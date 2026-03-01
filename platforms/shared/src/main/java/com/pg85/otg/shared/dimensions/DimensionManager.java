@@ -8,6 +8,7 @@ import com.pg85.otg.dimensions.DimensionInfo;
 import com.pg85.otg.dimensions.OTGWorldStorage;
 import com.pg85.otg.loader.DimensionConfigLoader;
 import com.pg85.otg.presets.Preset;
+import com.pg85.otg.shared.gen.SharedOTGChunkGenerator;
 import com.pg85.otg.shared.gamerules.GameRuleApplier;
 import com.pg85.otg.shared.gamerules.GameRuleManager;
 import com.pg85.otg.util.DimensionNameUtils;
@@ -15,7 +16,9 @@ import com.pg85.otg.util.OTGLog;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 
@@ -65,6 +68,11 @@ public class DimensionManager {
         }
         if (!storage.getAllGameRules().isEmpty()) {
             OTGLog.info("Restored GameRules for {} dimensions", storage.getAllGameRules().size());
+        }
+
+        // Apply GameRules for overworld if using OTG preset (first-time only)
+        if (storage.getGameRules("minecraft:overworld").isEmpty()) {
+            applyOverworldGameRulesIfOTG(server);
         }
     }
 
@@ -181,6 +189,25 @@ public class DimensionManager {
 
     public PlatformDimensionHelper getHelper() {
         return helper;
+    }
+
+    private void applyOverworldGameRulesIfOTG(MinecraftServer server) {
+        ServerLevel overworld = server.overworld();
+        ChunkGenerator gen = overworld.getChunkSource().getGenerator();
+        if (gen instanceof SharedOTGChunkGenerator otgGen) {
+            Preset preset = otgGen.getPreset();
+            if (preset == null) return;
+
+            String presetName = preset.getFolderName();
+            GameRuleSettings gameRuleSettings = preset.getPresetConfig().getGameRuleSettings();
+            if (!gameRuleSettings.isOverrideGameRules()) return;
+
+            DimensionConfig.GameRules overrides = loadDimensionConfigGameRules(presetName);
+            GameRules rules = GameRuleApplier.createGameRules(gameRuleSettings, overrides, server);
+            GameRuleManager.register(Level.OVERWORLD, rules);
+            storage.putGameRules("minecraft:overworld", GameRuleApplier.toMap(rules));
+            OTGLog.info("Applied GameRules for OTG overworld (preset: {})", presetName);
+        }
     }
 
     private @Nullable DimensionConfig.GameRules loadDimensionConfigGameRules(String presetName) {
