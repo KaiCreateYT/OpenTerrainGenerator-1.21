@@ -1,8 +1,10 @@
 package com.pg85.otg.shared.registry;
 
 import com.pg85.otg.OTG;
+import com.pg85.otg.config.dimensions.WorldPresetConfig;
 import com.pg85.otg.config.settings.preset.*;
 import com.pg85.otg.constants.Constants;
+import com.pg85.otg.loader.WorldPresetConfigLoader;
 import com.pg85.otg.platform.noise.OTGNoiseParamRegistry;
 import com.pg85.otg.platform.noise.OTGNoiseRouterBuilder;
 import com.pg85.otg.presets.DimensionPreset;
@@ -429,6 +431,17 @@ public final class OTGRegistryHelper {
             Map<ResourceKey<LevelStem>, LevelStem> levelStems = createLevelStems(preset, loaders, chunkGeneratorFactory);
 
             registerWorldPresets(preset, worldPresets, levelStems);
+        }
+
+        // Register WorldPreset YAMLs as MC WorldPresets
+        List<WorldPresetConfig> worldPresetConfigs = WorldPresetConfigLoader.loadAll(
+            OTG.getEngine().getOTGRootFolder());
+        if (!worldPresetConfigs.isEmpty()) {
+            Map<String, DimensionPreset> presetMap = new HashMap<>();
+            for (DimensionPreset p : OTG.getEngine().getDimensionPresetLoader().getAllDimensionPresets()) {
+                presetMap.put(p.getFolderName(), p);
+            }
+            WorldPresetRegistrar.register(worldPresetConfigs, presetMap, loaders, chunkGeneratorFactory);
         }
     }
 }
