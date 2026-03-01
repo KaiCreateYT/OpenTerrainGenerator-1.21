@@ -66,3 +66,23 @@ GameRules:
   DoTraderSpawning: true
   ForgiveDeadPlayers: true
   UniversalAnger: false
+  ProjectilesCanBreakBlocks: true
+  ReducedDebugInfo: false
+  DoImmediateRespawn: false
+  FreezeDamage: true
+  DoWardenSpawning: true
+  BlockExplosionDropDecay: true
+  MobExplosionDropDecay: true
+  TntExplosionDropDecay: false
+  WaterSourceConversion: true
+  LavaSourceConversion: false
+  GlobalSoundEvents: true
+  DoVinesSpread: true
+  EnderPearlsVanishOnDeath: true
+  MaxCommandForkCount: 65536
+  CommandModificationBlockLimit: 32768
+  PlayersNetherPortalDefaultDelay: 80
+  PlayersNetherPortalCreativeDelay: 1
+  PlayersSleepingPercentage: 100
+  SnowAccumulationHeight: 1
+  SpawnChunkRadius: 2

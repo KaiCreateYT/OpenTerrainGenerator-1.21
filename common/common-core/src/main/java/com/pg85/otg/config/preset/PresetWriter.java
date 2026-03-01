@@ -750,10 +750,10 @@ public class PresetWriter {
 
         presetConfig.getDimensionSettings().writeSettings(writer);
 
-        writer.header1("Game rules (Forge)",
+        writer.header1("Game rules",
                 "See: https://minecraft.fandom.com/wiki/Game_rule",
-                "Since game rules are shared across all dimensions, these settings only apply if this preset is used as the overworld.",
-                "These settings can be overridden via a DimensionConfig with a GameRules entry."
+                "These game rules apply per-dimension when OverrideGameRules is true.",
+                "Can be overridden via a DimensionConfig YAML with a GameRules entry."
         );
 
         writer.putSetting(GameRuleSettings.OVERRIDE_GAME_RULES, presetConfig.getGameRuleSettings().isOverrideGameRules(),
@@ -769,7 +769,7 @@ public class PresetWriter {
         writer.putSetting(GameRuleSettings.DO_ENTITY_DROPS, gameRuleSettings.isDoEntityDrops());
         writer.putSetting(GameRuleSettings.COMMAND_BLOCK_OUTPUT, gameRuleSettings.isCommandBlockOutput());
         writer.putSetting(GameRuleSettings.NATURAL_REGENERATION, gameRuleSettings.isNaturalRegeneration());
-        writer.putSetting(GameRuleSettings.DO_DAY_LIGHT_CYCLE, gameRuleSettings.isNaturalRegeneration());
+        writer.putSetting(GameRuleSettings.DO_DAY_LIGHT_CYCLE, gameRuleSettings.isDoDaylightCycle());
         writer.putSetting(GameRuleSettings.LOG_ADMIN_COMMANDS, gameRuleSettings.isLogAdminCommands());
         writer.putSetting(GameRuleSettings.SHOW_DEATH_MESSAGES, gameRuleSettings.isShowDeathMessages());
         writer.putSetting(GameRuleSettings.RANDOM_TICK_SPEED, gameRuleSettings.getRandomTickSpeed());
@@ -791,6 +791,26 @@ public class PresetWriter {
         writer.putSetting(GameRuleSettings.DO_TRADER_SPAWNING, gameRuleSettings.isDoTraderSpawning());
         writer.putSetting(GameRuleSettings.FORGIVE_DEAD_PLAYERS, gameRuleSettings.isForgiveDeadPlayers());
         writer.putSetting(GameRuleSettings.UNIVERSAL_ANGER, gameRuleSettings.isUniversalAnger());
+        writer.putSetting(GameRuleSettings.PROJECTILES_CAN_BREAK_BLOCKS, gameRuleSettings.isProjectilesCanBreakBlocks());
+        writer.putSetting(GameRuleSettings.REDUCED_DEBUG_INFO, gameRuleSettings.isReducedDebugInfo());
+        writer.putSetting(GameRuleSettings.DO_IMMEDIATE_RESPAWN, gameRuleSettings.isDoImmediateRespawn());
+        writer.putSetting(GameRuleSettings.FREEZE_DAMAGE, gameRuleSettings.isFreezeDamage());
+        writer.putSetting(GameRuleSettings.DO_WARDEN_SPAWNING, gameRuleSettings.isDoWardenSpawning());
+        writer.putSetting(GameRuleSettings.BLOCK_EXPLOSION_DROP_DECAY, gameRuleSettings.isBlockExplosionDropDecay());
+        writer.putSetting(GameRuleSettings.MOB_EXPLOSION_DROP_DECAY, gameRuleSettings.isMobExplosionDropDecay());
+        writer.putSetting(GameRuleSettings.TNT_EXPLOSION_DROP_DECAY, gameRuleSettings.isTntExplosionDropDecay());
+        writer.putSetting(GameRuleSettings.WATER_SOURCE_CONVERSION, gameRuleSettings.isWaterSourceConversion());
+        writer.putSetting(GameRuleSettings.LAVA_SOURCE_CONVERSION, gameRuleSettings.isLavaSourceConversion());
+        writer.putSetting(GameRuleSettings.GLOBAL_SOUND_EVENTS, gameRuleSettings.isGlobalSoundEvents());
+        writer.putSetting(GameRuleSettings.DO_VINES_SPREAD, gameRuleSettings.isDoVinesSpread());
+        writer.putSetting(GameRuleSettings.ENDER_PEARLS_VANISH_ON_DEATH, gameRuleSettings.isEnderPearlsVanishOnDeath());
+        writer.putSetting(GameRuleSettings.MAX_COMMAND_FORK_COUNT, gameRuleSettings.getMaxCommandForkCount());
+        writer.putSetting(GameRuleSettings.COMMAND_MODIFICATION_BLOCK_LIMIT, gameRuleSettings.getCommandModificationBlockLimit());
+        writer.putSetting(GameRuleSettings.PLAYERS_NETHER_PORTAL_DEFAULT_DELAY, gameRuleSettings.getPlayersNetherPortalDefaultDelay());
+        writer.putSetting(GameRuleSettings.PLAYERS_NETHER_PORTAL_CREATIVE_DELAY, gameRuleSettings.getPlayersNetherPortalCreativeDelay());
+        writer.putSetting(GameRuleSettings.PLAYERS_SLEEPING_PERCENTAGE, gameRuleSettings.getPlayersSleepingPercentage());
+        writer.putSetting(GameRuleSettings.SNOW_ACCUMULATION_HEIGHT, gameRuleSettings.getSnowAccumulationHeight());
+        writer.putSetting(GameRuleSettings.SPAWN_CHUNK_RADIUS, gameRuleSettings.getSpawnChunkRadius());
     }
 
     private static java.util.List<String> toStringList(java.util.List<Double> values) {

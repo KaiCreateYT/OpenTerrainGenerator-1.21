@@ -176,7 +176,27 @@ public class DimensionConfig
 		public boolean DoTraderSpawning;
 		public boolean ForgiveDeadPlayers;
 		public boolean UniversalAnger;
-		
+		public boolean ProjectilesCanBreakBlocks;
+		public boolean ReducedDebugInfo;
+		public boolean DoImmediateRespawn;
+		public boolean FreezeDamage;
+		public boolean DoWardenSpawning;
+		public boolean BlockExplosionDropDecay;
+		public boolean MobExplosionDropDecay;
+		public boolean TntExplosionDropDecay;
+		public boolean WaterSourceConversion;
+		public boolean LavaSourceConversion;
+		public boolean GlobalSoundEvents;
+		public boolean DoVinesSpread;
+		public boolean EnderPearlsVanishOnDeath;
+		public int MaxCommandForkCount;
+		public int CommandModificationBlockLimit;
+		public int PlayersNetherPortalDefaultDelay;
+		public int PlayersNetherPortalCreativeDelay;
+		public int PlayersSleepingPercentage;
+		public int SnowAccumulationHeight;
+		public int SpawnChunkRadius;
+
 		public GameRules() {}
 		
 		public GameRules clone()
@@ -213,6 +233,26 @@ public class DimensionConfig
 			gameRules.DoTraderSpawning = this.DoTraderSpawning;
 			gameRules.ForgiveDeadPlayers = this.ForgiveDeadPlayers;
 			gameRules.UniversalAnger = this.UniversalAnger;
+			gameRules.ProjectilesCanBreakBlocks = this.ProjectilesCanBreakBlocks;
+			gameRules.ReducedDebugInfo = this.ReducedDebugInfo;
+			gameRules.DoImmediateRespawn = this.DoImmediateRespawn;
+			gameRules.FreezeDamage = this.FreezeDamage;
+			gameRules.DoWardenSpawning = this.DoWardenSpawning;
+			gameRules.BlockExplosionDropDecay = this.BlockExplosionDropDecay;
+			gameRules.MobExplosionDropDecay = this.MobExplosionDropDecay;
+			gameRules.TntExplosionDropDecay = this.TntExplosionDropDecay;
+			gameRules.WaterSourceConversion = this.WaterSourceConversion;
+			gameRules.LavaSourceConversion = this.LavaSourceConversion;
+			gameRules.GlobalSoundEvents = this.GlobalSoundEvents;
+			gameRules.DoVinesSpread = this.DoVinesSpread;
+			gameRules.EnderPearlsVanishOnDeath = this.EnderPearlsVanishOnDeath;
+			gameRules.MaxCommandForkCount = this.MaxCommandForkCount;
+			gameRules.CommandModificationBlockLimit = this.CommandModificationBlockLimit;
+			gameRules.PlayersNetherPortalDefaultDelay = this.PlayersNetherPortalDefaultDelay;
+			gameRules.PlayersNetherPortalCreativeDelay = this.PlayersNetherPortalCreativeDelay;
+			gameRules.PlayersSleepingPercentage = this.PlayersSleepingPercentage;
+			gameRules.SnowAccumulationHeight = this.SnowAccumulationHeight;
+			gameRules.SpawnChunkRadius = this.SpawnChunkRadius;
 			return gameRules;
 		}				
 	}
