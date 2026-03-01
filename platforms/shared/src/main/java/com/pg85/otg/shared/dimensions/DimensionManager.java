@@ -3,7 +3,7 @@ package com.pg85.otg.shared.dimensions;
 import com.pg85.otg.OTG;
 import com.pg85.otg.dimensions.DimensionDatapack;
 import com.pg85.otg.dimensions.DimensionInfo;
-import com.pg85.otg.dimensions.DimensionStorage;
+import com.pg85.otg.dimensions.OTGWorldStorage;
 import com.pg85.otg.presets.Preset;
 import com.pg85.otg.util.DimensionNameUtils;
 import com.pg85.otg.util.OTGLog;
@@ -17,7 +17,7 @@ import java.util.Random;
 public class DimensionManager {
 
     private final PlatformDimensionHelper helper;
-    private DimensionStorage storage;
+    private OTGWorldStorage storage;
     private DimensionDatapack datapack;
     private MinecraftServer server;
 
@@ -27,7 +27,7 @@ public class DimensionManager {
 
     public void initialize(MinecraftServer server) {
         this.server = server;
-        this.storage = new DimensionStorage(helper.getWorldPath(server));
+        this.storage = new OTGWorldStorage(helper.getWorldPath(server));
         this.datapack = new DimensionDatapack(helper.getDatapackPath(server));
         this.storage.load();
 
