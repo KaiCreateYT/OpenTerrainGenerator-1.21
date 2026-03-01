@@ -10,10 +10,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 /**
- * Used for Forge MP at world creation, defines the overworld/nether/end and any custom dimensions for a world.
- * May also be used for ModPack Configs in the future, hence the yaml code.
+ * Defines a complete world configuration: which DimensionPresets to use for
+ * overworld/nether/end, any custom dimensions, and optional GameRules overrides.
+ * Serialized as YAML in the WorldPresets/ folder.
  */
-public class DimensionConfig
+public class WorldPresetConfig
 {
 	public boolean isModpackConfig = false;
 	// Use capitals since we're serialising to yaml and want to make it look nice.
@@ -27,16 +28,16 @@ public class DimensionConfig
 	public GameRules GameRules;
 	
 	// Parameterless constructor for deserialisation
-	public DimensionConfig() { }
+	public WorldPresetConfig() { }
 	
 	public boolean isModpackConfig()
 	{
 		return this.isModpackConfig;
 	}
 	
-	public static DimensionConfig createDefaultConfig()
+	public static WorldPresetConfig createDefaultConfig()
 	{
-		DimensionConfig config = new DimensionConfig();
+		WorldPresetConfig config = new WorldPresetConfig();
 		config.Overworld = new OTGOverWorld(null, -1, null, null);
 		config.Nether = new OTGDimension(null, -1);
 		config.End = new OTGDimension(null, -1);
@@ -49,15 +50,15 @@ public class DimensionConfig
 		try {
 			return mapper.writeValueAsString(this);
 		} catch (JsonProcessingException e) {
-			OTGLog.error(LogCategory.CONFIGS, "Failed to serialize dimension config to YAML: {}", e.getMessage());
+			OTGLog.error(LogCategory.CONFIGS, "Failed to serialize world preset config to YAML: {}", e.getMessage());
 		}
 		return null;
 	}
 	
 	// Clone method for GUI, to accommodate cancel button / rollbacks.
-	public DimensionConfig clone()
+	public WorldPresetConfig clone()
 	{
-		DimensionConfig clone = new DimensionConfig();
+		WorldPresetConfig clone = new WorldPresetConfig();
 
 		clone.isModpackConfig = this.isModpackConfig;
 		clone.Version = this.Version;

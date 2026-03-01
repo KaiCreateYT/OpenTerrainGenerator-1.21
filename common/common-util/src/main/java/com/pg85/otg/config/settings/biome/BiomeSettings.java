@@ -7,7 +7,7 @@ import com.pg85.otg.config.io.SettingsMap;
 import com.pg85.otg.config.settings.ConfigSection;
 import com.pg85.otg.config.settings.biome.generated.BiomePlacementSettings;
 import com.pg85.otg.config.settings.biome.generated.BiomeStructureTagSettings;
-import com.pg85.otg.config.settings.preset.PresetSettings;
+import com.pg85.otg.config.settings.preset.DimensionPresetSettings;
 import com.pg85.otg.config.settingtype.Setting;
 import com.pg85.otg.interfaces.IBiomeResourceLocation;
 import com.pg85.otg.interfaces.ICustomStructureGen;
@@ -63,7 +63,7 @@ public abstract class BiomeSettings implements ConfigFile {
         this.OTGBiomeID = new OTGBiomeID(id, this.getRegistryKey(), this.getConfigName());
     }
 
-    protected BiomeSettings(SettingsMap reader, PresetSettings presetSettings, IConfigFunctionProvider provider) {
+    protected BiomeSettings(SettingsMap reader, DimensionPresetSettings presetSettings, IConfigFunctionProvider provider) {
         this.configName = reader.getName();
         this.configPath = reader.getPath();
         renameOldSettings(reader);
@@ -77,7 +77,7 @@ public abstract class BiomeSettings implements ConfigFile {
 
     // Misc
 
-    // PresetConfig getters
+    // DimensionPresetConfig getters
     // TODO: Ideally, don't contain presetConfig within biomeconfig,
     // use a parent object that holds both, like a worldgenregion.
 
@@ -141,7 +141,7 @@ public abstract class BiomeSettings implements ConfigFile {
         settings.renameOldSetting("BiomeColor", BiomePlacementSettings.BIOME_MAP_COLOR);
     }
 
-    protected void readDefaultSettings(SettingsMap settingsMap, PresetSettings presetSettings, IConfigFunctionProvider provider) {
+    protected void readDefaultSettings(SettingsMap settingsMap, DimensionPresetSettings presetSettings, IConfigFunctionProvider provider) {
         templateConfig = TemplateConfig.buildTemplateSettings(settingsMap);
         identitySettings = IdentitySettings.buildIdentitySettings(settingsMap, presetSettings);
         mobSettings = MobSettings.getMobSettings(settingsMap);

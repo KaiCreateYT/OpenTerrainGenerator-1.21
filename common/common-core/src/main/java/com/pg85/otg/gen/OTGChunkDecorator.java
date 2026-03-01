@@ -209,7 +209,7 @@ public class OTGChunkDecorator implements IChunkDecorator
 		}
 
 		// Use BO4 logic for BO4 worlds
-		if(worldGenRegion.getPresetConfig().getResourceSettings().getCustomStructureType() == CustomStructureType.BO4)
+		if(worldGenRegion.getConfig().getResourceSettings().getCustomStructureType() == CustomStructureType.BO4)
 		{
 			long bo4Start = System.currentTimeMillis();
 			// Per-region lock - chunks in different regions can be processed in parallel
@@ -224,11 +224,11 @@ public class OTGChunkDecorator implements IChunkDecorator
 
 		if(
 			worldGenRegion.getSpawnChunk().equals(chunkCoord) &&
-			worldGenRegion.getPresetConfig().getResourceSettings().getBO3AtSpawn() != null &&
-			!worldGenRegion.getPresetConfig().getResourceSettings().getBO3AtSpawn().trim().isEmpty()
+			worldGenRegion.getConfig().getResourceSettings().getBO3AtSpawn() != null &&
+			!worldGenRegion.getConfig().getResourceSettings().getBO3AtSpawn().trim().isEmpty()
 		)
 		{
-			handleBO3AtSpawn(worldGenRegion, chunkCoord, worldGenRegion.getPresetConfig().getResourceSettings().getBO3AtSpawn(), worldGenRegion.getPresetFolderName(), otgRootFolder, structureCache, customObjectManager, materialReader, customObjectResourcesManager, modLoadedChecker, rand);
+			handleBO3AtSpawn(worldGenRegion, chunkCoord, worldGenRegion.getConfig().getResourceSettings().getBO3AtSpawn(), worldGenRegion.getPresetFolderName(), otgRootFolder, structureCache, customObjectManager, materialReader, customObjectResourcesManager, modLoadedChecker, rand);
 		}
 
 		long resourcesStart = System.currentTimeMillis();

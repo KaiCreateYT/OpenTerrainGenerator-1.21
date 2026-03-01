@@ -5,7 +5,7 @@ import java.util.*;
 import com.pg85.otg.config.ConfigFunction;
 import com.pg85.otg.config.io.SettingsMap;
 import com.pg85.otg.config.settings.biome.*;
-import com.pg85.otg.config.preset.PresetConfig;
+import com.pg85.otg.config.preset.DimensionPresetConfig;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.customobject.resource.CustomObjectResource;
 import com.pg85.otg.customobject.resource.CustomStructureResource;
@@ -68,11 +68,11 @@ public class BiomeConfig extends BiomeSettings
 		RESOURCE_QUEUE_RESOURCES.put("Scatter", VegetationScatterResource.class);
 	}
 
-	private final PresetConfig parent;
+	private final DimensionPresetConfig parent;
 	@Setter
 	private MobSettings mergedMobSettings = null;
 
-	public BiomeConfig(SettingsMap settingsMap, PresetConfig presetSettings)
+	public BiomeConfig(SettingsMap settingsMap, DimensionPresetConfig presetSettings)
 	{
 		super(settingsMap, presetSettings, new BiomeResourcesManager(presetSettings.getWorldInfo()));
 		parent = presetSettings;

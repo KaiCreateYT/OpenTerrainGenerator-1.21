@@ -1,7 +1,7 @@
 package com.pg85.otg.config;
 
 import com.pg85.otg.config.io.SettingsMap;
-import com.pg85.otg.config.settings.preset.PresetInfo;
+import com.pg85.otg.config.settings.preset.DimensionPresetInfo;
 import com.pg85.otg.config.standard.PluginConfigStandardValues;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.interfaces.ILogger;
@@ -35,7 +35,7 @@ public final class PluginConfig extends PluginConfigBase
 
 	private void readConfigSettings(SettingsMap reader, ILogger logger)
 	{
-		this.settingsMode = reader.getSetting(PresetInfo.SETTINGS_MODE);
+		this.settingsMode = reader.getSetting(DimensionPresetInfo.SETTINGS_MODE);
 		this.logLevel = reader.getSetting(PluginConfigStandardValues.LOG_LEVEL);
 		this.logCustomObjects = reader.getSetting(PluginConfigStandardValues.LOG_CUSTOM_OBJECTS);
 		this.logStructurePlotting = reader.getSetting(PluginConfigStandardValues.LOG_BO4_PLOTTING);
@@ -61,7 +61,7 @@ public final class PluginConfig extends PluginConfigBase
 		writer.header1("Open Terrain Generator Config");
 		writer.putSetting(Constants.ConfigVersionSetting, Constants.ConfigVersion);
 
-		writer.putSetting(PresetInfo.SETTINGS_MODE, this.settingsMode,
+		writer.putSetting(DimensionPresetInfo.SETTINGS_MODE, this.settingsMode,
 			"Possible Config Write Modes:",
 			"WriteAll			 - Write config files with help comments.",
 			"WriteWithoutComments - Write config files without help comments.",
@@ -139,7 +139,7 @@ public final class PluginConfig extends PluginConfigBase
 		);
 		
 		writer.putSetting(PluginConfigStandardValues.DEVELOPER_MODE, this.developerMode,
-			"Clears the BO2/BO3 cache and reloads PresetConfig/BiomeConfigs on exit/rejoin.",
+			"Clears the BO2/BO3 cache and reloads DimensionPresetConfig/BiomeConfigs on exit/rejoin.",
 			"Use this if you're creating a preset and want to do trial/error quickly.",
 			"Defaults to: false"
 		);

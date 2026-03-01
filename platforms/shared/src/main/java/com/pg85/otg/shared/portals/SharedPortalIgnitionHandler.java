@@ -4,7 +4,7 @@ import com.pg85.otg.OTG;
 import com.pg85.otg.config.settings.preset.PortalColors;
 import com.pg85.otg.config.settings.preset.PortalSettings;
 import com.pg85.otg.shared.gen.SharedOTGChunkGenerator;
-import com.pg85.otg.presets.Preset;
+import com.pg85.otg.presets.DimensionPreset;
 import com.pg85.otg.util.DimensionNameUtils;
 import com.pg85.otg.util.materials.LocalMaterialData;
 import net.minecraft.core.BlockPos;
@@ -87,13 +87,13 @@ public final class SharedPortalIgnitionHandler {
         List<PortalConfig> configs = new ArrayList<>();
         List<String> usedColors = new ArrayList<>();
 
-        List<Preset> presets = new ArrayList<>(OTG.getEngine().getPresetLoader().getAllPresets());
-        presets.sort(Comparator.comparing(Preset::getFolderName));
+        List<DimensionPreset> presets = new ArrayList<>(OTG.getEngine().getDimensionPresetLoader().getAllDimensionPresets());
+        presets.sort(Comparator.comparing(DimensionPreset::getFolderName));
 
-        for (Preset preset : presets) {
-            if (preset.getPresetConfig() == null) continue;
+        for (DimensionPreset preset : presets) {
+            if (preset.getConfig() == null) continue;
 
-            PortalSettings portalSettings = preset.getPresetConfig().getPortalSettings();
+            PortalSettings portalSettings = preset.getConfig().getPortalSettings();
             if (portalSettings == null) continue;
 
             if (portalSettings.getPortalBlocks() == null || portalSettings.getPortalBlocks().isEmpty()) {

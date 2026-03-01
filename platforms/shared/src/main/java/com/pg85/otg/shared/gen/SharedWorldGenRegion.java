@@ -1,6 +1,6 @@
 package com.pg85.otg.shared.gen;
 
-import com.pg85.otg.config.preset.PresetConfig;
+import com.pg85.otg.config.preset.DimensionPresetConfig;
 import com.pg85.otg.config.settings.biome.BiomeSettings;
 import com.pg85.otg.gen.OTGChunkGenerator;
 import com.pg85.otg.interfaces.IBiome;
@@ -49,7 +49,7 @@ import java.util.Optional;
 import java.util.Random;
 
 public abstract class SharedWorldGenRegion extends LocalWorldGenRegion {
-    private final PresetConfig presetConfig;
+    private final DimensionPresetConfig presetConfig;
     private final OTGWorldInfo otgWorldInfo;
     protected final WorldGenLevel worldGenLevel;
     protected final ChunkGenerator chunkGenerator;
@@ -58,7 +58,7 @@ public abstract class SharedWorldGenRegion extends LocalWorldGenRegion {
     protected SharedWorldGenRegion(
         String presetFolderName,
         IPluginConfig pluginConfig,
-        PresetConfig presetConfig,
+        DimensionPresetConfig presetConfig,
         OTGWorldInfo otgWorldInfo,
         WorldGenLevel worldGenLevel,
         ChunkAccess chunkAccess,
@@ -108,10 +108,10 @@ public abstract class SharedWorldGenRegion extends LocalWorldGenRegion {
 
     @Override
     public ChunkCoordinate getSpawnChunk() {
-        if (this.getPresetConfig().getSpawnSettings().isSpawnPointSet()) {
+        if (this.getConfig().getSpawnSettings().isSpawnPointSet()) {
             return ChunkCoordinate.fromBlockCoords(
-                this.getPresetConfig().getSpawnSettings().getSpawnPointX(),
-                this.getPresetConfig().getSpawnSettings().getSpawnPointZ()
+                this.getConfig().getSpawnSettings().getSpawnPointX(),
+                this.getConfig().getSpawnSettings().getSpawnPointZ()
             );
         } else {
             BlockPos spawnPos = this.worldGenLevel.getLevel().getSharedSpawnPos();

@@ -1,6 +1,6 @@
 package com.pg85.otg.fabric.gen;
 
-import com.pg85.otg.config.preset.PresetConfig;
+import com.pg85.otg.config.preset.DimensionPresetConfig;
 import com.pg85.otg.shared.materials.SharedMaterialData;
 import com.pg85.otg.shared.util.SharedNBTHelper;
 import com.pg85.otg.gen.OTGChunkGenerator;
@@ -20,7 +20,7 @@ public class FabricWorldGenRegion extends SharedWorldGenRegion {
     public FabricWorldGenRegion(
         String presetFolderName,
         IPluginConfig pluginConfig,
-        PresetConfig presetConfig,
+        DimensionPresetConfig presetConfig,
         OTGWorldInfo otgWorldInfo,
         WorldGenLevel worldGenLevel,
         ChunkAccess chunkAccess,

@@ -5,7 +5,7 @@ import net.minecraft.core.RegistrationInfo;
 import com.pg85.otg.OTG;
 import com.pg85.otg.config.settings.preset.DimensionSettings;
 import com.pg85.otg.constants.Constants;
-import com.pg85.otg.presets.Preset;
+import com.pg85.otg.presets.DimensionPreset;
 import com.pg85.otg.util.OTGLog;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -113,12 +113,12 @@ public abstract class SharedDimensionHelper implements PlatformDimensionHelper {
 
     @Override
     public void createDimensionRuntime(MinecraftServer server, String name, String presetName, long seed) throws Exception {
-        Preset preset = OTG.getEngine().getPresetLoader().getPresetByFolderName(presetName);
+        DimensionPreset preset = OTG.getEngine().getDimensionPresetLoader().getDimensionPresetByFolderName(presetName);
         if (preset == null) {
             throw new IllegalArgumentException("Preset not found: " + presetName);
         }
 
-        DimensionSettings dimSettings = preset.getPresetConfig().getDimensionSettings();
+        DimensionSettings dimSettings = preset.getConfig().getDimensionSettings();
 
         ResourceKey<Level> levelKey = DimensionKeys.otg(name);
         ResourceLocation dimLocation = levelKey.location();

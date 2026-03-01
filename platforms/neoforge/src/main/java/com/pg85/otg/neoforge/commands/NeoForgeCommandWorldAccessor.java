@@ -25,7 +25,7 @@ public class NeoForgeCommandWorldAccessor implements CommandWorldAccessor {
         return new NeoForgeWorldGenRegion(
             preset.getFolderName(),
             OTG.getEngine().getPluginConfig(),
-            preset.getPresetConfig(),
+            preset.getConfig(),
             otgWorldInfo,
             level,
             chunkAccess,

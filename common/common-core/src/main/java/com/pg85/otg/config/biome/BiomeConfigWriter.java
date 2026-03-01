@@ -18,7 +18,7 @@ public class BiomeConfigWriter {
         writer.header1("Biome Identity");
 
         writer.putSetting(OutdatedSettings.IS_TEMPLATE_FOR_BIOME, biomeConfig.getIdentitySettings().isTemplateForBiome(),
-                "Set this to true if this biome config is used with non-OTG biomes, configured in the PresetConfig via TemplateBiome()",
+                "Set this to true if this biome config is used with non-OTG biomes, configured in the DimensionPresetConfig via TemplateBiome()",
                 "OTG generates the terrain for the biome as configured in this file and spawns resources, but also allows the biome to spawn ",
                 "its own resources and mobs and apply its settings. Because of this, the following OTG settings cannot be used:",
                 "- Colors, Mob spawning, particles, sounds, vanilla structures, wetness, temperature.",
@@ -35,14 +35,14 @@ public class BiomeConfigWriter {
         writer.putSetting(BiomePlacementSettings.BIOME_SIZE, biomeConfig.getGenerationSettings().getBiomeSize(),
                 "Biome size from 0 to GenerationDepth. Defines in which biome layer this biome will be generated (see GenerationDepth).",
                 "Higher numbers result in a smaller biome, lower numbers a larger biome.",
-                "How this setting is used depends on the value of BiomeMode in the PresetConfig.",
+                "How this setting is used depends on the value of BiomeMode in the DimensionPresetConfig.",
                 "It will be used for:",
                 "- normal biomes, ice biomes, isle biomes and border biomes when BiomeMode is set to NoGroups",
                 "- biomes spawned as part of a BiomeGroup when BiomeMode is set to Normal.",
                 "  For biomes spawned as isles, borders or rivers other settings are available.",
                 "  Isle biomes:	" + BiomePlacementSettings.BIOME_SIZE_WHEN_ISLE + " (see below)",
                 "  Border biomes: " + BiomePlacementSettings.BIOME_SIZE_WHEN_BORDER + " (see below)",
-                "  River biomes:  " + GenerationSettings.RIVER_SIZE + " (see PresetConfig)");
+                "  River biomes:  " + GenerationSettings.RIVER_SIZE + " (see DimensionPresetConfig)");
 
         writer.putSetting(BiomePlacementSettings.BIOME_RARITY, biomeConfig.getGenerationSettings().getBiomeRarity(),
                 "Biome rarity from 100 to 1. If this is normal or ice biome - chance to spawn this biome, then others.",
@@ -57,7 +57,7 @@ public class BiomeConfigWriter {
                 "and used in the input of BiomeMode: FromImage.");
 
         writer.header2("Isle biomes", "To spawn a biome as an isle, first add it to the",
-                GenerationSettings.ISLE_BIOMES + " list in the PresetConfig.", "");
+                GenerationSettings.ISLE_BIOMES + " list in the DimensionPresetConfig.", "");
 
         writer.putSetting(BiomePlacementSettings.ISLE_IN_BIOMES, biomeConfig.getGenerationSettings().getIsleInBiomes(),
                 "List of biomes in which this biome will spawn as an isle.",
@@ -74,7 +74,7 @@ public class BiomeConfigWriter {
                 "Rarity of this biome when spawned as an isle biome in BiomeMode: Normal.");
 
         writer.smallTitle("Border biomes", "To spawn a biome as a border, first add it to the",
-                GenerationSettings.BORDER_BIOMES + " list in the PresetConfig.", "");
+                GenerationSettings.BORDER_BIOMES + " list in the DimensionPresetConfig.", "");
 
         writer.putSetting(BiomePlacementSettings.BORDER_IN_BIOMES, biomeConfig.getGenerationSettings().getBorderInBiomes(),
                 "List of biomes this biome can be a border of.",
@@ -412,7 +412,7 @@ public class BiomeConfigWriter {
 
         if (!isTemplateBiome) {
             writer.header1("Vanilla structures", "Vanilla structure settings, each structure type has a global on/off",
-                    "toggle in the PresetConfig, be sure to enable it to allow biomes to", "spawn structures.",
+                    "toggle in the DimensionPresetConfig, be sure to enable it to allow biomes to", "spawn structures.",
                     "* Fossils and Dungeons count as resources, not structures.");
 
 //            writer.putSetting(BiomeStructureSettings.STRONGHOLDS_ENABLED, biomeConfig.getStructureSettings().isStrongholdsEnabled(),

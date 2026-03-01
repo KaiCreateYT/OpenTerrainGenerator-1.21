@@ -106,7 +106,7 @@ public class OreResource extends BiomeResourceBase implements IBasicResource
     )
     {
         OTGWorldInfo world = worldGenRegion.getWorldInfo();
-        if (worldGenRegion.getPresetConfig().getResourceSettings().isDisableOreGen()) {
+        if (worldGenRegion.getConfig().getResourceSettings().isDisableOreGen()) {
             if (this.material.isOre()) {
                 return true;
             }

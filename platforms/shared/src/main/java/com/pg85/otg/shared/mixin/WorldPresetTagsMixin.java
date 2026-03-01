@@ -2,7 +2,7 @@ package com.pg85.otg.shared.mixin;
 
 import com.pg85.otg.config.settings.biome.BiomeStructureTagConfig;
 import com.pg85.otg.constants.Constants;
-import com.pg85.otg.shared.biome.SharedPresetBiomeLoader;
+import com.pg85.otg.shared.biome.SharedDimensionPresetBiomeLoader;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.biome.StructureTagMapper;
 import net.minecraft.core.Holder;
@@ -71,7 +71,7 @@ public class WorldPresetTagsMixin {
 
     private void addBiomesToStructureTags(RegistryAccess registryAccess) {
         Map<ResourceKey<Biome>, BiomeStructureTagConfig> structureConfigs =
-                SharedPresetBiomeLoader.getStructureTagConfigs();
+                SharedDimensionPresetBiomeLoader.getStructureTagConfigs();
 
         if (structureConfigs.isEmpty()) return;
 

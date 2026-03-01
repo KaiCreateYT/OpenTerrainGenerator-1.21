@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.pg85.otg.config.dimensions.DimensionConfig;
+import com.pg85.otg.config.dimensions.WorldPresetConfig;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
@@ -15,13 +15,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class DimensionConfigLoader {
-    public static DimensionConfig fromDisk(String fileName, Path otgRootFolder)
+public class WorldPresetConfigLoader {
+    public static WorldPresetConfig fromDisk(String fileName, Path otgRootFolder)
     {
-        File dimensionConfig = new File(otgRootFolder.toFile(), Constants.DIMENSION_CONFIGS_FOLDER + File.separator + fileName + ".yaml");
+        File dimensionConfig = new File(otgRootFolder.toFile(), Constants.WORLD_PRESETS_FOLDER + File.separator + fileName + ".yaml");
         if(dimensionConfig.exists())
         {
-            DimensionConfig dimConfig = new DimensionConfig();
+            WorldPresetConfig dimConfig = new WorldPresetConfig();
             String content = "";
             try
             {
@@ -29,9 +29,9 @@ public class DimensionConfigLoader {
             }
             catch (IOException e)
             {
-                OTGLog.error(LogCategory.CONFIGS, "Failed to read dimension config file: {}", e.getMessage());
+                OTGLog.error(LogCategory.CONFIGS, "Failed to read world preset config file: {}", e.getMessage());
             }
-            DimensionConfig loadedConfig = fromYamlString(content);
+            WorldPresetConfig loadedConfig = fromYamlString(content);
             if(loadedConfig != null)
             {
                 dimConfig.isModpackConfig = true;
@@ -49,19 +49,19 @@ public class DimensionConfigLoader {
         return null;
     }
 
-    public static DimensionConfig fromYamlString(String input)
+    public static WorldPresetConfig fromYamlString(String input)
     {
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        DimensionConfig dimConfig = null;
+        WorldPresetConfig dimConfig = null;
 
         try {
-            dimConfig = mapper.readValue(input, DimensionConfig.class);
+            dimConfig = mapper.readValue(input, WorldPresetConfig.class);
         } catch (JsonParseException e) {
-            OTGLog.error(LogCategory.CONFIGS, "Failed to parse dimension config YAML: {}", e.getMessage());
+            OTGLog.error(LogCategory.CONFIGS, "Failed to parse world preset config YAML: {}", e.getMessage());
         } catch (JsonMappingException e) {
-            OTGLog.error(LogCategory.CONFIGS, "Failed to map dimension config YAML: {}", e.getMessage());
+            OTGLog.error(LogCategory.CONFIGS, "Failed to map world preset config YAML: {}", e.getMessage());
         } catch (IOException e) {
-            OTGLog.error(LogCategory.CONFIGS, "Failed to read dimension config input: {}", e.getMessage());
+            OTGLog.error(LogCategory.CONFIGS, "Failed to read world preset config input: {}", e.getMessage());
         }
 
         return dimConfig;

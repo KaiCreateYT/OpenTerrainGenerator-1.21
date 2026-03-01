@@ -4,19 +4,19 @@ import com.pg85.otg.config.ConfigFunction;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.exceptions.InvalidConfigException;
 import com.pg85.otg.interfaces.ILogger;
-import com.pg85.otg.config.settings.preset.PresetSettings;
+import com.pg85.otg.config.settings.preset.DimensionPresetSettings;
 import com.pg85.otg.util.helpers.StringHelper;
 import com.pg85.otg.util.logging.LogCategory;
 import java.util.*;
 
-public final class TemplateBiome extends ConfigFunction<PresetSettings>
+public final class TemplateBiome extends ConfigFunction<DimensionPresetSettings>
 {
 	private String name;
 	private double minTemp;
 	private double maxTemp;
 	private final List<String> tags = new ArrayList<String>();
 
-	public TemplateBiome(PresetSettings config, List<String> args) throws InvalidConfigException
+	public TemplateBiome(DimensionPresetSettings config, List<String> args) throws InvalidConfigException
 	{
 		assureSize(2, args);
 		this.name = args.get(0);

@@ -71,7 +71,7 @@ public class VeinResource extends BiomeResourceBase implements IBasicResource
         // Find all veins that reach this chunk, and spawn them
         int searchRadius = (this.maxSizeInBlocks + 15) / 16;
 
-        if (worldGenRegion.getPresetConfig().getResourceSettings().isDisableOreGen()) {
+        if (worldGenRegion.getConfig().getResourceSettings().isDisableOreGen()) {
             if (this.material.isOre()) {
                 return;
             }

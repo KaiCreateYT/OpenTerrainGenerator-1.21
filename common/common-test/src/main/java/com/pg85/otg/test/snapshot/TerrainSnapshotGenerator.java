@@ -3,7 +3,7 @@ package com.pg85.otg.test.snapshot;
 import com.pg85.otg.gen.OTGChunkGenerator;
 import com.pg85.otg.interfaces.IBiome;
 import com.pg85.otg.interfaces.ILayerSource;
-import com.pg85.otg.presets.Preset;
+import com.pg85.otg.presets.DimensionPreset;
 import com.pg85.otg.test.gen.TestChunkBuffer;
 import com.pg85.otg.util.ChunkCoordinate;
 import com.pg85.otg.util.gen.JigsawStructureData;
@@ -33,7 +33,7 @@ public class TerrainSnapshotGenerator {
      */
     public static final int HEIGHTMAP_RESOLUTION = 16;
 
-    private final Preset preset;
+    private final DimensionPreset preset;
     private final ILayerSource biomeProvider;
     private final IBiome[] biomes;
     private final OTGWorldInfo worldInfo;
@@ -52,7 +52,7 @@ public class TerrainSnapshotGenerator {
      * @param version       version string for metadata
      */
     public TerrainSnapshotGenerator(
-            Preset preset,
+            DimensionPreset preset,
             ILayerSource biomeProvider,
             IBiome[] biomes,
             OTGWorldInfo worldInfo,

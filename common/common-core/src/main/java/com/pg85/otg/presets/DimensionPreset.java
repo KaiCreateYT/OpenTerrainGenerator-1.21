@@ -5,28 +5,29 @@ import java.util.*;
 
 import com.pg85.otg.config.biome.BiomeConfig;
 import com.pg85.otg.config.biome.BiomeTemplate;
-import com.pg85.otg.config.preset.PresetConfig;
+import com.pg85.otg.config.preset.DimensionPresetConfig;
 import com.pg85.otg.config.settings.biome.BiomeSettings;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.util.biome.OTGBiomeID;
 import lombok.Getter;
 
 /**
- * Represents an OTG preset, with all its world and biome configs, stored in /config/OpenTerrainGenerator/Presets/\<PresetName\>/.
+ * Represents an OTG dimension preset, with all its world and biome configs,
+ * stored in /config/OpenTerrainGenerator/DimensionPresets/\<PresetName\>/.
  */
-public class Preset {
+public class DimensionPreset {
     @Getter
-    private final Path presetFolder;
+    private final Path folder;
     @Getter
     private final String folderName;
     @Getter
-    private final String presetRegistryName;
+    private final String registryName;
 
     // Note: Since we're not using Supplier<>, we need to be careful about any classes fetching
     // and caching our worldconfig/biomeconfigs etc, or they won't update when reloaded from disk.
     // BiomeGen and ChunkGen cache some settings during a session, so they'll only update on world exit/rejoin.
     @Getter
-    private PresetConfig presetConfig;
+    private DimensionPresetConfig config;
 
     private final List<BiomeConfig> biomeConfigList;
 
@@ -43,14 +44,14 @@ public class Preset {
     @Getter
     private String description;
 
-    public Preset(Path presetFolder, PresetConfig presetConfig, List<BiomeConfig> biomeConfigList, List<BiomeTemplate> biomeTemplateList) {
-        this.presetFolder = presetFolder;
-        this.folderName = presetFolder.toFile().getName();
-        this.presetRegistryName = presetConfig.getPresetInfo().getRegistryName();
-        this.presetConfig = presetConfig;
-        this.author = presetConfig.getPresetInfo().getAuthor();
-        this.description = presetConfig.getPresetInfo().getDescription();
-        this.majorVersion = presetConfig.getPresetInfo().getMajorVersion();
+    public DimensionPreset(Path folder, DimensionPresetConfig config, List<BiomeConfig> biomeConfigList, List<BiomeTemplate> biomeTemplateList) {
+        this.folder = folder;
+        this.folderName = folder.toFile().getName();
+        this.registryName = config.getPresetInfo().getRegistryName();
+        this.config = config;
+        this.author = config.getPresetInfo().getAuthor();
+        this.description = config.getPresetInfo().getDescription();
+        this.majorVersion = config.getPresetInfo().getMajorVersion();
         this.biomeTemplateList = biomeTemplateList;
         this.biomeConfigList = biomeConfigList;
 
@@ -65,8 +66,8 @@ public class Preset {
         });
     }
 
-    public void update(Preset preset) {
-        this.presetConfig = preset.presetConfig;
+    public void update(DimensionPreset preset) {
+        this.config = preset.config;
         this.biomeConfigs = preset.biomeConfigs;
         this.biomeTemplates = preset.biomeTemplates;
         this.biomeIDS = preset.biomeIDS;
@@ -108,11 +109,11 @@ public class Preset {
     }
 
     public List<String> getDimensionNames() {
-        return getPresetConfig().getDimensionSettings().getDefaultDimensions()
+        return getConfig().getDimensionSettings().getDefaultDimensions()
                 .stream()
                 .map(
                         string -> string.equalsIgnoreCase("this")
-                                ? Constants.MOD_ID_SHORT + ':' + getPresetRegistryName()
+                                ? Constants.MOD_ID_SHORT + ':' + getRegistryName()
                                 : string)
                 .map(s -> s.toLowerCase(Locale.ROOT))
                 .toList();

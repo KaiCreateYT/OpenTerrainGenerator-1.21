@@ -127,7 +127,7 @@ public class FrozenSurfaceHelper
 		int snowHeight;
 		LocalMaterialData materialToSnowAt = null;
 		LocalMaterialData materialToSnowOn = null;
-		if(worldGenRegion.getPresetConfig().getTerrainSettings().isBetterSnowFall())
+		if(worldGenRegion.getConfig().getTerrainSettings().isBetterSnowFall())
 		{
 			tempAtBlockToFreeze = biome.getTemperatureAt(x, y, z);
             snowHeight = SurfaceSettings.getSnowHeight(tempAtBlockToFreeze);

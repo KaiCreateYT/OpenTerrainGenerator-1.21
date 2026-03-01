@@ -4,7 +4,7 @@ import com.pg85.otg.OTGEngine;
 import com.pg85.otg.gen.biome.layers.BiomeLayerData;
 import com.pg85.otg.interfaces.IBiome;
 import com.pg85.otg.interfaces.IModLoadedChecker;
-import com.pg85.otg.presets.LocalPresetLoader;
+import com.pg85.otg.presets.LocalDimensionPresetLoader;
 
 import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.logging.LogLevel;
@@ -40,14 +40,14 @@ public class TestOTGEngine extends OTGEngine {
     public void onStart() {
         // Minimal startup - skip preset unpacking and file creation
         getLogger().init(LogLevel.INFO, EnumSet.of(LogCategory.MAIN, LogCategory.CONFIGS), "");
-        // Note: We don't call presetLoader.loadPresetsFromDisk() here
-        // because TestPresetLoader.loadPresets() does this separately
+        // Note: We don't call dimensionPresetLoader.loadDimensionPresetsFromDisk() here
+        // because TestDimensionPresetLoader.loadPresets() does this separately
     }
 
     /**
-     * Minimal LocalPresetLoader for test engine.
+     * Minimal LocalDimensionPresetLoader for test engine.
      */
-    private static class TestLocalPresetLoader extends LocalPresetLoader {
+    private static class TestLocalPresetLoader extends LocalDimensionPresetLoader {
         public TestLocalPresetLoader(Path otgRootFolder) {
             super(otgRootFolder);
         }

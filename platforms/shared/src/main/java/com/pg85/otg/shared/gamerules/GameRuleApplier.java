@@ -1,7 +1,7 @@
 package com.pg85.otg.shared.gamerules;
 
 import com.mojang.serialization.Dynamic;
-import com.pg85.otg.config.dimensions.DimensionConfig;
+import com.pg85.otg.config.dimensions.WorldPresetConfig;
 import com.pg85.otg.config.settings.preset.GameRuleSettings;
 import com.pg85.otg.util.OTGLog;
 import net.minecraft.nbt.CompoundTag;
@@ -14,19 +14,19 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Creates MC GameRules from OTG config (PresetConfig + optional DimensionConfig override).
+ * Creates MC GameRules from OTG config (DimensionPresetConfig + optional WorldPresetConfig override).
  */
 public final class GameRuleApplier {
 
     private GameRuleApplier() {}
 
     /**
-     * Creates a new GameRules instance populated from PresetConfig settings
-     * with optional DimensionConfig overrides.
+     * Creates a new GameRules instance populated from DimensionPresetConfig settings
+     * with optional WorldPresetConfig overrides.
      */
     public static GameRules createGameRules(
             GameRuleSettings presetRules,
-            @Nullable DimensionConfig.GameRules overrides,
+            @Nullable WorldPresetConfig.GameRules overrides,
             MinecraftServer server
     ) {
         GameRules rules = new GameRules();
@@ -39,7 +39,7 @@ public final class GameRuleApplier {
         applyFromPreset(rules, presetRules, server);
 
         if (overrides != null) {
-            OTGLog.info("Applying DimensionConfig GameRules overrides");
+            OTGLog.info("Applying WorldPresetConfig GameRules overrides");
             applyFromDimensionConfig(rules, overrides, server);
         }
 
@@ -106,7 +106,7 @@ public final class GameRuleApplier {
     }
 
     // Only applies fields explicitly set in YAML (non-null). Unset fields keep preset values.
-    private static void applyFromDimensionConfig(GameRules rules, DimensionConfig.GameRules dc, MinecraftServer server) {
+    private static void applyFromDimensionConfig(GameRules rules, WorldPresetConfig.GameRules dc, MinecraftServer server) {
         // Boolean overrides — null means "not specified, keep preset value"
         if (dc.DoFireTick != null) rules.getRule(GameRules.RULE_DOFIRETICK).set(dc.DoFireTick, server);
         if (dc.MobGriefing != null) rules.getRule(GameRules.RULE_MOBGRIEFING).set(dc.MobGriefing, server);

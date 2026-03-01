@@ -18,7 +18,7 @@ import com.pg85.otg.customobject.util.Corner;
 import com.pg85.otg.exceptions.InvalidConfigException;
 import com.pg85.otg.interfaces.IMaterialReader;
 import com.pg85.otg.interfaces.IModLoadedChecker;
-import com.pg85.otg.presets.Preset;
+import com.pg85.otg.presets.DimensionPreset;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.gen.LocalWorldGenRegion;
 import com.pg85.otg.util.materials.LocalMaterialData;
@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 public class ExportCommand {
 
     private static final SuggestionProvider<CommandSourceStack> PRESET_SUGGESTIONS = (ctx, builder) -> {
-        List<String> names = new ArrayList<>(OTG.getEngine().getPresetLoader().getAllPresetFolderNames());
+        List<String> names = new ArrayList<>(OTG.getEngine().getDimensionPresetLoader().getAllDimensionPresetFolderNames());
         names.add("global");
         return SharedSuggestionProvider.suggest(names, builder);
     };
@@ -141,11 +141,11 @@ public class ExportCommand {
         // Determine if global
         boolean isGlobal = presetName.equalsIgnoreCase("global");
         if (isGlobal) {
-            presetName = OTG.getEngine().getPresetLoader().getDefaultPresetFolderName();
+            presetName = OTG.getEngine().getDimensionPresetLoader().getDefaultDimensionPresetFolderName();
         }
 
         // Resolve the preset
-        Preset preset = OTG.getEngine().getPresetLoader().getPresetByShortNameOrFolderName(presetName);
+        DimensionPreset preset = OTG.getEngine().getDimensionPresetLoader().getDimensionPresetByShortNameOrFolderName(presetName);
         if (preset == null) {
             source.sendFailure(Component.literal("Could not find preset '" + presetName + "'."));
             return 0;
@@ -189,7 +189,7 @@ public class ExportCommand {
         if (isGlobal) {
             objectPath = OTG.getEngine().getGlobalObjectsFolder();
         } else {
-            objectPath = preset.getPresetFolder().resolve(Constants.OBJECTS_FOLDER);
+            objectPath = preset.getFolder().resolve(Constants.OBJECTS_FOLDER);
         }
         // Fallback to WorldObjects if Objects doesn't exist
         if (!objectPath.toFile().exists()) {
@@ -233,7 +233,7 @@ public class ExportCommand {
 
         // Resolve template and services
         CustomObjectManager customObjectManager = OTG.getEngine().getCustomObjectManager();
-        IMaterialReader materialReader = OTG.getEngine().getPresetLoader().getMaterialReader();
+        IMaterialReader materialReader = OTG.getEngine().getDimensionPresetLoader().getMaterialReader();
         CustomObjectResourcesManager resourcesManager = OTG.getEngine().getCustomObjectResourcesManager();
         IModLoadedChecker modLoadedChecker = OTG.getEngine().getModLoadedChecker();
         Path otgRootFolder = OTG.getEngine().getOTGRootFolder();

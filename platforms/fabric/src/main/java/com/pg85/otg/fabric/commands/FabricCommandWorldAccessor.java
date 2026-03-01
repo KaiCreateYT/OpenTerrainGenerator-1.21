@@ -25,7 +25,7 @@ public class FabricCommandWorldAccessor implements CommandWorldAccessor {
         return new FabricWorldGenRegion(
             preset.getFolderName(),
             OTG.getEngine().getPluginConfig(),
-            preset.getPresetConfig(),
+            preset.getConfig(),
             otgWorldInfo,
             level,
             chunkAccess,

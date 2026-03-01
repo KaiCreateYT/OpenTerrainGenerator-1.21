@@ -20,9 +20,9 @@ public class Constants
 	
 	// Folders
 	
-	public static final String PRESETS_FOLDER = "Presets";
+	public static final String DIMENSION_PRESETS_FOLDER = "DimensionPresets";
 	public static final String GLOBAL_OBJECTS_FOLDER = "GlobalObjects";
-	public static final String DIMENSION_CONFIGS_FOLDER = "DimensionConfigs";	
+	public static final String WORLD_PRESETS_FOLDER = "WorldPresets";
 	public static final String DEFAULT_PRESET_NAME = "DefaultPreset";	
 
 	// Config constants
@@ -56,7 +56,7 @@ public class Constants
 	// World constants
 
 	// Files and folders
-	public static final String PRESET_CONFIG_FILE = "PresetConfig.ini";
+	public static final String DIMENSION_PRESET_CONFIG_FILE = "DimensionPresetConfig.ini";
 	public static final String LEGACY_WORLD_CONFIG_FILE = "WorldConfig.ini";
 	public static final String FALLBACK_FILE = "Fallbacks.ini";
 	public static final String BIOMES_FOLDER = "Biomes";

@@ -13,15 +13,15 @@ import com.pg85.otg.config.settings.preset.GenerationSettings;
 import com.pg85.otg.gen.biome.BiomeData;
 import com.pg85.otg.interfaces.IBiome;
 import com.pg85.otg.config.settings.biome.BiomeSettings;
-import com.pg85.otg.config.settings.preset.PresetSettings;
+import com.pg85.otg.config.settings.preset.DimensionPresetSettings;
 import com.pg85.otg.config.settings.preset.ImageSettings;
-import com.pg85.otg.config.settings.preset.PresetInfo;
+import com.pg85.otg.config.settings.preset.DimensionPresetInfo;
 
 public class BiomeLayerData
 {
 	public final ImageSettings imageSettings;
 	public final GenerationSettings biomeSettings;
-	public final PresetInfo presetInfo;
+	public final DimensionPresetInfo presetInfo;
 	public final Path presetDir;
 	public final int[] oceanTemperatures;
 	public final BiomeData oceanBiomeData;
@@ -44,7 +44,7 @@ public class BiomeLayerData
 
 
 	public BiomeLayerData(Path presetDir,
-						  PresetSettings presetConfig,
+						  DimensionPresetSettings presetConfig,
 						  BiomeSettings oceanBiomeConfig,
 						  int[] oceanTemperatures,
 						  Map<Integer, BiomeGroup> groupRegistry,

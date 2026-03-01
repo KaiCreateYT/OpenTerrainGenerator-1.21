@@ -31,7 +31,7 @@ public class CustomObjectResourcesManager implements ICustomObjectResourcesManag
 	 * @param <T>	Type of the holder of the config function.
 	 * @param name	The name of the config function.
 	 * @param holder The holder of the config function, like
-	 *				{@link PresetConfig}.
+	 *				{@link DimensionPresetConfig}.
 	 * @param args	The args of the function.
 	 * @return A config function with the given name, or null if the config
 	 * function requires another holder. For invalid or non-existing config

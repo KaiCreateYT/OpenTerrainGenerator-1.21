@@ -12,7 +12,7 @@ import lombok.Getter;
 
 @Builder
 @Getter
-public class PresetInfo extends ConfigSection {
+public class DimensionPresetInfo extends ConfigSection {
     private final ConfigMode settingsMode;
     private final String displayName;
     private final String registryName;
@@ -24,7 +24,7 @@ public class PresetInfo extends ConfigSection {
 
     public static final Setting<ConfigMode> SETTINGS_MODE = Settings.enumSetting(
             "SettingsMode", ConfigMode.WriteAll,
-            t -> ((PresetInfo) t).getSettingsMode(),
+            t -> ((DimensionPresetInfo) t).getSettingsMode(),
             "Each time " + Constants.MOD_ID + " reads the config files it can also write to them. With this setting you can change how this behaves. Possible modes:",
             "WriteAll - Auto-update settings from old versions, order them, add comments, reset invalid settings and remove custom comments. (Recommended)",
             "WriteWithoutComments - Same as WriteAll, but removes all comments, both the ones added by OTG and custom ones. Removing comments is a recommended optimization for release versions of presets.",
@@ -32,46 +32,46 @@ public class PresetInfo extends ConfigSection {
     );
     public static final Setting<String> AUTHOR = Settings.stringSetting(
             "Author", "Unknown",
-            t -> ((PresetInfo) t).getAuthor(),
+            t -> ((DimensionPresetInfo) t).getAuthor(),
             "The author of this preset"
     );
     public static final Setting<String> REGISTRY_NAME = Settings.stringSetting(
             "RegistryName", "",
-            t -> ((PresetInfo) t).getRegistryName(),
+            t -> ((DimensionPresetInfo) t).getRegistryName(),
             "The shortened name for the preset, used in biome resource locations and similar"
     );
     public static final Setting<String> DISPLAY_NAME = Settings.stringSetting(
             "DisplayName", "",
-            t -> ((PresetInfo) t).getDisplayName(),
+            t -> ((DimensionPresetInfo) t).getDisplayName(),
             "The display name for this preset, used in the world creation screen and similar. ",
             "Defaults to the preset folder name if left blank"
     );
     public static final Setting<String> DESCRIPTION = Settings.stringSetting(
             "Description", "No description given",
-            t -> ((PresetInfo) t).getDescription(),
+            t -> ((DimensionPresetInfo) t).getDescription(),
             "A short description of this preset"
     );
     public static final Setting<Integer> MAJOR_VERSION = Settings.intSetting(
             "MajorVersion", 0 , 0, Integer.MAX_VALUE,
-            t -> ((PresetInfo) t).getMajorVersion(),
+            t -> ((DimensionPresetInfo) t).getMajorVersion(),
             "The preset major version. Increasing the minor version makes the PresetPacker overwrite,",
             "while increasing the major version will make the PresetPacker save a new copy"
     );
     public static final Setting<Integer> MINOR_VERSION = Settings.intSetting(
             "MinorVersion", 0 , 0, Integer.MAX_VALUE,
-            t -> ((PresetInfo) t).getMinorVersion(),
+            t -> ((DimensionPresetInfo) t).getMinorVersion(),
             "The preset minor version. Increasing the minor version makes the PresetPacker overwrite,",
             "while increasing the major version will make the PresetPacker save a new copy"
     );
 
     public static final Setting<Boolean> SELECTABLE_IN_WORLD_CREATION = Settings.booleanSetting(
             "SelectableInWorldCreation", true,
-            t -> ((PresetInfo) t).isSelectableInWorldCreation(),
+            t -> ((DimensionPresetInfo) t).isSelectableInWorldCreation(),
             "Whether this preset should be selectable in the world creation screen"
     );
 
-    public static PresetInfo buildPresetInfo(SettingsMap reader) {
-        PresetInfoBuilder presetInfoBuilder = builder();
+    public static DimensionPresetInfo buildPresetInfo(SettingsMap reader) {
+        DimensionPresetInfoBuilder presetInfoBuilder = builder();
 
         presetInfoBuilder.displayName(reader.getSetting(DISPLAY_NAME));
         presetInfoBuilder.settingsMode(reader.getSetting(SETTINGS_MODE));
@@ -85,8 +85,8 @@ public class PresetInfo extends ConfigSection {
         return presetInfoBuilder.fixSettings(reader.getName()).build();
     }
 
-    public static class PresetInfoBuilder {
-        public PresetInfoBuilder fixSettings(String presetFolderName) {
+    public static class DimensionPresetInfoBuilder {
+        public DimensionPresetInfoBuilder fixSettings(String presetFolderName) {
             if (this.registryName.isBlank() || this.registryName.equalsIgnoreCase("default")) {
                 this.registryName = presetFolderName;
             }

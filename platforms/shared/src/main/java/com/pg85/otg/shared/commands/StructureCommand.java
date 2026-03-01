@@ -58,7 +58,7 @@ public class StructureCommand {
 
         Path otgRootFolder = OTG.getEngine().getOTGRootFolder();
         var customObjectManager = OTG.getEngine().getCustomObjectManager();
-        IMaterialReader materialReader = OTG.getEngine().getPresetLoader().getMaterialReader();
+        IMaterialReader materialReader = OTG.getEngine().getDimensionPresetLoader().getMaterialReader();
         var resourcesManager = OTG.getEngine().getCustomObjectResourcesManager();
         var modLoadedChecker = OTG.getEngine().getModLoadedChecker();
 

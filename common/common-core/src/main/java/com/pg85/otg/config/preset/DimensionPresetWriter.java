@@ -4,9 +4,9 @@ import com.pg85.otg.config.io.SettingsMap;
 import com.pg85.otg.config.settings.preset.*;
 import com.pg85.otg.constants.Constants;
 
-public class PresetWriter {
-    static void writePresetConfig(PresetConfig presetConfig, SettingsMap writer) {
-        writer.header1("PresetConfig",
+public class DimensionPresetWriter {
+    static void writePresetConfig(DimensionPresetConfig presetConfig, SettingsMap writer) {
+        writer.header1("DimensionPresetConfig",
                 "Contains settings which affect the entire world, biome specific settings can be found in the Biome Configs.",
                 "This file controls biome groupings, ocean and land sizes/rarities, river settings, cave and canyon distribution,",
                 "vanilla minecraft structure spawning, sea level, dimension/portal settings and more."
@@ -14,7 +14,7 @@ public class PresetWriter {
 
         writer.header2("Config Writing");
 
-        writer.putSetting(PresetInfo.SETTINGS_MODE, presetConfig.getPresetInfo().getSettingsMode(),
+        writer.putSetting(DimensionPresetInfo.SETTINGS_MODE, presetConfig.getPresetInfo().getSettingsMode(),
                 "Each time " + Constants.MOD_ID + " reads the config files it can also write to them. With this setting you can change how this behaves. Possible modes:",
                 "WriteAll - Auto-update settings from old versions, order them, add comments, reset invalid settings and remove custom comments. (Recommended)",
                 "WriteWithoutComments - Same as WriteAll, but removes all comments, both the ones added by OTG and custom ones. Removing comments is a recommended optimization for release versions of presets.",
@@ -23,31 +23,31 @@ public class PresetWriter {
 
         writer.header2("Preset Identity");
 
-        writer.putSetting(PresetInfo.DISPLAY_NAME, presetConfig.getPresetInfo());
+        writer.putSetting(DimensionPresetInfo.DISPLAY_NAME, presetConfig.getPresetInfo());
 
-        writer.putSetting(PresetInfo.AUTHOR, presetConfig.getPresetInfo().getAuthor(),
+        writer.putSetting(DimensionPresetInfo.AUTHOR, presetConfig.getPresetInfo().getAuthor(),
                 "The author of this preset"
         );
 
-        writer.putSetting(PresetInfo.DESCRIPTION, presetConfig.getPresetInfo().getDescription(),
+        writer.putSetting(DimensionPresetInfo.DESCRIPTION, presetConfig.getPresetInfo().getDescription(),
                 "A short description of this preset"
         );
 
-        writer.putSetting(PresetInfo.MAJOR_VERSION, presetConfig.getPresetInfo().getMajorVersion(),
+        writer.putSetting(DimensionPresetInfo.MAJOR_VERSION, presetConfig.getPresetInfo().getMajorVersion(),
                 "The preset major version. Increasing the minor version makes the PresetPacker overwrite,",
                 "while increasing the major version will make the PresetPacker save a new copy"
         );
 
-        writer.putSetting(PresetInfo.MINOR_VERSION, presetConfig.getPresetInfo().getMinorVersion(),
+        writer.putSetting(DimensionPresetInfo.MINOR_VERSION, presetConfig.getPresetInfo().getMinorVersion(),
                 "The preset minor version. Increasing the minor version makes the PresetPacker overwrite,",
                 "while increasing the major version will make the PresetPacker save a new copy"
         );
 
-        writer.putSetting(PresetInfo.REGISTRY_NAME, presetConfig.getPresetInfo().getRegistryName(),
+        writer.putSetting(DimensionPresetInfo.REGISTRY_NAME, presetConfig.getPresetInfo().getRegistryName(),
                 "The shortened name for the preset, used in biome resource locations and similar"
         );
 
-        writer.putSetting(PresetInfo.SELECTABLE_IN_WORLD_CREATION, presetConfig.getPresetInfo().isSelectableInWorldCreation(),
+        writer.putSetting(DimensionPresetInfo.SELECTABLE_IN_WORLD_CREATION, presetConfig.getPresetInfo().isSelectableInWorldCreation(),
                 "Whether this preset should be selectable in the world creation screen."
         );
 
@@ -71,7 +71,7 @@ public class PresetWriter {
 
         writer.putSetting(GenerationSettings.GENERATION_DEPTH, presetConfig.getGenerationSettings().getGenerationDepth(),
                 "Defines the maximum number BiomeSize, RiverSize and LandSize can be set to.",
-                "All size settings such as Biome Group Size, RiverSize, LandSize (in the PresetConfig.ini), and BiomeSize (in Biome Configs) must be between 0 (largest) and GenerationDepth (smallest).",
+                "All size settings such as Biome Group Size, RiverSize, LandSize (in the DimensionPresetConfig.ini), and BiomeSize (in Biome Configs) must be between 0 (largest) and GenerationDepth (smallest).",
                 "Increasing GenerationDepth by one will roughly double the size of all biomes, similarly decreasing it by 1 will half the size of all biomes.",
                 "Small values (1-2) and Large values (20+) may affect generator performance.",
                 "This setting is also used in BiomeMode:FromImage when ImageMode is set to ContinueNormal"
@@ -254,7 +254,7 @@ public class PresetWriter {
         );
 
         writer.putSetting(ImageSettings.IMAGE_FILE, presetConfig.getImageSettings().getImageFile(),
-                "The image which will provide the Biomes must be a PNG file without transparency, once placed in the same folder as PresetConfig.ini OTG will use it as a reference for the Biomes generation.",
+                "The image which will provide the Biomes must be a PNG file without transparency, once placed in the same folder as DimensionPresetConfig.ini OTG will use it as a reference for the Biomes generation.",
                 "Source png file name for FromImage biome mode."
         );
 
@@ -753,7 +753,7 @@ public class PresetWriter {
         writer.header1("Game rules",
                 "See: https://minecraft.fandom.com/wiki/Game_rule",
                 "These game rules apply per-dimension when OverrideGameRules is true.",
-                "Can be overridden via a DimensionConfig YAML with a GameRules entry."
+                "Can be overridden via a WorldPresetConfig YAML with a GameRules entry."
         );
 
         writer.putSetting(GameRuleSettings.OVERRIDE_GAME_RULES, presetConfig.getGameRuleSettings().isOverrideGameRules(),

@@ -282,7 +282,7 @@ public class BO4Config extends CustomObjectConfigFile
 		{
 			File currentFile = this.getFile().getParentFile();
 			this.presetFolderName = currentFile.getName();
-			while(currentFile.getParentFile() != null && !currentFile.getName().equals(Constants.PRESETS_FOLDER))
+			while(currentFile.getParentFile() != null && !currentFile.getName().equals(Constants.DIMENSION_PRESETS_FOLDER))
 			{
 				this.presetFolderName = currentFile.getName();
 				currentFile = currentFile.getParentFile();

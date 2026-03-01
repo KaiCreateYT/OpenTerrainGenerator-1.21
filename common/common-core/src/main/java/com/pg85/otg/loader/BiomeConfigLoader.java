@@ -5,7 +5,7 @@ import com.pg85.otg.config.biome.BiomeTemplate;
 import com.pg85.otg.config.io.FileSettingsReader;
 import com.pg85.otg.config.io.FileSettingsWriter;
 import com.pg85.otg.config.io.SettingsMap;
-import com.pg85.otg.config.preset.PresetConfig;
+import com.pg85.otg.config.preset.DimensionPresetConfig;
 import com.pg85.otg.config.settings.biome.BiomeSettings;
 import com.pg85.otg.config.settings.biome.OutdatedSettings;
 import com.pg85.otg.constants.Constants;
@@ -196,7 +196,7 @@ public final class BiomeConfigLoader {
 		}
 	}
 
-	public static List<BiomeTemplate> loadBiomeTemplates(Path presetDir, PresetConfig presetConfig) {
+	public static List<BiomeTemplate> loadBiomeTemplates(Path presetDir, DimensionPresetConfig presetConfig) {
 		List<BiomeSettings> list = loadBiomeSettings(presetDir, presetConfig, BiomeSettingType.TEMPLATE);
 		return list.stream().map(t -> (BiomeTemplate) t).toList();
 	}
@@ -204,11 +204,11 @@ public final class BiomeConfigLoader {
 	/**
 	 * Loads the biome configs from the given preset directory. May return biome templates if legacy TemplateForBiome setting is set.
 	 */
-	public static List<BiomeSettings> loadBiomeConfigs(Path presetDir, PresetConfig presetConfig) {
+	public static List<BiomeSettings> loadBiomeConfigs(Path presetDir, DimensionPresetConfig presetConfig) {
 		return loadBiomeSettings(presetDir, presetConfig, BiomeSettingType.CONFIG);
 	}
 
-	public static List<BiomeSettings> loadBiomeSettings(Path presetDir, PresetConfig presetConfig, BiomeSettingType type)
+	public static List<BiomeSettings> loadBiomeSettings(Path presetDir, DimensionPresetConfig presetConfig, BiomeSettingType type)
 	{
 		File biomesDirectory = getBiomeDirectory(presetDir);
 		// Load all files
@@ -246,7 +246,7 @@ public final class BiomeConfigLoader {
 
 
 	private static ArrayList<BiomeSettings> readSettings(
-			PresetConfig presetConfig,
+			DimensionPresetConfig presetConfig,
 			Map<String, SettingsMap> biomeSettingStore,
 			BiomeSettingType type
 	) {
@@ -277,7 +277,7 @@ public final class BiomeConfigLoader {
 
 	private static void writeSettings(
 			List<BiomeSettings> biomeSettings,
-			PresetConfig presetConfig
+			DimensionPresetConfig presetConfig
 	) {
 		for (BiomeSettings settings : biomeSettings) {
 			SettingsMap updatedMap = settings.getSettingsAsMap();
@@ -288,7 +288,7 @@ public final class BiomeConfigLoader {
 		}
 	}
 
-	private static void processSettings(PresetConfig presetConfig, List<BiomeSettings> biomeSettingMaps)
+	private static void processSettings(DimensionPresetConfig presetConfig, List<BiomeSettings> biomeSettingMaps)
 	{
 		for(BiomeSettings biomeSettings : biomeSettingMaps)
 		{

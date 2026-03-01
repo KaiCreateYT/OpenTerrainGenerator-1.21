@@ -4,7 +4,7 @@ import com.pg85.otg.shared.commands.OTGCommandRegistrar;
 import com.pg85.otg.shared.dimensions.DimensionKeys;
 import com.pg85.otg.shared.dimensions.DimensionManager;
 import com.pg85.otg.shared.gen.SharedOTGChunkGenerator;
-import com.pg85.otg.presets.Preset;
+import com.pg85.otg.presets.DimensionPreset;
 import com.pg85.otg.util.materials.LocalMaterialData;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.core.BlockPos;
@@ -129,16 +129,16 @@ public class SharedOTGPortalBlock extends NetherPortalBlock {
     }
 
     private ServerLevel findAndLoadDimensionByColor(MinecraftServer server, String targetColor) {
-        Optional<Preset> presetOpt = SharedPortalConfigResolver.findPresetByColor(targetColor);
+        Optional<DimensionPreset> presetOpt = SharedPortalConfigResolver.findPresetByColor(targetColor);
         if (presetOpt.isEmpty()) {
             return null;
         }
 
-        Preset preset = presetOpt.get();
+        DimensionPreset preset = presetOpt.get();
         return loadOrCreateDimension(server, preset);
     }
 
-    private ServerLevel loadOrCreateDimension(MinecraftServer server, Preset preset) {
+    private ServerLevel loadOrCreateDimension(MinecraftServer server, DimensionPreset preset) {
         String dimName = DimensionKeys.normalizeName(preset.getFolderName());
         ResourceKey<Level> levelKey = DimensionKeys.otg(dimName);
 

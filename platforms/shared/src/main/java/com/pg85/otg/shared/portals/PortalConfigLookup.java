@@ -2,7 +2,7 @@ package com.pg85.otg.shared.portals;
 
 import com.pg85.otg.OTG;
 import com.pg85.otg.config.settings.preset.PortalSettings;
-import com.pg85.otg.presets.Preset;
+import com.pg85.otg.presets.DimensionPreset;
 import com.pg85.otg.util.DimensionNameUtils;
 
 import java.util.Optional;
@@ -20,17 +20,17 @@ public final class PortalConfigLookup {
      * @param portalColor The color to search for (case-insensitive)
      * @return Optional containing the matching preset, or empty if not found
      */
-    public static Optional<Preset> findPresetByColor(String portalColor) {
+    public static Optional<DimensionPreset> findPresetByColor(String portalColor) {
         String targetColor = DimensionNameUtils.normalizeColor(portalColor);
-        return OTG.getEngine().getPresetLoader().getAllPresets().stream()
-                .filter(p -> p.getPresetConfig() != null)
-                .filter(p -> p.getPresetConfig().getPortalSettings() != null)
+        return OTG.getEngine().getDimensionPresetLoader().getAllDimensionPresets().stream()
+                .filter(p -> p.getConfig() != null)
+                .filter(p -> p.getConfig().getPortalSettings() != null)
                 .filter(p -> {
-                    PortalSettings settings = p.getPresetConfig().getPortalSettings();
+                    PortalSettings settings = p.getConfig().getPortalSettings();
                     return settings.getPortalBlocks() != null && !settings.getPortalBlocks().isEmpty();
                 })
                 .filter(p -> targetColor.equals(DimensionNameUtils.normalizeColor(
-                        p.getPresetConfig().getPortalSettings().getPortalColor())))
+                        p.getConfig().getPortalSettings().getPortalColor())))
                 .findFirst();
     }
 
@@ -41,7 +41,7 @@ public final class PortalConfigLookup {
      */
     public static Optional<PortalSettings> findSettingsByColor(String portalColor) {
         return findPresetByColor(portalColor)
-                .map(p -> p.getPresetConfig().getPortalSettings());
+                .map(p -> p.getConfig().getPortalSettings());
     }
 
     /**

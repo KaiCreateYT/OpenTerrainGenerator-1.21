@@ -4,7 +4,7 @@ import com.pg85.otg.biome.BiomePlan;
 import com.pg85.otg.config.biome.BiomeConfig;
 import com.pg85.otg.config.settings.biome.BiomeSettings;
 import com.pg85.otg.config.settings.biome.BiomeStructureTagConfig;
-import com.pg85.otg.config.settings.preset.PresetSettings;
+import com.pg85.otg.config.settings.preset.DimensionPresetSettings;
 import com.pg85.otg.interfaces.IBiome;
 import com.pg85.otg.interfaces.IBiomeResourceLocation;
 import com.pg85.otg.util.OTGLog;
@@ -45,7 +45,7 @@ public final class BiomeRegistrar {
             BiomePlan plan,
             Map<IBiomeResourceLocation, BiomeSettings> biomeConfigsByResourceLocation,
             BiomeFactory biomeFactory,
-            PresetSettings presetConfig,
+            DimensionPresetSettings presetConfig,
             WritableRegistry<Biome> biomeRegistry,
             PlatformBiomeCreator platformBiomeCreator
     ) {

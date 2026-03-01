@@ -10,9 +10,9 @@ import java.util.Map.Entry;
 import com.pg85.otg.config.ConfigFunction;
 import com.pg85.otg.config.ErroredFunction;
 import com.pg85.otg.config.io.IConfigFunctionProvider;
-import com.pg85.otg.config.preset.PresetConfig;
+import com.pg85.otg.config.preset.DimensionPresetConfig;
 import com.pg85.otg.config.settings.biome.BiomeSettings;
-import com.pg85.otg.config.settings.preset.PresetSettings;
+import com.pg85.otg.config.settings.preset.DimensionPresetSettings;
 import com.pg85.otg.util.gen.OTGWorldInfo;
 
 public class BiomeResourcesManager implements IConfigFunctionProvider
@@ -49,7 +49,7 @@ public class BiomeResourcesManager implements IConfigFunctionProvider
 	 * @param <T>    Type of the holder of the config function.
 	 * @param name   The name of the config function.
 	 * @param holder The holder of the config function, like
-	 *               {@link PresetSettings}.
+	 *               {@link DimensionPresetSettings}.
 	 * @param args   The args of the function.
 	 * @return A config function with the given name, or null if the config
 	 * function requires another holder. For invalid or non-existing config

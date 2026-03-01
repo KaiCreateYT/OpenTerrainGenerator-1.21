@@ -1,6 +1,6 @@
 package com.pg85.otg.gen.carver;
 
-import com.pg85.otg.config.settings.preset.PresetSettings;
+import com.pg85.otg.config.settings.preset.DimensionPresetSettings;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.interfaces.ICachedBiomeProvider;
 import com.pg85.otg.interfaces.ISurfaceGeneratorNoiseProvider;
@@ -13,7 +13,7 @@ import java.util.BitSet;
 import java.util.Random;
 
 public class CaveCarver extends Carver {
-    public CaveCarver(PresetSettings presetConfig) {
+    public CaveCarver(DimensionPresetSettings presetConfig) {
         super(presetConfig);
     }
 

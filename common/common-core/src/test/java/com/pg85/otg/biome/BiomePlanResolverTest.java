@@ -3,8 +3,8 @@ package com.pg85.otg.biome;
 import com.pg85.otg.config.biome.BiomeConfig;
 import com.pg85.otg.config.settings.biome.BiomeSettings;
 import com.pg85.otg.interfaces.IBiomeResourceLocation;
-import com.pg85.otg.presets.Preset;
-import com.pg85.otg.test.preset.TestPresetLoader;
+import com.pg85.otg.presets.DimensionPreset;
+import com.pg85.otg.test.preset.TestDimensionPresetLoader;
 import com.pg85.otg.util.biome.OTGBiomeResourceLocation;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -16,12 +16,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class BiomePlanResolverTest {
 
-    private static Preset defaultPreset;
+    private static DimensionPreset defaultPreset;
 
     @BeforeAll
     static void loadPreset() {
         Path otgRoot = Path.of("resources");
-        defaultPreset = TestPresetLoader.loadPreset(otgRoot, "DefaultPreset");
+        defaultPreset = TestDimensionPresetLoader.loadPreset(otgRoot, "DefaultPreset");
         assertNotNull(defaultPreset, "DefaultPreset must exist in resources");
     }
 
@@ -98,8 +98,8 @@ class BiomePlanResolverTest {
         for (BiomeConfig bc : defaultPreset.getBiomeConfigList()) {
             if (!bc.getIdentitySettings().isTemplateForBiome()) {
                 IBiomeResourceLocation loc = new OTGBiomeResourceLocation(
-                        defaultPreset.getPresetFolder(),
-                        defaultPreset.getPresetRegistryName(),
+                        defaultPreset.getFolder(),
+                        defaultPreset.getRegistryName(),
                         bc.getIdentitySettings().getBiomeName());
                 bc.setRegistryKey(loc);
                 byResourceLocation.put(loc, bc);
@@ -108,7 +108,7 @@ class BiomePlanResolverTest {
         }
 
         return BiomePlanResolver.resolve(
-                defaultPreset.getPresetConfig(),
+                defaultPreset.getConfig(),
                 byResourceLocation,
                 byName
         );

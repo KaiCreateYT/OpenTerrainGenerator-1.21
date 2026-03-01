@@ -27,10 +27,10 @@ public interface ICustomStructureResource
 	default void spawnForChunkDecoration(CustomStructureCache structureCache, IWorldGenRegion worldGenRegion, Random random, Path otgRootFolder, CustomObjectManager customObjectManager, IMaterialReader materialReader, CustomObjectResourcesManager manager, IModLoadedChecker modLoadedChecker)
 	{
 		// Don't process BO4's, they're plotted and spawned separately from other resources.
-		if(worldGenRegion.getPresetConfig().getResourceSettings().getCustomStructureType() != CustomStructureType.BO4)
+		if(worldGenRegion.getConfig().getResourceSettings().getCustomStructureType() != CustomStructureType.BO4)
 		{
 			// Find all structures that reach this chunk, and spawn them
-			int searchRadius = worldGenRegion.getPresetConfig().getResourceSettings().getMaximumCustomStructureRadius();
+			int searchRadius = worldGenRegion.getConfig().getResourceSettings().getMaximumCustomStructureRadius();
 			int currentChunkX = worldGenRegion.getDecorationArea().getChunkBeingDecorated().getChunkX();
 			int currentChunkZ = worldGenRegion.getDecorationArea().getChunkBeingDecorated().getChunkZ();
 			BO3CustomStructure structureStart;

@@ -3,7 +3,7 @@ package com.pg85.otg;
 import com.pg85.otg.config.PluginConfig;
 import com.pg85.otg.config.io.FileSettingsReader;
 import com.pg85.otg.config.io.FileSettingsWriter;
-import com.pg85.otg.config.settings.preset.PresetInfo;
+import com.pg85.otg.config.settings.preset.DimensionPresetInfo;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.customobject.CustomObjectManager;
 import com.pg85.otg.customobject.config.CustomObjectResourcesManager;
@@ -11,7 +11,7 @@ import com.pg85.otg.customobject.structures.CustomStructureCache;
 import com.pg85.otg.interfaces.ILogger;
 import com.pg85.otg.interfaces.IModLoadedChecker;
 import com.pg85.otg.interfaces.IPluginConfig;
-import com.pg85.otg.presets.LocalPresetLoader;
+import com.pg85.otg.presets.LocalDimensionPresetLoader;
 import com.pg85.otg.util.OTGMaterialReader;
 import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.logging.LogLevel;
@@ -39,7 +39,7 @@ public abstract class OTGEngine
 	// Classes implemented/provided by the platform-specific layer.
 	
 	@Getter
-    protected final LocalPresetLoader presetLoader;
+    protected final LocalDimensionPresetLoader dimensionPresetLoader;
 	@Getter
     protected final ILogger logger;
 	@Getter
@@ -59,12 +59,12 @@ public abstract class OTGEngine
 	@Getter
     private CustomObjectManager customObjectManager;
 	
-	protected OTGEngine(ILogger logger, Path otgRootFolder, IModLoadedChecker modLoadedChecker, LocalPresetLoader presetLoader)
+	protected OTGEngine(ILogger logger, Path otgRootFolder, IModLoadedChecker modLoadedChecker, LocalDimensionPresetLoader dimensionPresetLoader)
 	{
 		this.logger = logger;
 		this.otgRootFolder = otgRootFolder;
 		this.globalObjectsFolder = otgRootFolder.resolve(Constants.GLOBAL_OBJECTS_FOLDER);
-		this.presetLoader = presetLoader;
+		this.dimensionPresetLoader = dimensionPresetLoader;
 		this.modLoadedChecker = modLoadedChecker;
 	}
 	
@@ -89,15 +89,32 @@ public abstract class OTGEngine
 		);
 		FileSettingsWriter.writeToFile(this.pluginConfig.getSettingsAsMap(), pluginConfigFile, this.pluginConfig.getSettingsMode());
 
+		// Detect old folder names and warn users
+		Path oldPresetsDir = Paths.get(getOTGRootFolder().toString(), "Presets");
+		if (oldPresetsDir.toFile().exists() && !Paths.get(getOTGRootFolder().toString(), Constants.DIMENSION_PRESETS_FOLDER).toFile().exists()) {
+			this.logger.error(LogCategory.MAIN, "==============================================");
+			this.logger.error(LogCategory.MAIN, "BREAKING CHANGE: 'Presets/' has been renamed to 'DimensionPresets/'");
+			this.logger.error(LogCategory.MAIN, "Please rename your Presets folder to DimensionPresets");
+			this.logger.error(LogCategory.MAIN, "==============================================");
+		}
+
+		Path oldDimConfigsDir = Paths.get(getOTGRootFolder().toString(), "DimensionConfigs");
+		if (oldDimConfigsDir.toFile().exists() && !Paths.get(getOTGRootFolder().toString(), Constants.WORLD_PRESETS_FOLDER).toFile().exists()) {
+			this.logger.error(LogCategory.MAIN, "==============================================");
+			this.logger.error(LogCategory.MAIN, "BREAKING CHANGE: 'DimensionConfigs/' has been renamed to 'WorldPresets/'");
+			this.logger.error(LogCategory.MAIN, "Please rename your DimensionConfigs folder to WorldPresets");
+			this.logger.error(LogCategory.MAIN, "==============================================");
+		}
+
 		// Create OTG folders
 
-		File presetsDir = Paths.get(getOTGRootFolder().toString(), Constants.PRESETS_FOLDER).toFile();
+		File presetsDir = Paths.get(getOTGRootFolder().toString(), Constants.DIMENSION_PRESETS_FOLDER).toFile();
 		if(!presetsDir.exists())
 		{
 			presetsDir.mkdirs();
 		}
 
-		File dimensionConfigsDir = Paths.get(getOTGRootFolder().toString(), Constants.DIMENSION_CONFIGS_FOLDER).toFile();
+		File dimensionConfigsDir = Paths.get(getOTGRootFolder().toString(), Constants.WORLD_PRESETS_FOLDER).toFile();
 		if(!dimensionConfigsDir.exists())
 		{
 			dimensionConfigsDir.mkdirs();
@@ -132,7 +149,7 @@ public abstract class OTGEngine
 
 		// Load presets
 
-		this.presetLoader.loadPresetsFromDisk();
+		this.dimensionPresetLoader.loadDimensionPresetsFromDisk();
 	}
 
 	/**
@@ -189,8 +206,8 @@ public abstract class OTGEngine
 		try
 		{
 			String rootDir = getOTGRootFolder().toString();
-			String defaultPresetPath = "resources/" + Constants.PRESETS_FOLDER + "/" + Constants.DEFAULT_PRESET_NAME + "/";
-			String dimensionConfigsPath = "resources/" + Constants.DIMENSION_CONFIGS_FOLDER + "/";
+			String defaultPresetPath = "resources/" + Constants.DIMENSION_PRESETS_FOLDER + "/" + Constants.DEFAULT_PRESET_NAME + "/";
+			String dimensionConfigsPath = "resources/" + Constants.WORLD_PRESETS_FOLDER + "/";
 			Enumeration<JarEntry> entries = jarFile.entries();
 
 			while (entries.hasMoreElements())
@@ -249,7 +266,7 @@ public abstract class OTGEngine
 			return false;
 		}
 
-		File presetConfigFile = new File(presetDir, Constants.PRESET_CONFIG_FILE);
+		File presetConfigFile = new File(presetDir, Constants.DIMENSION_PRESET_CONFIG_FILE);
 		if (!presetConfigFile.exists())
 		{
 			return false;
@@ -267,7 +284,7 @@ public abstract class OTGEngine
 			while (entries.hasMoreElements())
 			{
 				JarEntry jarEntry = entries.nextElement();
-				if (jarEntry.getName().contains(Constants.DEFAULT_PRESET_NAME + "/" + Constants.PRESET_CONFIG_FILE))
+				if (jarEntry.getName().contains(Constants.DEFAULT_PRESET_NAME + "/" + Constants.DIMENSION_PRESET_CONFIG_FILE))
 				{
 					try (BufferedReader jarConfigReader = new BufferedReader(new InputStreamReader(jarFile.getInputStream(jarEntry))))
 					{
@@ -291,12 +308,12 @@ public abstract class OTGEngine
 	
 	private int parseMajorVersion(BufferedReader reader) throws IOException
 	{
-		return parseVersion(reader, PresetInfo.MAJOR_VERSION.getName());
+		return parseVersion(reader, DimensionPresetInfo.MAJOR_VERSION.getName());
 	}
 	
 	private int parseMinorVersion(BufferedReader reader) throws IOException
 	{
-		return parseVersion(reader, PresetInfo.MINOR_VERSION.getName());
+		return parseVersion(reader, DimensionPresetInfo.MINOR_VERSION.getName());
 	}
 	
 	private int parseVersion(BufferedReader reader, String name) throws IOException
@@ -342,7 +359,7 @@ public abstract class OTGEngine
 
     public Path getPresetsDirectory()
 	{
-		return Paths.get(this.getOTGRootFolder().toString(), Constants.PRESETS_FOLDER);
+		return Paths.get(this.getOTGRootFolder().toString(), Constants.DIMENSION_PRESETS_FOLDER);
 	}
 
 	// Logging

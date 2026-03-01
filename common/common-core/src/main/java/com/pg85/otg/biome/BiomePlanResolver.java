@@ -2,7 +2,7 @@ package com.pg85.otg.biome;
 
 import com.pg85.otg.config.biome.BiomeGroupFunction;
 import com.pg85.otg.config.settings.biome.BiomeSettings;
-import com.pg85.otg.config.settings.preset.PresetSettings;
+import com.pg85.otg.config.settings.preset.DimensionPresetSettings;
 import com.pg85.otg.gen.biome.BiomeData;
 import com.pg85.otg.gen.biome.layers.BiomeGroup;
 import com.pg85.otg.interfaces.IBiomeResourceLocation;
@@ -30,7 +30,7 @@ public final class BiomePlanResolver {
      * @return a fully resolved BiomePlan
      */
     public static BiomePlan resolve(
-            PresetSettings presetConfig,
+            DimensionPresetSettings presetConfig,
             Map<IBiomeResourceLocation, BiomeSettings> biomeConfigsByResourceLocation,
             Map<String, BiomeSettings> biomeConfigsByName
     ) {
@@ -141,7 +141,7 @@ public final class BiomePlanResolver {
     }
 
     private static void resolveOceanTemperature(
-            PresetSettings presetConfig, BiomeSettings settings, int id, int[] temps) {
+            DimensionPresetSettings presetConfig, BiomeSettings settings, int id, int[] temps) {
         String name = settings.getIdentitySettings().getBiomeName();
         if (name.equals(presetConfig.getGenerationSettings().getDefaultWarmOceanBiome())) temps[0] = id;
         if (name.equals(presetConfig.getGenerationSettings().getDefaultLukewarmOceanBiome())) temps[1] = id;
@@ -191,7 +191,7 @@ public final class BiomePlanResolver {
      * Extracted from SharedLegacyBiomeLoader.processBiomeGroups() (lines 547-629).
      */
     static Map<Integer, BiomeGroup> processBiomeGroups(
-            PresetSettings presetConfig,
+            DimensionPresetSettings presetConfig,
             Map<String, BiomeSettings> biomeConfigsByName,
             Set<Integer> biomeDepths,
             Map<Integer, List<BiomeGroup>> groupDepths) {

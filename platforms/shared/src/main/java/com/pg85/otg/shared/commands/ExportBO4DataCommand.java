@@ -19,7 +19,7 @@ import com.pg85.otg.config.settings.biome.BiomeSettings;
 import com.pg85.otg.interfaces.IMaterialReader;
 import com.pg85.otg.interfaces.IModLoadedChecker;
 import com.pg85.otg.interfaces.IStructuredCustomObject;
-import com.pg85.otg.presets.Preset;
+import com.pg85.otg.presets.DimensionPreset;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.bo3.Rotation;
@@ -67,15 +67,15 @@ public class ExportBO4DataCommand {
 
         // Get the preset from the chunk generator
         String presetFolderName = accessor.getPresetFolderName(level);
-        Preset preset = presetFolderName != null
-            ? OTG.getEngine().getPresetLoader().getPresetByShortNameOrFolderName(presetFolderName)
+        DimensionPreset preset = presetFolderName != null
+            ? OTG.getEngine().getDimensionPresetLoader().getDimensionPresetByShortNameOrFolderName(presetFolderName)
             : null;
         if (preset == null) {
             source.sendFailure(Component.literal("Could not find OTG preset for this world."));
             return 0;
         }
 
-        if (preset.getPresetConfig().getResourceSettings().getCustomStructureType() != CustomStructureType.BO4) {
+        if (preset.getConfig().getResourceSettings().getCustomStructureType() != CustomStructureType.BO4) {
             source.sendSuccess(
                 () -> Component.literal("The ExportBO4Data command is only available for CustomStructureType:BO4 worlds."),
                 false
@@ -100,7 +100,7 @@ public class ExportBO4DataCommand {
             );
 
             // Capture values on the main thread to avoid cross-thread ServerLevel access
-            final Preset bgPreset = preset;
+            final DimensionPreset bgPreset = preset;
             final CustomStructureCache bgStructureCache = structureCache;
             final CommandWorldAccessor bgAccessor = accessor;
             final ServerLevel bgLevel = level;
@@ -151,10 +151,10 @@ public class ExportBO4DataCommand {
         return 0;
     }
 
-    private static void exportOnBackground(Preset preset, CustomStructureCache structureCache,
+    private static void exportOnBackground(DimensionPreset preset, CustomStructureCache structureCache,
                                            CommandWorldAccessor accessor, ServerLevel level, long seed) {
         CustomObjectManager customObjectManager = OTG.getEngine().getCustomObjectManager();
-        IMaterialReader materialReader = OTG.getEngine().getPresetLoader().getMaterialReader();
+        IMaterialReader materialReader = OTG.getEngine().getDimensionPresetLoader().getMaterialReader();
         CustomObjectResourcesManager resourcesManager = OTG.getEngine().getCustomObjectResourcesManager();
         IModLoadedChecker modLoadedChecker = OTG.getEngine().getModLoadedChecker();
         Path otgRootFolder = OTG.getEngine().getOTGRootFolder();

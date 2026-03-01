@@ -238,7 +238,7 @@ public class SettingsSchemaGenerator {
         settings.put("GenerationSettings", ConfigSection.getSettings(GenerationSettings.class));
         settings.put("ImageSettings", ConfigSection.getSettings(ImageSettings.class));
         settings.put("PortalSettings", ConfigSection.getSettings(PortalSettings.class));
-        settings.put("PresetInfo", ConfigSection.getSettings(PresetInfo.class));
+        settings.put("DimensionPresetInfo", ConfigSection.getSettings(DimensionPresetInfo.class));
         settings.put("ResourceSettings", ConfigSection.getSettings(ResourceSettings.class));
         settings.put("SpawnSettings", ConfigSection.getSettings(SpawnSettings.class));
         settings.put("StructureSettings", ConfigSection.getSettings(StructureSettings.class));

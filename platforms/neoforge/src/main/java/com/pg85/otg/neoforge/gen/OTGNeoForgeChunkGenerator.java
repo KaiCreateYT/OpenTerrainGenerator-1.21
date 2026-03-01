@@ -63,7 +63,7 @@ public class OTGNeoForgeChunkGenerator extends SharedOTGChunkGenerator {
         return new NeoForgeWorldGenRegion(
                 presetFolderName,
                 com.pg85.otg.OTG.getEngine().getPluginConfig(),
-                this.getPreset().getPresetConfig(),
+                this.getPreset().getConfig(),
                 this.getOtgWorldInfo(),
                 worldGenLevel,
                 chunkAccess,

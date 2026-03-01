@@ -37,7 +37,7 @@ public final class SimpleSettingsMap implements SettingsMap
 	/**
 	 * Creates a new settings reader.
 	 *
-	 * @param name     Name of the config file, like "PresetConfig" or "Taiga".
+	 * @param name     Name of the config file, like "DimensionPresetConfig" or "Taiga".
 	 *                 //@param isNewConfig True if this config is newly created.
 	 * @param filePath
 	 */

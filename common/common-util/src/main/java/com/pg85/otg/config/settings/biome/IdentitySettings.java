@@ -1,7 +1,7 @@
 package com.pg85.otg.config.settings.biome;
 
 import com.pg85.otg.config.io.SettingsMap;
-import com.pg85.otg.config.settings.preset.PresetSettings;
+import com.pg85.otg.config.settings.preset.DimensionPresetSettings;
 import com.pg85.otg.config.settingtype.Setting;
 import com.pg85.otg.config.settingtype.Settings;
 import com.pg85.otg.config.settings.ConfigSection;
@@ -30,7 +30,7 @@ public class IdentitySettings extends ConfigSection {
             "Defaults to the biome name if left blank."
     );
 
-    public static IdentitySettings buildIdentitySettings(SettingsMap reader, PresetSettings presetSettings) {
+    public static IdentitySettings buildIdentitySettings(SettingsMap reader, DimensionPresetSettings presetSettings) {
         var builder = builder();
 
         builder.biomeName(reader.getName());

@@ -11,7 +11,7 @@ import com.pg85.otg.gen.OTGChunkDecorator;
 import com.pg85.otg.gen.OTGChunkGenerator;
 import com.pg85.otg.interfaces.IBiome;
 import com.pg85.otg.platform.noise.OTGNoiseRouterData;
-import com.pg85.otg.presets.Preset;
+import com.pg85.otg.presets.DimensionPreset;
 import com.pg85.otg.shared.biome.IOTGBiomeProvider;
 import com.pg85.otg.util.ChunkCoordinate;
 import com.pg85.otg.util.gen.ChunkBuffer;
@@ -76,7 +76,7 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
     protected final Holder<NoiseGeneratorSettings> settings;
     protected final IOTGBiomeProvider otgBiomeProvider;
     protected final OTGChunkGenerator internalGenerator;
-    protected final Preset preset;
+    protected final DimensionPreset preset;
     protected Registry<Biome> biomeRegistry;
     protected final NoiseBasedChunkGenerator horribleDelegateForCarvers;
     protected Aquifer.FluidPicker globalFluidPicker = null;
@@ -117,12 +117,12 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
         int maxY = settings.value().noiseSettings().height() + minY - 1;
         this.otgWorldInfo = new OTGWorldInfo(minY, maxY);
         this.internalGenerator = new OTGChunkGenerator(
-                OTG.getEngine().getPresetLoader().getPresetByFolderName(otgBiomeProvider.getPresetFolderName()),
+                OTG.getEngine().getDimensionPresetLoader().getDimensionPresetByFolderName(otgBiomeProvider.getPresetFolderName()),
                 (com.pg85.otg.interfaces.ILayerSource) otgBiomeProvider,
-                OTG.getEngine().getPresetLoader().getGlobalIdMapping(otgBiomeProvider.getPresetFolderName()),
+                OTG.getEngine().getDimensionPresetLoader().getGlobalIdMapping(otgBiomeProvider.getPresetFolderName()),
                 otgWorldInfo
         );
-        this.preset = OTG.getEngine().getPresetLoader().getPresetByFolderName(otgBiomeProvider.getPresetFolderName());
+        this.preset = OTG.getEngine().getDimensionPresetLoader().getDimensionPresetByFolderName(otgBiomeProvider.getPresetFolderName());
         this.biomeRegistry = biomeRegistry;
         this.horribleDelegateForCarvers = new NoiseBasedChunkGenerator(
                 (net.minecraft.world.level.biome.BiomeSource) otgBiomeProvider, settings);
@@ -155,10 +155,10 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
 
     protected void initCaveComponents(RandomState randomState) {
         if (this.caveRandomState != null) return;
-        if (!this.preset.getPresetConfig().getCarverSettings().isUseModernCaves()) return;
+        if (!this.preset.getConfig().getCarverSettings().isUseModernCaves()) return;
         synchronized (this) {
             if (this.caveRandomState != null) return;
-            NoiseCaveSettings caveCfg = this.preset.getPresetConfig().getNoiseCaveSettings();
+            NoiseCaveSettings caveCfg = this.preset.getConfig().getNoiseCaveSettings();
             NoiseSettings ns = this.settings.value().noiseSettings();
 
             OTGNoiseRouterData.CaveDensityComponents components = OTGNoiseRouterData.caveDensityComponentsForCarving(
@@ -267,7 +267,7 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
                     this.preset.getFolderName(),
                     worldSaveFolder,
                     this.seed,
-                    CustomStructureType.BO4 == this.preset.getPresetConfig().getResourceSettings().getCustomStructureType());
+                    CustomStructureType.BO4 == this.preset.getConfig().getResourceSettings().getCustomStructureType());
         }
         return this.structureCache;
     }
@@ -334,7 +334,7 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
     @Override
     public void applyCarvers(WorldGenRegion worldGenRegion, long seed, RandomState randomState, BiomeManager biomeManager, StructureManager structureManager, ChunkAccess chunkAccess, GenerationStep.Carving carving) {
         long t0 = System.nanoTime();
-        if (this.preset.getPresetConfig().getCarverSettings().isUseModernCaves()) {
+        if (this.preset.getConfig().getCarverSettings().isUseModernCaves()) {
             this.horribleDelegateForCarvers.applyCarvers(worldGenRegion, seed, randomState, biomeManager, structureManager, chunkAccess, carving);
             long elapsed = System.nanoTime() - t0;
             carversTotalNs.addAndGet(elapsed);
@@ -388,7 +388,7 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
         Iterable<Holder<ConfiguredWorldCarver<?>>> iterable = biomegenerationsettings.getCarvers(carving);
 
         List<String> defaultCaves = Arrays.asList("minecraft:cave", "minecraft:underwater_cave", "minecraft:nether_cave");
-        boolean cavesEnabled = this.preset.getPresetConfig().getCarverSettings().isCavesEnabled();
+        boolean cavesEnabled = this.preset.getConfig().getCarverSettings().isCavesEnabled();
         if (cavesEnabled) {
             for (Holder<ConfiguredWorldCarver<?>> carver : iterable) {
                 if (defaultCaves.stream().noneMatch(
@@ -401,7 +401,7 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
         }
 
         List<String> defaultRavines = Arrays.asList("minecraft:canyon", "minecraft:underwater_canyon");
-        boolean ravinesEnabled = this.preset.getPresetConfig().getCarverSettings().isRavinesEnabled();
+        boolean ravinesEnabled = this.preset.getConfig().getCarverSettings().isRavinesEnabled();
         if (ravinesEnabled) {
             for (Holder<ConfiguredWorldCarver<?>> carver : iterable) {
                 if (defaultRavines.stream().noneMatch(
@@ -489,7 +489,7 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
         long noiseElapsed = System.nanoTime() - tNoise;
         populateNoiseTotalNs.addAndGet(noiseElapsed);
 
-        if (this.preset.getPresetConfig().getCarverSettings().isUseModernCaves()) {
+        if (this.preset.getConfig().getCarverSettings().isUseModernCaves()) {
             long tCarve = System.nanoTime();
             carveWithNoise(blender, randomState, structureManager, chunkAccess, buffer);
             long carveElapsed = System.nanoTime() - tCarve;
@@ -525,7 +525,7 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
         BlockState debugCheese = Blocks.YELLOW_STAINED_GLASS.defaultBlockState();
         BlockState debugSpaghetti = Blocks.RED_STAINED_GLASS.defaultBlockState();
         BlockState debugNoodle = Blocks.BLUE_STAINED_GLASS.defaultBlockState();
-        boolean debugCaveTypes = this.preset.getPresetConfig().getNoiseCaveSettings().isDebugCaveTypes();
+        boolean debugCaveTypes = this.preset.getConfig().getNoiseCaveSettings().isDebugCaveTypes();
 
         OTGNoiseRouterData.CaveDensityComponents components = this.caveComponents;
 
@@ -535,7 +535,7 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
         int minX = targetChunk.getPos().getMinBlockX();
         int minZ = targetChunk.getPos().getMinBlockZ();
 
-        NoiseCaveSettings caveCfg = this.preset.getPresetConfig().getNoiseCaveSettings();
+        NoiseCaveSettings caveCfg = this.preset.getConfig().getNoiseCaveSettings();
         int suppressionRange = caveCfg.getSurfaceSuppressionRange();
         double breakthroughChance = caveCfg.getSurfaceBreakthroughChance();
         double breakthroughScale = caveCfg.getSurfaceBreakthroughScale();
@@ -705,57 +705,57 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
     // --- Portal settings ---
 
     public String getPortalColor() {
-        if (preset != null && preset.getPresetConfig() != null) {
-            return preset.getPresetConfig().getPortalSettings().getPortalColor();
+        if (preset != null && preset.getConfig() != null) {
+            return preset.getConfig().getPortalSettings().getPortalColor();
         }
         return "default";
     }
 
     public List<LocalMaterialData> getPortalBlocks() {
-        if (preset != null && preset.getPresetConfig() != null) {
-            return preset.getPresetConfig().getPortalSettings().getPortalBlocks();
+        if (preset != null && preset.getConfig() != null) {
+            return preset.getConfig().getPortalSettings().getPortalBlocks();
         }
         return new ArrayList<>();
     }
 
     public String getPortalMob() {
-        if (preset != null && preset.getPresetConfig() != null) {
-            return preset.getPresetConfig().getPortalSettings().getPortalMob();
+        if (preset != null && preset.getConfig() != null) {
+            return preset.getConfig().getPortalSettings().getPortalMob();
         }
         return "minecraft:zombified_piglin";
     }
 
     public String getPortalIgnitionSource() {
-        if (preset != null && preset.getPresetConfig() != null) {
-            return preset.getPresetConfig().getPortalSettings().getPortalIgnitionSource();
+        if (preset != null && preset.getConfig() != null) {
+            return preset.getConfig().getPortalSettings().getPortalIgnitionSource();
         }
         return "minecraft:flint_and_steel";
     }
 
     public int getPortalMinWidth() {
-        if (preset != null && preset.getPresetConfig() != null) {
-            return preset.getPresetConfig().getPortalSettings().getPortalMinWidth();
+        if (preset != null && preset.getConfig() != null) {
+            return preset.getConfig().getPortalSettings().getPortalMinWidth();
         }
         return 2;
     }
 
     public int getPortalMaxWidth() {
-        if (preset != null && preset.getPresetConfig() != null) {
-            return preset.getPresetConfig().getPortalSettings().getPortalMaxWidth();
+        if (preset != null && preset.getConfig() != null) {
+            return preset.getConfig().getPortalSettings().getPortalMaxWidth();
         }
         return 21;
     }
 
     public int getPortalMinHeight() {
-        if (preset != null && preset.getPresetConfig() != null) {
-            return preset.getPresetConfig().getPortalSettings().getPortalMinHeight();
+        if (preset != null && preset.getConfig() != null) {
+            return preset.getConfig().getPortalSettings().getPortalMinHeight();
         }
         return 3;
     }
 
     public int getPortalMaxHeight() {
-        if (preset != null && preset.getPresetConfig() != null) {
-            return preset.getPresetConfig().getPortalSettings().getPortalMaxHeight();
+        if (preset != null && preset.getConfig() != null) {
+            return preset.getConfig().getPortalSettings().getPortalMaxHeight();
         }
         return 21;
     }

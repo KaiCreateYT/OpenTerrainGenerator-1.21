@@ -88,7 +88,7 @@ public class GenerationSettings extends ConfigSection {
             "GenerationDepth", 10, 1, 20,
             t -> ((GenerationSettings) t).getGenerationDepth(),
             "Defines the maximum number BiomeSize, RiverSize and LandSize can be set to.",
-            "All size settings such as Biome Group Size, RiverSize, LandSize (in the PresetConfig.ini), and BiomeSize (in Biome Configs) must be between 0 (largest) and GenerationDepth (smallest).",
+            "All size settings such as Biome Group Size, RiverSize, LandSize (in the DimensionPresetConfig.ini), and BiomeSize (in Biome Configs) must be between 0 (largest) and GenerationDepth (smallest).",
             "Increasing GenerationDepth by one will roughly double the size of all biomes, similarly decreasing it by 1 will half the size of all biomes.",
             "Small values (1-2) and Large values (20+) may affect generator performance.",
             "This setting is also used in BiomeMode:FromImage when ImageMode is set to ContinueNormal"
@@ -202,7 +202,7 @@ public class GenerationSettings extends ConfigSection {
 
 
 
-    public static GenerationSettings getGenerationSettings(PresetSettings presetConfig, SettingsMap reader, IConfigFunctionProvider biomeResourcesManager, List<String> biomes, Path settingsDir) {
+    public static GenerationSettings getGenerationSettings(DimensionPresetSettings presetConfig, SettingsMap reader, IConfigFunctionProvider biomeResourcesManager, List<String> biomes, Path settingsDir) {
         var generationSettingsBuilder = builder();
 
         generationSettingsBuilder.worldBiomes(biomes);
@@ -252,9 +252,9 @@ public class GenerationSettings extends ConfigSection {
         return generationSettingsBuilder.fixSettings().build();
     }
 
-    private static ArrayList<TemplateBiome> readTemplateBiomes(SettingsMap reader, PresetSettings presetSettings, IConfigFunctionProvider biomeResourcesManager) {
+    private static ArrayList<TemplateBiome> readTemplateBiomes(SettingsMap reader, DimensionPresetSettings presetSettings, IConfigFunctionProvider biomeResourcesManager) {
         var templateBiomes = new ArrayList<TemplateBiome>();
-        for (ConfigFunction<PresetSettings> res : reader.getConfigFunctions(presetSettings, biomeResourcesManager)) {
+        for (ConfigFunction<DimensionPresetSettings> res : reader.getConfigFunctions(presetSettings, biomeResourcesManager)) {
             if (res != null) {
                 if (res instanceof TemplateBiome tb) {
                     templateBiomes.add(tb);
@@ -264,9 +264,9 @@ public class GenerationSettings extends ConfigSection {
         return templateBiomes;
     }
 
-    private static BiomeGroupManager readBiomeGroups(SettingsMap reader, PresetSettings presetSettings, IConfigFunctionProvider biomeResourcesManager) {
+    private static BiomeGroupManager readBiomeGroups(SettingsMap reader, DimensionPresetSettings presetSettings, IConfigFunctionProvider biomeResourcesManager) {
         var biomeGroupManager = new BiomeGroupManager();
-        for (ConfigFunction<PresetSettings> res : reader.getConfigFunctions(presetSettings, biomeResourcesManager)) {
+        for (ConfigFunction<DimensionPresetSettings> res : reader.getConfigFunctions(presetSettings, biomeResourcesManager)) {
             if (res != null) {
                 if (res instanceof BiomeGroupFunction) {
                     biomeGroupManager.registerGroup((BiomeGroupFunction) res);

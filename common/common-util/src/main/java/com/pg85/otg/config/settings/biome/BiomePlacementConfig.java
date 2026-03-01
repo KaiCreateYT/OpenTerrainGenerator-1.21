@@ -36,14 +36,14 @@ public class BiomePlacementConfig extends ConfigSection {
     @LongDescription({
             "Biome size from 0 to GenerationDepth. Defines in which biome layer this biome will be generated (see GenerationDepth).",
             "Higher numbers result in a smaller biome, lower numbers a larger biome.",
-            "How this setting is used depends on the value of BiomeMode in the PresetConfig.",
+            "How this setting is used depends on the value of BiomeMode in the DimensionPresetConfig.",
             "It will be used for:",
             "- normal biomes, ice biomes, isle biomes and border biomes when BiomeMode is set to NoGroups",
             "- biomes spawned as part of a BiomeGroup when BiomeMode is set to Normal.",
             "  For biomes spawned as isles, borders or rivers other settings are available.",
             "  Isle biomes:	BiomeSizeWhenIsle (see below)",
             "  Border biomes: BiomeSizeWhenBorder (see below)",
-            "  River biomes:  RiverSize (see PresetConfig)"
+            "  River biomes:  RiverSize (see DimensionPresetConfig)"
     })
     private final int biomeSize;
 
@@ -74,7 +74,7 @@ public class BiomePlacementConfig extends ConfigSection {
             "List of biomes in which this biome will spawn as an isle.",
             "For example, Mushroom Isles spawn inside the Ocean biome.",
             "To spawn a biome as an isle, first add it to the",
-            "IsleBiomes list in the PresetConfig."
+            "IsleBiomes list in the DimensionPresetConfig."
     })
     private final List<String> isleInBiomes;
 
@@ -97,7 +97,7 @@ public class BiomePlacementConfig extends ConfigSection {
             "For example, the Beach biome is a border on the Ocean biome, so",
             "it can spawn anywhere on the border of an ocean.",
             "To spawn a biome as a border, first add it to the",
-            "BorderBiomes list in the PresetConfig."
+            "BorderBiomes list in the DimensionPresetConfig."
     })
     private final List<String> borderInBiomes;
 

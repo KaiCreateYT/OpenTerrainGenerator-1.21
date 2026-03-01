@@ -2,7 +2,7 @@ package com.pg85.otg.config.biome;
 
 import com.pg85.otg.config.io.SettingsMap;
 import com.pg85.otg.config.settings.biome.*;
-import com.pg85.otg.config.settings.preset.PresetSettings;
+import com.pg85.otg.config.settings.preset.DimensionPresetSettings;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.interfaces.IBiomeResourceLocation;
 import lombok.Getter;
@@ -12,7 +12,7 @@ import java.nio.file.Path;
 
 public class BiomeTemplate extends BiomeSettings {
 
-    public BiomeTemplate(SettingsMap reader, PresetSettings parent) {
+    public BiomeTemplate(SettingsMap reader, DimensionPresetSettings parent) {
         super(reader, parent, new BiomeResourcesManager(parent.getWorldInfo()));
         this.configPath = reader.getPath();
         this.parent = parent;
@@ -24,7 +24,7 @@ public class BiomeTemplate extends BiomeSettings {
 
     @Getter
     private final Path configPath;
-    private final PresetSettings parent;
+    private final DimensionPresetSettings parent;
 
     @Override
     public boolean biomeConfigsHaveReplacement() {

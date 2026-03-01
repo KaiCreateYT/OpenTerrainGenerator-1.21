@@ -54,7 +54,7 @@ class BO4ConfigWriter
 			writer.setting(BO4Settings.ISOTGPLUS, true);
 		}
 
-		writer.comment("The settings mode, WriteAll, WriteWithoutComments or WriteDisable. See PresetConfig.");
+		writer.comment("The settings mode, WriteAll, WriteWithoutComments or WriteDisable. See DimensionPresetConfig.");
 		writer.setting(BO3Config.SETTINGS_MODE_BO3, config.settingsMode);
 
 		// Main settings

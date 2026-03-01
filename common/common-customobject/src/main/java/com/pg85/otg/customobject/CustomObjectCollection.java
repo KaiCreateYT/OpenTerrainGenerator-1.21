@@ -266,7 +266,7 @@ public class CustomObjectCollection {
             this.boTemplateFilesPerPreset.put(presetFolderName, templateFiles);
 
             // TODO: Rename folders
-            Path presetPath = otgRootFolder.resolve(Constants.PRESETS_FOLDER).resolve(presetFolderName);
+            Path presetPath = otgRootFolder.resolve(Constants.DIMENSION_PRESETS_FOLDER).resolve(presetFolderName);
             File objectsDir = presetPath.resolve(Constants.OBJECTS_FOLDER).toFile();
             if (!objectsDir.exists()) {
                 objectsDir = presetPath.resolve(Constants.LEGACY_WORLD_OBJECTS_FOLDER).toFile();

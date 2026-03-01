@@ -19,17 +19,17 @@ import java.nio.file.Path;
 import java.util.*;
 
 /**
- * PresetConfig.ini classes
+ * DimensionPresetConfig.ini classes
  * <p>
- * PresetSettings defines anything that's used/exposed between projects.
- * PresetConfig contains only fields/methods used for io/serialisation/instantiation.
+ * DimensionPresetSettings defines anything that's used/exposed between projects.
+ * DimensionPresetConfig contains only fields/methods used for io/serialisation/instantiation.
  * <p>
- * PresetConfig should be used only in common-core and platform-specific layers, when reading/writing settings on app start.
- * PresetSettings should be used wherever settings are used in code.
+ * DimensionPresetConfig should be used only in common-core and platform-specific layers, when reading/writing settings on app start.
+ * DimensionPresetSettings should be used wherever settings are used in code.
  */
 @Getter
 @Setter
-public class PresetConfig extends PresetSettings {
+public class DimensionPresetConfig extends DimensionPresetSettings {
     public static final HashMap<String, Class<? extends ConfigFunction<?>>> CONFIG_FUNCTIONS = new HashMap<>();
     public static final Setting<List<String>> NORMAL_BIOMES = Settings.stringListSetting(
         "NormalBiomes", "Desert", "Forest", "Extreme Hills", "Swampland", "Plains", "Taiga", "Jungle", "River"
@@ -45,15 +45,15 @@ public class PresetConfig extends PresetSettings {
     protected int maxSmoothRadius = 2;
     protected NoiseCaveSettings noiseCaveSettings;
 
-    public PresetConfig(Path settingsDir, SettingsMap settingsReader, ArrayList<String> biomes) {
+    public DimensionPresetConfig(Path settingsDir, SettingsMap settingsReader, ArrayList<String> biomes) {
         super(settingsReader.getName());
         this.renameOldSettings(settingsReader);
-        presetInfo = PresetInfo.buildPresetInfo(settingsReader);
+        presetInfo = DimensionPresetInfo.buildPresetInfo(settingsReader);
         visualSettings = VisualSettings.builder().fogColor(settingsReader.getSetting(VisualSettings.PRESET_FOG_COLOR)).build();
         blockSettings = BlockSettings.getBlockSettings(settingsReader);
         dimensionSettings = DimensionSettings.getDimensionSettings(settingsReader);
         generationSettings = GenerationSettings.getGenerationSettings(
-                this, settingsReader, PresetResourcesManager.get(), biomes, settingsDir);
+                this, settingsReader, DimensionPresetResourcesManager.get(), biomes, settingsDir);
         resourceSettings = ResourceSettings.getResourceSettings(settingsReader);
         terrainSettings = TerrainSettings.getTerrainSettings(settingsReader);
         noiseCaveSettings = NoiseCaveSettings.getNoiseCaveSettings(settingsReader);
@@ -96,7 +96,7 @@ public class PresetConfig extends PresetSettings {
         reader.renameOldSetting("WorldFog", VisualSettings.PRESET_FOG_COLOR);
         reader.renameOldSetting("BedrockobBlock", BlockSettings.BEDROCK_BLOCK);
         reader.renameOldSetting("DimensionPortalMaterials", PortalSettings.PORTAL_BLOCKS);
-        reader.renameOldSetting("ShortPresetName", PresetInfo.REGISTRY_NAME);
+        reader.renameOldSetting("ShortPresetName", DimensionPresetInfo.REGISTRY_NAME);
     }
 
     @Override
@@ -107,7 +107,7 @@ public class PresetConfig extends PresetSettings {
     @Override
     public void writeConfigSettings(SettingsMap writer) {
         writer.putSetting(Constants.ConfigVersionSetting, Constants.ConfigVersion);
-        PresetWriter.writePresetConfig(this, writer);
+        DimensionPresetWriter.writePresetConfig(this, writer);
     }
 
     public static class BiomeGroupNames

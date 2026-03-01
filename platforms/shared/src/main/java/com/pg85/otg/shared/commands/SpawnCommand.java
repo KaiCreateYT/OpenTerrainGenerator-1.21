@@ -34,7 +34,7 @@ import java.util.Random;
 public class SpawnCommand {
 
     private static final SuggestionProvider<CommandSourceStack> PRESET_SUGGESTIONS = (ctx, builder) -> {
-        List<String> names = new ArrayList<>(OTG.getEngine().getPresetLoader().getAllPresetFolderNames());
+        List<String> names = new ArrayList<>(OTG.getEngine().getDimensionPresetLoader().getAllDimensionPresetFolderNames());
         return SharedSuggestionProvider.suggest(names, builder);
     };
 
@@ -43,7 +43,7 @@ public class SpawnCommand {
         try {
             presetName = StringArgumentType.getString(ctx, "preset");
         } catch (IllegalArgumentException e) {
-            presetName = OTG.getEngine().getPresetLoader().getDefaultPresetFolderName();
+            presetName = OTG.getEngine().getDimensionPresetLoader().getDefaultDimensionPresetFolderName();
         }
 
         CustomObjectCollection objects = OTG.getEngine().getCustomObjectManager().getGlobalObjects();
@@ -108,7 +108,7 @@ public class SpawnCommand {
             presetName,
             OTG.getEngine().getOTGRootFolder(),
             OTG.getEngine().getCustomObjectManager(),
-            OTG.getEngine().getPresetLoader().getMaterialReader(),
+            OTG.getEngine().getDimensionPresetLoader().getMaterialReader(),
             OTG.getEngine().getCustomObjectResourcesManager(),
             OTG.getEngine().getModLoadedChecker()
         );
@@ -158,7 +158,7 @@ public class SpawnCommand {
         }
 
         // BO4 structures require CustomStructureType.BO4 in the preset config
-        if (region.getPresetConfig().getResourceSettings().getCustomStructureType() != CustomStructureType.BO4) {
+        if (region.getConfig().getResourceSettings().getCustomStructureType() != CustomStructureType.BO4) {
             source.sendFailure(Component.literal(
                 "Cannot spawn a BO4 structure in a CustomStructureType:BO3 world. " +
                 "Use a BO3 instead, or set CustomStructureType:BO4 in the preset config."
@@ -186,7 +186,7 @@ public class SpawnCommand {
                     presetName,
                     OTG.getEngine().getOTGRootFolder(),
                     OTG.getEngine().getCustomObjectManager(),
-                    OTG.getEngine().getPresetLoader().getMaterialReader(),
+                    OTG.getEngine().getDimensionPresetLoader().getMaterialReader(),
                     OTG.getEngine().getCustomObjectResourcesManager(),
                     OTG.getEngine().getModLoadedChecker(),
                     region,
@@ -254,7 +254,7 @@ public class SpawnCommand {
                                     chunkCoord,
                                     OTG.getEngine().getOTGRootFolder(),
                                     OTG.getEngine().getCustomObjectManager(),
-                                    OTG.getEngine().getPresetLoader().getMaterialReader(),
+                                    OTG.getEngine().getDimensionPresetLoader().getMaterialReader(),
                                     OTG.getEngine().getCustomObjectResourcesManager(),
                                     OTG.getEngine().getModLoadedChecker(),
                                     false // force (respect height bounds)

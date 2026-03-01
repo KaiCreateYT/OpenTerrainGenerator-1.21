@@ -14,7 +14,7 @@ import com.pg85.otg.gen.noise.OctavePerlinNoiseSampler;
 import com.pg85.otg.gen.noise.PerlinNoiseSampler;
 import com.pg85.otg.gen.noise.legacy.NoiseGeneratorPerlinMesaBlocks;
 import com.pg85.otg.interfaces.*;
-import com.pg85.otg.presets.Preset;
+import com.pg85.otg.presets.DimensionPreset;
 import com.pg85.otg.util.ChunkCoordinate;
 import com.pg85.otg.util.gen.*;
 import com.pg85.otg.util.helpers.MathHelper;
@@ -81,7 +81,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
     private OctavePerlinNoiseSampler upperInterpolatedNoise; // Volatility2 noise
     private OctavePerlinNoiseSampler depthNoise;
 
-    private final Preset preset;
+    private final DimensionPreset preset;
     private final OTGWorldInfo otgWorldInfo;
     private long seed;
     private final CachedBiomeProvider cachedBiomeProvider;
@@ -124,7 +124,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
     }
 
     public OTGChunkGenerator(
-            Preset preset,
+            DimensionPreset preset,
             ILayerSource biomeProvider,
             IBiome[] biomesById,
             OTGWorldInfo otgWorldInfo
@@ -145,8 +145,8 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
             return buffer;
         });
 
-        this.caves = new CaveCarver(preset.getPresetConfig());
-        this.ravines = new RavineCarver(preset.getPresetConfig());
+        this.caves = new CaveCarver(preset.getConfig());
+        this.ravines = new RavineCarver(preset.getConfig());
 
     }
 
@@ -369,7 +369,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
         );
         BiomeSettings biome;
         BiomeTerrainSettings biomeTerrainSettings;
-        TerrainSettings terrainSettings = this.preset.getPresetConfig().getTerrainSettings();
+        TerrainSettings terrainSettings = this.preset.getConfig().getTerrainSettings();
         int worldHeightCap = otgWorldInfo.getHeight();
         float heightAt;
         float weightAt;

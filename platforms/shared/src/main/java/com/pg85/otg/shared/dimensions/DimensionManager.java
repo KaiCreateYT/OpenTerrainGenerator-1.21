@@ -1,13 +1,13 @@
 package com.pg85.otg.shared.dimensions;
 
 import com.pg85.otg.OTG;
-import com.pg85.otg.config.dimensions.DimensionConfig;
+import com.pg85.otg.config.dimensions.WorldPresetConfig;
 import com.pg85.otg.config.settings.preset.GameRuleSettings;
 import com.pg85.otg.dimensions.DimensionDatapack;
 import com.pg85.otg.dimensions.DimensionInfo;
 import com.pg85.otg.dimensions.OTGWorldStorage;
-import com.pg85.otg.loader.DimensionConfigLoader;
-import com.pg85.otg.presets.Preset;
+import com.pg85.otg.loader.WorldPresetConfigLoader;
+import com.pg85.otg.presets.DimensionPreset;
 import com.pg85.otg.shared.gen.SharedOTGChunkGenerator;
 import com.pg85.otg.shared.gamerules.GameRuleApplier;
 import com.pg85.otg.shared.gamerules.GameRuleManager;
@@ -45,10 +45,10 @@ public class DimensionManager {
         this.storage.load();
 
         for (DimensionInfo info : storage.getAllDimensions()) {
-            Preset preset = OTG.getEngine().getPresetLoader().getPresetByFolderName(info.getPreset());
+            DimensionPreset preset = OTG.getEngine().getDimensionPresetLoader().getDimensionPresetByFolderName(info.getPreset());
             if (preset != null) {
                 try {
-                    datapack.createDimensionFiles(info, preset.getPresetConfig().getDimensionSettings());
+                    datapack.createDimensionFiles(info, preset.getConfig().getDimensionSettings());
                 } catch (Exception e) {
                     OTGLog.error("Failed to regenerate datapack for {}: {}", info.getName(), e.getMessage());
                 }
@@ -77,7 +77,7 @@ public class DimensionManager {
     }
 
     public CreateResult createDimension(String presetName) {
-        Preset preset = OTG.getEngine().getPresetLoader().getPresetByFolderName(presetName);
+        DimensionPreset preset = OTG.getEngine().getDimensionPresetLoader().getDimensionPresetByFolderName(presetName);
         if (preset == null) {
             return CreateResult.error("Unknown preset '" + presetName + "'. Use /otg preset list");
         }
@@ -92,12 +92,12 @@ public class DimensionManager {
         DimensionInfo info = DimensionInfo.create(presetName, seed);
 
         try {
-            datapack.createDimensionFiles(info, preset.getPresetConfig().getDimensionSettings());
+            datapack.createDimensionFiles(info, preset.getConfig().getDimensionSettings());
             storage.addDimension(info);
 
-            // Apply GameRules from preset + optional DimensionConfig override
-            GameRuleSettings gameRuleSettings = preset.getPresetConfig().getGameRuleSettings();
-            DimensionConfig.GameRules dimConfigOverrides = loadDimensionConfigGameRules(presetName);
+            // Apply GameRules from preset + optional WorldPresetConfig override
+            GameRuleSettings gameRuleSettings = preset.getConfig().getGameRuleSettings();
+            WorldPresetConfig.GameRules dimConfigOverrides = loadDimensionConfigGameRules(presetName);
             GameRules gameRules = GameRuleApplier.createGameRules(gameRuleSettings, dimConfigOverrides, server);
             ResourceKey<Level> levelKey = DimensionKeys.otg(normalizedName);
             GameRuleManager.register(levelKey, gameRules);
@@ -197,14 +197,14 @@ public class DimensionManager {
         ServerLevel overworld = server.overworld();
         ChunkGenerator gen = overworld.getChunkSource().getGenerator();
         if (gen instanceof SharedOTGChunkGenerator otgGen) {
-            Preset preset = otgGen.getPreset();
+            DimensionPreset preset = otgGen.getPreset();
             if (preset == null) return;
 
             String presetName = preset.getFolderName();
-            GameRuleSettings gameRuleSettings = preset.getPresetConfig().getGameRuleSettings();
+            GameRuleSettings gameRuleSettings = preset.getConfig().getGameRuleSettings();
             if (!gameRuleSettings.isOverrideGameRules()) return;
 
-            DimensionConfig.GameRules overrides = loadDimensionConfigGameRules(presetName);
+            WorldPresetConfig.GameRules overrides = loadDimensionConfigGameRules(presetName);
             GameRules rules = GameRuleApplier.createGameRules(gameRuleSettings, overrides, server);
             GameRuleManager.register(Level.OVERWORLD, rules);
             storage.putGameRules("minecraft:overworld", GameRuleApplier.toMap(rules));
@@ -212,8 +212,8 @@ public class DimensionManager {
         }
     }
 
-    private @Nullable DimensionConfig.GameRules loadDimensionConfigGameRules(String presetName) {
-        DimensionConfig dimConfig = DimensionConfigLoader.fromDisk(
+    private @Nullable WorldPresetConfig.GameRules loadDimensionConfigGameRules(String presetName) {
+        WorldPresetConfig dimConfig = WorldPresetConfigLoader.fromDisk(
                 presetName, OTG.getEngine().getOTGRootFolder());
         if (dimConfig != null && dimConfig.GameRules != null) {
             return dimConfig.GameRules;

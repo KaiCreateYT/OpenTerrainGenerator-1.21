@@ -2,7 +2,7 @@ package com.pg85.otg.gen.carver;
 
 import com.pg85.otg.config.settings.biome.BiomeSettings;
 import com.pg85.otg.config.settings.biome.SurfaceSettings;
-import com.pg85.otg.config.settings.preset.PresetSettings;
+import com.pg85.otg.config.settings.preset.DimensionPresetSettings;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.interfaces.ICachedBiomeProvider;
 import com.pg85.otg.interfaces.ISurfaceGeneratorNoiseProvider;
@@ -18,9 +18,9 @@ import java.util.BitSet;
 import java.util.Random;
 
 public abstract class Carver {
-    protected final PresetSettings presetConfig;
+    protected final DimensionPresetSettings presetConfig;
 
-    public Carver(PresetSettings presetConfig) {
+    public Carver(DimensionPresetSettings presetConfig) {
         this.presetConfig = presetConfig;
     }
 

@@ -3,7 +3,7 @@ package com.pg85.otg.config.biome;
 import com.pg85.otg.config.ConfigFunction;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.exceptions.InvalidConfigException;
-import com.pg85.otg.config.settings.preset.PresetSettings;
+import com.pg85.otg.config.settings.preset.DimensionPresetSettings;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.helpers.StringHelper;
 import com.pg85.otg.util.logging.LogCategory;
@@ -19,7 +19,7 @@ import java.util.*;
  *
  * <p>This class represents such a biome group.
  */
-public final class BiomeGroupFunction extends ConfigFunction<PresetSettings>
+public final class BiomeGroupFunction extends ConfigFunction<DimensionPresetSettings>
 {
     /**
      * -- GETTER --
@@ -54,10 +54,10 @@ public final class BiomeGroupFunction extends ConfigFunction<PresetSettings>
 	 * @param config The world config.
 	 * @param args   The settings to be parsed.
 	 * @throws InvalidConfigException When the config is invalid.
-	 * @see #BiomeGroupFunction(PresetSettings, String, int, int, List) Constructor to
+	 * @see #BiomeGroupFunction(DimensionPresetSettings, String, int, int, List) Constructor to
 	 * properly initialize this biome group manually.
 	 */
-	public BiomeGroupFunction(PresetSettings config, List<String> args) throws InvalidConfigException
+	public BiomeGroupFunction(DimensionPresetSettings config, List<String> args) throws InvalidConfigException
 	{
 		// Must have at least a GroupName and a Biome that belongs to it
 		assureSize(4, args);
@@ -87,13 +87,13 @@ public final class BiomeGroupFunction extends ConfigFunction<PresetSettings>
 
 	/**
 	 * Creates a new <code>BiomeGroup</code>.
-	 * @param config	PresetConfig this biome group is part of.
+	 * @param config	DimensionPresetConfig this biome group is part of.
 	 * @param groupName The name of this group.
 	 * @param size	  Size value of this biome group.
 	 * @param rarity	Rarity value of this biome group.
 	 * @param biomes	List of names of the biomes that spawn in this group.
 	 */
-	public BiomeGroupFunction(PresetSettings config, String groupName, int size, int rarity, List<String> biomes)
+	public BiomeGroupFunction(DimensionPresetSettings config, String groupName, int size, int rarity, List<String> biomes)
 	{
 		this.name = groupName;
 		this.generationDepth = size;

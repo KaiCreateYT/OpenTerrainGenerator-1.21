@@ -4,7 +4,7 @@ import com.pg85.otg.config.ConfigFunction;
 import com.pg85.otg.config.biome.BiomeConfig;
 import com.pg85.otg.config.settings.biome.BiomeSettings;
 import com.pg85.otg.config.settings.biome.BiomeVisualSettings;
-import com.pg85.otg.config.settings.preset.PresetSettings;
+import com.pg85.otg.config.settings.preset.DimensionPresetSettings;
 import com.pg85.otg.gen.resource.RegistryResource;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.biome.WeightedMobSpawnGroup;
@@ -48,7 +48,7 @@ public final class BiomeFactory {
         this.carverHolder = carverHolder;
     }
 
-    public Biome createOTGBiome(PresetSettings presetConfig, BiomeConfig biomeConfig) {
+    public Biome createOTGBiome(DimensionPresetSettings presetConfig, BiomeConfig biomeConfig) {
         BiomeGenerationSettings.Builder generationSettings = new BiomeGenerationSettings.Builder(featureHolder, carverHolder);
 
         MobSpawnSettings.Builder mobSpawnSettings = createMobSpawnSettings(biomeConfig);
@@ -93,7 +93,7 @@ public final class BiomeFactory {
                 .build();
     }
 
-    private static BiomeSpecialEffects.Builder getSpecialEffects(PresetSettings presetConfig, BiomeSettings biomeConfig) {
+    private static BiomeSpecialEffects.Builder getSpecialEffects(DimensionPresetSettings presetConfig, BiomeSettings biomeConfig) {
         BiomeVisualSettings biomeVisualSettings = biomeConfig.getVisualSettings();
         float safeTemperature = biomeConfig.getVisualSettings().getBiomeTemperature();
         if (safeTemperature >= 0.1 && safeTemperature <= 0.2) {

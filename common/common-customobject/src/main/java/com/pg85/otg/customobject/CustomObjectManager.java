@@ -17,7 +17,7 @@ import java.util.Map;
 
 /**
  * This class is the registry for the custom object types. It also stores
- * the global objects. World objects are stored in the PresetConfig class.
+ * the global objects. World objects are stored in the DimensionPresetConfig class.
  * <p />
  * 
  * Open Terrain Generator supports multiple types of custom objects. By default, it

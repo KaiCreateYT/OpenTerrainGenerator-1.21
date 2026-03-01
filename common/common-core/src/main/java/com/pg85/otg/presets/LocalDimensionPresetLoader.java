@@ -10,37 +10,37 @@ import com.pg85.otg.config.biome.BiomeResourcesManager;
 import com.pg85.otg.config.biome.BiomeTemplate;
 import com.pg85.otg.config.settings.biome.BiomeSettings;
 import com.pg85.otg.loader.BiomeConfigLoader;
-import com.pg85.otg.config.preset.PresetConfig;
+import com.pg85.otg.config.preset.DimensionPresetConfig;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.gen.biome.layers.BiomeLayerData;
 import com.pg85.otg.interfaces.IBiome;
 import com.pg85.otg.interfaces.IMaterialReader;
-import com.pg85.otg.loader.PresetConfigLoader;
+import com.pg85.otg.loader.DimensionPresetConfigLoader;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.OTGMaterialReader;
 import com.pg85.otg.util.logging.LogCategory;
 
 /**
  * Base class for preset loading. Loads presets from disk and provides
- * global ID mapping and generation data. Subclassed by SharedPresetBiomeLoader
+ * global ID mapping and generation data. Subclassed by SharedDimensionPresetBiomeLoader
  * in the shared platform module for MC-dependent biome registration.
  *
  * Not abstract — can be used directly for testing or headless operation.
  */
-public class LocalPresetLoader {
+public class LocalDimensionPresetLoader {
     private static final int MAX_INHERITANCE_DEPTH = 15;
     protected final File presetsDir;
-    protected final HashMap<String, Preset> presets = new HashMap<>();
+    protected final HashMap<String, DimensionPreset> presets = new HashMap<>();
     protected final HashMap<String, String> aliasMap = new HashMap<>();
     private Map<String, IBiome[]> globalIdMapping = new java.util.concurrent.ConcurrentHashMap<>();
     private Map<String, BiomeLayerData> presetGenerationData = new java.util.concurrent.ConcurrentHashMap<>();
 
-    public LocalPresetLoader(Path otgRootFolder) {
+    public LocalDimensionPresetLoader(Path otgRootFolder) {
         this.presetsDir = getPresetsDir(otgRootFolder).toFile();
     }
 
     private static Path getPresetsDir(Path otgRootFolder) {
-        return Paths.get(otgRootFolder.toString(), File.separator + Constants.PRESETS_FOLDER);
+        return Paths.get(otgRootFolder.toString(), File.separator + Constants.DIMENSION_PRESETS_FOLDER);
     }
 
     public IMaterialReader getMaterialReader() {
@@ -48,7 +48,7 @@ public class LocalPresetLoader {
     }
 
 
-    public Preset getPresetByShortNameOrFolderName(String name) {
+    public DimensionPreset getDimensionPresetByShortNameOrFolderName(String name) {
         // Example: preset is stored as "Biome Bundle v7", but also accepts "Biome Bundle"
         if (aliasMap.containsKey(name)) {
             return this.presets.get(aliasMap.get(name));
@@ -56,26 +56,26 @@ public class LocalPresetLoader {
         return this.presets.get(name);
     }
 
-    public Preset getPresetByFolderName(String name) {
+    public DimensionPreset getDimensionPresetByFolderName(String name) {
         return this.presets.get(name);
     }
 
-    public ArrayList<Preset> getAllPresets() {
-        return new ArrayList<Preset>(presets.values());
+    public ArrayList<DimensionPreset> getAllDimensionPresets() {
+        return new ArrayList<DimensionPreset>(presets.values());
     }
 
-    public Set<String> getAllPresetFolderNames() {
+    public Set<String> getAllDimensionPresetFolderNames() {
         return presets.keySet();
     }
 
-    public String getDefaultPresetFolderName() {
+    public String getDefaultDimensionPresetFolderName() {
         return this.presets.keySet().isEmpty() ? Constants.DEFAULT_PRESET_NAME
                 : this.presets.containsKey(Constants.DEFAULT_PRESET_NAME)
                 ? Constants.DEFAULT_PRESET_NAME
                 : (String) this.presets.keySet().toArray()[0];
     }
 
-    public void loadPresetsFromDisk() {
+    public void loadDimensionPresetsFromDisk() {
         // Clear existing presets and aliases before reloading (important for developer mode reload)
         this.presets.clear();
         this.aliasMap.clear();
@@ -85,16 +85,16 @@ public class LocalPresetLoader {
             for (File presetDir : Objects.requireNonNull(this.presetsDir.listFiles())) {
                 if (presetDir.isDirectory()) {
                     for (File file : Objects.requireNonNull(presetDir.listFiles())) {
-                        if (file.getName().equals(Constants.PRESET_CONFIG_FILE) || file.getName().equals(Constants.LEGACY_WORLD_CONFIG_FILE)) {
-                            Preset preset = loadPreset(presetDir.toPath());
-                            if (this.aliasMap.containsKey(preset.getPresetRegistryName())) {
+                        if (file.getName().equals(Constants.DIMENSION_PRESET_CONFIG_FILE) || file.getName().equals(Constants.LEGACY_WORLD_CONFIG_FILE)) {
+                            DimensionPreset preset = loadPreset(presetDir.toPath());
+                            if (this.aliasMap.containsKey(preset.getRegistryName())) {
                                 OTGLog.error(LogCategory.MAIN,
-                                        "Duplicate preset registry name found: {}. Preset {} will be ignored.",
-                                        preset.getPresetRegistryName(), preset.getFolderName());
+                                        "Duplicate preset registry name found: {}. DimensionPreset {} will be ignored.",
+                                        preset.getRegistryName(), preset.getFolderName());
                                 continue;
                             } else {
                                 this.presets.put(preset.getFolderName(), preset);
-                                this.aliasMap.put(preset.getPresetRegistryName(), preset.getFolderName());
+                                this.aliasMap.put(preset.getRegistryName(), preset.getFolderName());
                             }
                             break;
                         }
@@ -106,8 +106,8 @@ public class LocalPresetLoader {
         }
     }
 
-    public static Preset loadPreset(Path presetDir) {
-        PresetConfig presetConfig = PresetConfigLoader.loadPresetConfig(presetDir);
+    public static DimensionPreset loadPreset(Path presetDir) {
+        DimensionPresetConfig presetConfig = DimensionPresetConfigLoader.loadPresetConfig(presetDir);
         List<BiomeTemplate> biomeTemplatesImmutable = BiomeConfigLoader.loadBiomeTemplates(presetDir, presetConfig);
         List<BiomeSettings> biomeSettingsImmutable = BiomeConfigLoader.loadBiomeConfigs(presetDir, presetConfig);
         List<BiomeTemplate> biomeTemplates = new ArrayList<>(biomeTemplatesImmutable);
@@ -117,17 +117,17 @@ public class LocalPresetLoader {
             if (bs instanceof BiomeConfig bc) biomeConfigs.add(bc);
         });
 
-        return new Preset(presetDir, presetConfig, biomeConfigs, biomeTemplates);
+        return new DimensionPreset(presetDir, presetConfig, biomeConfigs, biomeTemplates);
     }
 
-    public static List<Preset> loadPresetsFromDisk(Path otgRootFolder) {
+    public static List<DimensionPreset> loadDimensionPresetsFromDisk(Path otgRootFolder) {
         Path presetsDir = getPresetsDir(otgRootFolder);
         if (!presetsDir.toFile().exists()) {
             OTGLog.info(LogCategory.CONFIGS, "No presets found in {}", presetsDir);
             return Collections.emptyList();
         }
-        List<Path> presetDirectories = PresetConfigLoader.findPresetDirectories(presetsDir);
-        List<Preset> presets = new ArrayList<>();
+        List<Path> presetDirectories = DimensionPresetConfigLoader.findPresetDirectories(presetsDir);
+        List<DimensionPreset> presets = new ArrayList<>();
         for (Path presetDir : presetDirectories) {
             presets.add(loadPreset(presetDir));
         }

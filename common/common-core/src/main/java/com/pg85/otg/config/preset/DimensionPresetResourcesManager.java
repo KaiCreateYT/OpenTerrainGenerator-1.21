@@ -3,7 +3,7 @@ package com.pg85.otg.config.preset;
 import com.pg85.otg.config.ConfigFunction;
 import com.pg85.otg.config.ErroredFunction;
 import com.pg85.otg.config.io.IConfigFunctionProvider;
-import com.pg85.otg.config.settings.preset.PresetSettings;
+import com.pg85.otg.config.settings.preset.DimensionPresetSettings;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -11,19 +11,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class PresetResourcesManager implements IConfigFunctionProvider {
+public class DimensionPresetResourcesManager implements IConfigFunctionProvider {
     private static final Map<String, Class<? extends ConfigFunction<?>>> CONFIG_FUNCTIONS = new HashMap<>();
 
-    private static final PresetResourcesManager INSTANCE = new PresetResourcesManager();
+    private static final DimensionPresetResourcesManager INSTANCE = new DimensionPresetResourcesManager();
 
-    public static PresetResourcesManager get()
+    public static DimensionPresetResourcesManager get()
     {
         return INSTANCE;
     }
 
     private static void ensureAllConfigFunctionsRegistered()
     {
-        registerAllConfigFunctions(PresetConfig.CONFIG_FUNCTIONS);
+        registerAllConfigFunctions(DimensionPresetConfig.CONFIG_FUNCTIONS);
     }
 
     public static void registerAllConfigFunctions(Map<String, Class<? extends ConfigFunction<?>>> configFunctions)
@@ -45,7 +45,7 @@ public class PresetResourcesManager implements IConfigFunctionProvider {
      * @param <T>    Type of the holder of the config function.
      * @param name   The name of the config function.
      * @param holder The holder of the config function, like
-     *               {@link PresetSettings}.
+     *               {@link DimensionPresetSettings}.
      * @param args   The args of the function.
      * @return A config function with the given name, or null if the config
      * function requires another holder. For invalid or non-existing config
@@ -91,10 +91,10 @@ public class PresetResourcesManager implements IConfigFunctionProvider {
 
     private static <T> Constructor<? extends ConfigFunction<?>> getConstructor(T holder, Class<? extends ConfigFunction<?>> clazz) throws NoSuchMethodException {
         Constructor<? extends ConfigFunction<?>> constructor = null;
-        if(holder instanceof PresetSettings)
+        if(holder instanceof DimensionPresetSettings)
         {
-            // Every PresetConfig resource should have a constructor that conforms to this method signature
-            constructor = clazz.getConstructor(PresetSettings.class, List.class);
+            // Every DimensionPresetConfig resource should have a constructor that conforms to this method signature
+            constructor = clazz.getConstructor(DimensionPresetSettings.class, List.class);
         } else {
             throw new NoSuchMethodException("No valid constructor found for " + clazz.getName() + " with holder " + holder.getClass().getName());
         }

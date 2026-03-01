@@ -1,8 +1,8 @@
 package com.pg85.otg.test.preset;
 
 import com.pg85.otg.OTG;
-import com.pg85.otg.presets.LocalPresetLoader;
-import com.pg85.otg.presets.Preset;
+import com.pg85.otg.presets.LocalDimensionPresetLoader;
+import com.pg85.otg.presets.DimensionPreset;
 import com.pg85.otg.test.engine.TestOTGEngine;
 import com.pg85.otg.test.materials.TestMaterialReader;
 import com.pg85.otg.test.materials.TestMaterials;
@@ -15,7 +15,7 @@ import java.util.List;
  * Utility for loading OTG presets in headless (no Minecraft) mode.
  * Initializes TestMaterials and TestMaterialReader before loading.
  */
-public class TestPresetLoader {
+public class TestDimensionPresetLoader {
 
     private static boolean initialized = false;
     private static Path currentOtgRoot = null;
@@ -66,9 +66,9 @@ public class TestPresetLoader {
      * @param otgRootFolder the root folder containing the Presets/ directory
      * @return list of loaded presets
      */
-    public static List<Preset> loadPresets(Path otgRootFolder) {
+    public static List<DimensionPreset> loadPresets(Path otgRootFolder) {
         initHeadless(otgRootFolder);
-        return LocalPresetLoader.loadPresetsFromDisk(otgRootFolder);
+        return LocalDimensionPresetLoader.loadDimensionPresetsFromDisk(otgRootFolder);
     }
 
     /**
@@ -78,11 +78,11 @@ public class TestPresetLoader {
      * @param presetName    the preset folder name (e.g., "DefaultPreset", "Biome Bundle")
      * @return the loaded preset, or null if not found
      */
-    public static Preset loadPreset(Path otgRootFolder, String presetName) {
-        List<Preset> presets = loadPresets(otgRootFolder);
+    public static DimensionPreset loadPreset(Path otgRootFolder, String presetName) {
+        List<DimensionPreset> presets = loadPresets(otgRootFolder);
         return presets.stream()
                 .filter(p -> p.getFolderName().equals(presetName) ||
-                             p.getPresetConfig().getConfigName().equals(presetName))
+                             p.getConfig().getConfigName().equals(presetName))
                 .findFirst()
                 .orElse(null);
     }

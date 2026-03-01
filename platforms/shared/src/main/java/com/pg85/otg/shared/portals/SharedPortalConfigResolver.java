@@ -3,7 +3,7 @@ package com.pg85.otg.shared.portals;
 import com.pg85.otg.config.settings.preset.PortalSettings;
 import com.pg85.otg.shared.gen.SharedOTGChunkGenerator;
 import com.pg85.otg.shared.materials.IBlockStateMaterial;
-import com.pg85.otg.presets.Preset;
+import com.pg85.otg.presets.DimensionPreset;
 import com.pg85.otg.util.DimensionNameUtils;
 import com.pg85.otg.util.materials.LocalMaterialData;
 import net.minecraft.server.level.ServerLevel;
@@ -18,7 +18,7 @@ public final class SharedPortalConfigResolver {
 
     private SharedPortalConfigResolver() {}
 
-    public static Optional<Preset> findPresetByColor(String portalColor) {
+    public static Optional<DimensionPreset> findPresetByColor(String portalColor) {
         return PortalConfigLookup.findPresetByColor(portalColor);
     }
 

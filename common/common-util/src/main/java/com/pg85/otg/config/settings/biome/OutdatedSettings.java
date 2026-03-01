@@ -18,7 +18,7 @@ public class OutdatedSettings {
             "TemplateForBiome",
             false,
             t -> ((IdentitySettings)t).isTemplateForBiome(),
-            "Set this to true if this biome config is used with non-OTG biomes, configured in the PresetConfig via TemplateBiome()",
+            "Set this to true if this biome config is used with non-OTG biomes, configured in the DimensionPresetConfig via TemplateBiome()",
             "OTG generates the terrain for the biome as configured in this file and spawns resources, but also allows the biome to spawn ",
             "its own resources and mobs and apply its settings. Because of this, the following OTG settings cannot be used:",
             "- Colors, Mob spawning, particles, sounds, vanilla structures, wetness, temperature.",

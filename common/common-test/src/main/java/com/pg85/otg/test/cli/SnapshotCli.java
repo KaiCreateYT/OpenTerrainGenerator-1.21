@@ -5,10 +5,10 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.pg85.otg.config.biome.BiomeConfig;
 import com.pg85.otg.interfaces.IBiome;
-import com.pg85.otg.presets.Preset;
+import com.pg85.otg.presets.DimensionPreset;
 import com.pg85.otg.test.biome.TestBiome;
 import com.pg85.otg.test.biome.TestBiomeProvider;
-import com.pg85.otg.test.preset.TestPresetLoader;
+import com.pg85.otg.test.preset.TestDimensionPresetLoader;
 import com.pg85.otg.test.snapshot.SnapshotModel;
 import com.pg85.otg.test.snapshot.TerrainSnapshotComparator;
 import com.pg85.otg.test.snapshot.TerrainSnapshotComparator.ComparisonResult;
@@ -141,7 +141,7 @@ public class SnapshotCli {
         System.out.println();
         System.out.println("Options:");
         System.out.println("  --seed <n>            World seed (default: 12345)");
-        System.out.println("  --preset <name>       Preset name (default: DefaultPreset)");
+        System.out.println("  --preset <name>       DimensionPreset name (default: DefaultPreset)");
         System.out.println("  --otg-root <path>     OTG config directory (default: config/OpenTerrainGenerator)");
         System.out.println("  --verbose             Show all differences (default: max 10 per section)");
         System.out.println("  --fail-threshold <n>  Fail only if difference exceeds n% (default: 0)");
@@ -382,17 +382,17 @@ public class SnapshotCli {
         Path otgRootPath = Paths.get(otgRoot);
 
         // Initialize headless mode with OTG engine
-        TestPresetLoader.initHeadless(otgRootPath);
+        TestDimensionPresetLoader.initHeadless(otgRootPath);
 
         // Load the specified preset
-        Preset preset = TestPresetLoader.loadPreset(otgRootPath, presetName);
+        DimensionPreset preset = TestDimensionPresetLoader.loadPreset(otgRootPath, presetName);
         if (preset == null) {
             // List available presets
-            List<Preset> available = TestPresetLoader.loadPresets(otgRootPath);
+            List<DimensionPreset> available = TestDimensionPresetLoader.loadPresets(otgRootPath);
             StringBuilder sb = new StringBuilder("Preset not found: " + presetName);
             if (!available.isEmpty()) {
                 sb.append("\nAvailable presets:");
-                for (Preset p : available) {
+                for (DimensionPreset p : available) {
                     sb.append("\n  - ").append(p.getFolderName());
                 }
             } else {
@@ -404,14 +404,14 @@ public class SnapshotCli {
         System.out.println("  Loaded preset: " + preset.getFolderName());
 
         // Get world info from preset
-        OTGWorldInfo worldInfo = preset.getPresetConfig().getWorldInfo();
+        OTGWorldInfo worldInfo = preset.getConfig().getWorldInfo();
         System.out.println("  World height: " + worldInfo.minY() + " to " + worldInfo.maxY());
 
         // Build IBiome array from preset's BiomeConfigs
         List<BiomeConfig> biomeConfigs = preset.getBiomeConfigList();
         System.out.println("  Biomes: " + biomeConfigs.size());
 
-        // Assign OTG biome IDs (LocalPresetLoader doesn't do this - only platform loaders do)
+        // Assign OTG biome IDs (LocalDimensionPresetLoader doesn't do this - only platform loaders do)
         // ID 0 is reserved for ocean, start from 1
         int currentId = 1;
         for (BiomeConfig bc : biomeConfigs) {
@@ -612,15 +612,15 @@ public class SnapshotCli {
         Path otgRootPath = Paths.get(otgRoot);
 
         // Initialize headless mode
-        TestPresetLoader.initHeadless(otgRootPath);
+        TestDimensionPresetLoader.initHeadless(otgRootPath);
 
         // Load preset
-        Preset preset = TestPresetLoader.loadPreset(otgRootPath, presetName);
+        DimensionPreset preset = TestDimensionPresetLoader.loadPreset(otgRootPath, presetName);
         if (preset == null) {
             throw new IllegalArgumentException("Preset not found: " + presetName);
         }
 
-        OTGWorldInfo worldInfo = preset.getPresetConfig().getWorldInfo();
+        OTGWorldInfo worldInfo = preset.getConfig().getWorldInfo();
 
         // Build IBiome array
         List<BiomeConfig> biomeConfigs = preset.getBiomeConfigList();
@@ -805,15 +805,15 @@ public class SnapshotCli {
         Path otgRootPath = Paths.get(otgRoot);
 
         // Initialize headless mode
-        TestPresetLoader.initHeadless(otgRootPath);
+        TestDimensionPresetLoader.initHeadless(otgRootPath);
 
         // Load preset
-        Preset preset = TestPresetLoader.loadPreset(otgRootPath, presetName);
+        DimensionPreset preset = TestDimensionPresetLoader.loadPreset(otgRootPath, presetName);
         if (preset == null) {
             throw new IllegalArgumentException("Preset not found: " + presetName);
         }
 
-        OTGWorldInfo worldInfo = preset.getPresetConfig().getWorldInfo();
+        OTGWorldInfo worldInfo = preset.getConfig().getWorldInfo();
 
         // Build IBiome array
         List<BiomeConfig> biomeConfigs = preset.getBiomeConfigList();
@@ -998,15 +998,15 @@ public class SnapshotCli {
         Path otgRootPath = Paths.get(otgRoot);
 
         // Initialize headless mode
-        TestPresetLoader.initHeadless(otgRootPath);
+        TestDimensionPresetLoader.initHeadless(otgRootPath);
 
         // Load preset
-        Preset preset = TestPresetLoader.loadPreset(otgRootPath, presetName);
+        DimensionPreset preset = TestDimensionPresetLoader.loadPreset(otgRootPath, presetName);
         if (preset == null) {
             throw new IllegalArgumentException("Preset not found: " + presetName);
         }
 
-        OTGWorldInfo worldInfo = preset.getPresetConfig().getWorldInfo();
+        OTGWorldInfo worldInfo = preset.getConfig().getWorldInfo();
 
         // Build IBiome array
         List<BiomeConfig> biomeConfigs = preset.getBiomeConfigList();

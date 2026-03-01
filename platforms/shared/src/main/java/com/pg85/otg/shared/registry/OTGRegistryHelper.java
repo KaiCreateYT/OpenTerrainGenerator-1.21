@@ -5,8 +5,8 @@ import com.pg85.otg.config.settings.preset.*;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.platform.noise.OTGNoiseParamRegistry;
 import com.pg85.otg.platform.noise.OTGNoiseRouterBuilder;
-import com.pg85.otg.presets.Preset;
-import com.pg85.otg.shared.biome.SharedPresetBiomeLoader;
+import com.pg85.otg.presets.DimensionPreset;
+import com.pg85.otg.shared.biome.SharedDimensionPresetBiomeLoader;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.materials.LocalMaterialData;
 import com.pg85.otg.util.minecraft.OTGDimensionType;
@@ -119,18 +119,18 @@ public final class OTGRegistryHelper {
         );
     }
 
-    public static @NotNull HashMap<Preset, ResourceKey<DimensionType>> registerDimensionTypes(List<RegistryDataLoader.Loader<?>> loaders) {
-        var map = new HashMap<Preset, ResourceKey<DimensionType>>();
-        for (Preset preset : OTG.getEngine().getPresetLoader().getAllPresets()) {
-            OTGDimensionType otgDimensionType = preset.getPresetConfig().getDimensionSettings().getDimensionType();
+    public static @NotNull HashMap<DimensionPreset, ResourceKey<DimensionType>> registerDimensionTypes(List<RegistryDataLoader.Loader<?>> loaders) {
+        var map = new HashMap<DimensionPreset, ResourceKey<DimensionType>>();
+        for (DimensionPreset preset : OTG.getEngine().getDimensionPresetLoader().getAllDimensionPresets()) {
+            OTGDimensionType otgDimensionType = preset.getConfig().getDimensionSettings().getDimensionType();
             ResourceKey<DimensionType> dimensionKey = switch (otgDimensionType) {
                 case OVERWORLD -> BuiltinDimensionTypes.OVERWORLD;
                 case NETHER -> BuiltinDimensionTypes.NETHER;
                 case END -> BuiltinDimensionTypes.END;
                 case OTG -> {
-                    ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, preset.getPresetRegistryName().toLowerCase(Locale.ROOT));
+                    ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, preset.getRegistryName().toLowerCase(Locale.ROOT));
                     ResourceKey<DimensionType> dimensionTypeKey = ResourceKey.create(Registries.DIMENSION_TYPE, id);
-                    DimensionType dimensionType = getDimensionType(preset.getPresetConfig().getDimensionSettings());
+                    DimensionType dimensionType = getDimensionType(preset.getConfig().getDimensionSettings());
                     WritableRegistry<DimensionType> dimensionTypes = getRegistryOrThrow(loaders, Registries.DIMENSION_TYPE);
                     dimensionTypes.register(dimensionTypeKey, dimensionType, RegistrationInfo.BUILT_IN);
                     OTGLog.info("Registered dimension type: {}", dimensionTypeKey.location());
@@ -145,7 +145,7 @@ public final class OTGRegistryHelper {
     // --- World presets ---
 
     public static void registerWorldPresets(
-            Preset preset,
+            DimensionPreset preset,
             WritableRegistry<WorldPreset> worldPresets,
             Map<ResourceKey<LevelStem>, LevelStem> levelStems
     ) {
@@ -153,7 +153,7 @@ public final class OTGRegistryHelper {
         OTGLog.info("{}", levelStems.values());
 
         WorldPreset worldPreset = new WorldPreset(levelStems);
-        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, preset.getPresetRegistryName().toLowerCase(Locale.ROOT));
+        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, preset.getRegistryName().toLowerCase(Locale.ROOT));
         ResourceKey<WorldPreset> key = ResourceKey.create(Registries.WORLD_PRESET, id);
         worldPresets.register(key, worldPreset, RegistrationInfo.BUILT_IN);
         OTGLog.info("Registered world preset: {}", key.location());
@@ -164,7 +164,7 @@ public final class OTGRegistryHelper {
     public static void registerBiomes(List<RegistryDataLoader.Loader<?>> loaders) {
         if (OTG.getEngine().getPluginConfig().getDeveloperModeEnabled()) {
             OTG.getEngine().getCustomObjectManager().reloadCustomObjectFiles();
-            OTG.getEngine().getPresetLoader().loadPresetsFromDisk();
+            OTG.getEngine().getDimensionPresetLoader().loadDimensionPresetsFromDisk();
         }
 
         // Override bootstrap HolderGetters with real registry lookups.
@@ -175,15 +175,15 @@ public final class OTGRegistryHelper {
         WritableRegistry<net.minecraft.world.level.levelgen.placement.PlacedFeature> pfRegistry =
                 getRegistry(loaders, Registries.PLACED_FEATURE);
         if (pfRegistry != null) {
-            SharedPresetBiomeLoader.PLACED_FEATURE_HOLDER = pfRegistry.asLookup();
+            SharedDimensionPresetBiomeLoader.PLACED_FEATURE_HOLDER = pfRegistry.asLookup();
         }
         WritableRegistry<net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver<?>> carverRegistry =
                 getRegistry(loaders, Registries.CONFIGURED_CARVER);
         if (carverRegistry != null) {
-            SharedPresetBiomeLoader.CONFIGURED_CARVER_HOLDER = carverRegistry.asLookup();
+            SharedDimensionPresetBiomeLoader.CONFIGURED_CARVER_HOLDER = carverRegistry.asLookup();
         }
 
-        SharedPresetBiomeLoader loader = (SharedPresetBiomeLoader) OTG.getEngine().getPresetLoader();
+        SharedDimensionPresetBiomeLoader loader = (SharedDimensionPresetBiomeLoader) OTG.getEngine().getDimensionPresetLoader();
         WritableRegistry<Biome> biomeWritableRegistry = getRegistry(loaders, Registries.BIOME);
         if (biomeWritableRegistry == null) {
             OTGLog.error("Could not find biome registry");
@@ -195,11 +195,11 @@ public final class OTGRegistryHelper {
     // --- Noise generator settings ---
 
     public static void registerNoiseGenSettings(
-            Preset preset,
+            DimensionPreset preset,
             List<RegistryDataLoader.Loader<?>> loaders,
             RegistryAccess registryAccess,
             Function<LocalMaterialData, BlockState> toBlockState) {
-        PresetSettings presetSettings = preset.getPresetConfig();
+        DimensionPresetSettings presetSettings = preset.getConfig();
         DimensionSettings dimensionSettings = presetSettings.getDimensionSettings();
         BlockSettings blockSettings = presetSettings.getBlockSettings();
         ResourceSettings resourceSettings = presetSettings.getResourceSettings();
@@ -216,7 +216,7 @@ public final class OTGRegistryHelper {
             HolderGetter<DensityFunction> densityGetter = getRegistryOrThrow(loaders, Registries.DENSITY_FUNCTION).asLookup();
             HolderGetter<NormalNoise.NoiseParameters> noiseGetter = getRegistryOrThrow(loaders, Registries.NOISE).asLookup();
             OTGNoiseRouterBuilder routerBuilder = new OTGNoiseRouterBuilder(densityGetter, noiseGetter);
-            String presetName = preset.getPresetRegistryName().toLowerCase(Locale.ROOT);
+            String presetName = preset.getRegistryName().toLowerCase(Locale.ROOT);
             NoiseRouter router = routerBuilder.buildWithSettings(presetSettings.getNoiseCaveSettings(), presetName, false, false);
 
             ngs = new NoiseGeneratorSettings(
@@ -252,14 +252,14 @@ public final class OTGRegistryHelper {
         if (registry == null) {
             throw new RuntimeException("Could not find noise settings registry");
         }
-        ResourceKey<NoiseGeneratorSettings> key = ResourceKey.create(Registries.NOISE_SETTINGS, ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, preset.getPresetRegistryName()));
+        ResourceKey<NoiseGeneratorSettings> key = ResourceKey.create(Registries.NOISE_SETTINGS, ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, preset.getRegistryName()));
         registry.register(key, ngs, RegistrationInfo.BUILT_IN);
     }
 
     // --- Level stems ---
 
     public static Map<ResourceKey<LevelStem>, LevelStem> createLevelStems(
-            Preset preset,
+            DimensionPreset preset,
             List<RegistryDataLoader.Loader<?>> loaders,
             ChunkGeneratorFactory factory
     ) {
@@ -286,9 +286,9 @@ public final class OTGRegistryHelper {
             ChunkGenerator chunkGenerator;
 
             if (dim.startsWith(Constants.MOD_ID_SHORT)) {
-                Preset dimPreset = null;
-                for (Preset p : OTG.getEngine().getPresetLoader().getAllPresets()) {
-                    if (dim.equals(Constants.MOD_ID_SHORT + ":" + p.getPresetRegistryName())) {
+                DimensionPreset dimPreset = null;
+                for (DimensionPreset p : OTG.getEngine().getDimensionPresetLoader().getAllDimensionPresets()) {
+                    if (dim.equals(Constants.MOD_ID_SHORT + ":" + p.getRegistryName())) {
                         dimPreset = p;
                         break;
                     }
@@ -298,18 +298,18 @@ public final class OTGRegistryHelper {
                     continue;
                 }
 
-                ResourceKey<DimensionType> dimensionKey = switch (dimPreset.getPresetConfig().getDimensionSettings().getDimensionType()) {
-                    case OTG -> ResourceKey.create(Registries.DIMENSION_TYPE, ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, dimPreset.getPresetRegistryName()));
+                ResourceKey<DimensionType> dimensionKey = switch (dimPreset.getConfig().getDimensionSettings().getDimensionType()) {
+                    case OTG -> ResourceKey.create(Registries.DIMENSION_TYPE, ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, dimPreset.getRegistryName()));
                     case OVERWORLD -> BuiltinDimensionTypes.OVERWORLD;
                     case NETHER -> BuiltinDimensionTypes.NETHER;
                     case END -> BuiltinDimensionTypes.END;
                 };
 
-                ResourceKey<NoiseGeneratorSettings> noiseKey = switch (dimPreset.getPresetConfig().getDimensionSettings().getDimensionType()) {
+                ResourceKey<NoiseGeneratorSettings> noiseKey = switch (dimPreset.getConfig().getDimensionSettings().getDimensionType()) {
                     case OVERWORLD -> NoiseGeneratorSettings.OVERWORLD;
                     case NETHER -> NoiseGeneratorSettings.NETHER;
                     case END -> NoiseGeneratorSettings.END;
-                    case OTG -> ResourceKey.create(Registries.NOISE_SETTINGS, ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, dimPreset.getPresetRegistryName()));
+                    case OTG -> ResourceKey.create(Registries.NOISE_SETTINGS, ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, dimPreset.getRegistryName()));
                 };
 
                 Holder.Reference<DimensionType> dimensionReference = dimensionHolders.getOrThrow(dimensionKey);
@@ -403,13 +403,13 @@ public final class OTGRegistryHelper {
             return;
         }
 
-        OTGLog.info("Registering the following OTG presets: {}", OTG.getEngine().getPresetLoader().getAllPresets());
+        OTGLog.info("Registering the following OTG presets: {}", OTG.getEngine().getDimensionPresetLoader().getAllDimensionPresets());
 
         registerBiomes(loaders);
 
-        HashMap<Preset, ResourceKey<DimensionType>> dimensionTypes = registerDimensionTypes(loaders);
+        HashMap<DimensionPreset, ResourceKey<DimensionType>> dimensionTypes = registerDimensionTypes(loaders);
 
-        for (Preset preset : dimensionTypes.keySet()) {
+        for (DimensionPreset preset : dimensionTypes.keySet()) {
             registerNoiseGenSettings(preset, loaders, registryAccess, toBlockState);
         }
 
@@ -419,8 +419,8 @@ public final class OTGRegistryHelper {
             return;
         }
 
-        for (Preset preset : dimensionTypes.keySet()) {
-            if (!preset.getPresetConfig().getPresetInfo().isSelectableInWorldCreation()) {
+        for (DimensionPreset preset : dimensionTypes.keySet()) {
+            if (!preset.getConfig().getPresetInfo().isSelectableInWorldCreation()) {
                 continue;
             }
 

@@ -1,7 +1,7 @@
 package com.pg85.otg.platform.noise;
 
 import com.pg85.otg.config.settings.preset.NoiseCaveSettings;
-import com.pg85.otg.config.settings.preset.PresetSettings;
+import com.pg85.otg.config.settings.preset.DimensionPresetSettings;
 import com.pg85.otg.constants.Constants;
 import net.minecraft.core.RegistrationInfo;
 import net.minecraft.core.WritableRegistry;
@@ -16,7 +16,7 @@ public final class OTGNoiseParamRegistry {
     private OTGNoiseParamRegistry() {
     }
 
-    public static void registerNoiseParameters(PresetSettings presetSettings, WritableRegistry<NormalNoise.NoiseParameters> registry) {
+    public static void registerNoiseParameters(DimensionPresetSettings presetSettings, WritableRegistry<NormalNoise.NoiseParameters> registry) {
         String presetName = presetSettings.getPresetInfo().getRegistryName().toLowerCase(Locale.ROOT);
         NoiseCaveSettings settings = presetSettings.getNoiseCaveSettings();
 

@@ -51,7 +51,7 @@ public abstract class SharedOTGBiomeProvider extends BiomeSource implements ILay
 
     @Override
     protected @NotNull Stream<Holder<Biome>> collectPossibleBiomes() {
-        var iBiomes = OTG.getEngine().getPresetLoader().getGlobalIdMapping(presetFolderName);
+        var iBiomes = OTG.getEngine().getDimensionPresetLoader().getGlobalIdMapping(presetFolderName);
         if (iBiomes == null) {
             OTGLog.error(LogCategory.BIOME_REGISTRY,
                     "Biome mapping for preset {} is null.", presetFolderName);
@@ -143,7 +143,7 @@ public abstract class SharedOTGBiomeProvider extends BiomeSource implements ILay
                         this.seed, seed);
             }
             this.seed = seed;
-            layer = ThreadLocal.withInitial(() -> BiomeLayers.create(seed, OTG.getEngine().getPresetLoader().getPresetGenerationData().get(presetFolderName), OTG.getEngine().getLogger()));
+            layer = ThreadLocal.withInitial(() -> BiomeLayers.create(seed, OTG.getEngine().getDimensionPresetLoader().getPresetGenerationData().get(presetFolderName), OTG.getEngine().getLogger()));
             latch.countDown();
         }
     }

@@ -9,16 +9,16 @@ import com.pg85.otg.biome.BiomePlanResolver;
 import com.pg85.otg.config.biome.BiomeConfig;
 import com.pg85.otg.config.biome.BiomeTemplate;
 import com.pg85.otg.config.biome.TemplateBiome;
-import com.pg85.otg.config.preset.PresetConfig;
+import com.pg85.otg.config.preset.DimensionPresetConfig;
 import com.pg85.otg.config.settings.biome.BiomeStructureTagConfig;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.gen.biome.layers.BiomeLayerData;
 import com.pg85.otg.interfaces.IBiome;
 import com.pg85.otg.config.settings.biome.BiomeSettings;
 import com.pg85.otg.interfaces.IBiomeResourceLocation;
-import com.pg85.otg.config.settings.preset.PresetSettings;
-import com.pg85.otg.presets.LocalPresetLoader;
-import com.pg85.otg.presets.Preset;
+import com.pg85.otg.config.settings.preset.DimensionPresetSettings;
+import com.pg85.otg.presets.LocalDimensionPresetLoader;
+import com.pg85.otg.presets.DimensionPreset;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.biome.MCBiomeResourceLocation;
 import com.pg85.otg.util.biome.OTGBiomeResourceLocation;
@@ -40,7 +40,7 @@ import net.minecraft.world.level.levelgen.placement.PlacedFeature;
  * abstract methods. Both Fabric and NeoForge use this class directly, passing
  * their platform-specific adapter at construction time.
  */
-public class SharedPresetBiomeLoader extends LocalPresetLoader {
+public class SharedDimensionPresetBiomeLoader extends LocalDimensionPresetLoader {
     // Static fields for bootstrap context holders (set by BiomeDataMixin, overridden by OTGRegistryHelper)
     public static HolderGetter<PlacedFeature> PLACED_FEATURE_HOLDER;
     public static HolderGetter<ConfiguredWorldCarver<?>> CONFIGURED_CARVER_HOLDER;
@@ -55,7 +55,7 @@ public class SharedPresetBiomeLoader extends LocalPresetLoader {
     private final BiomePlatformAdapter platformAdapter;
     private Map<String, List<ResourceKey<Biome>>> biomesByPresetFolderName = new LinkedHashMap<>();
 
-    public SharedPresetBiomeLoader(Path otgRootFolder, BiomePlatformAdapter platformAdapter) {
+    public SharedDimensionPresetBiomeLoader(Path otgRootFolder, BiomePlatformAdapter platformAdapter) {
         super(otgRootFolder);
         this.platformAdapter = platformAdapter;
     }
@@ -73,9 +73,9 @@ public class SharedPresetBiomeLoader extends LocalPresetLoader {
             for (File presetDir : Objects.requireNonNull(this.presetsDir.listFiles())) {
                 if (presetDir.isDirectory() && presetDir.getName().equals(presetFolderName)) {
                     for (File file : Objects.requireNonNull(presetDir.listFiles())) {
-                        if (file.getName().equals(Constants.PRESET_CONFIG_FILE)) {
-                            Preset preset = loadPreset(presetDir.toPath());
-                            Preset existingPreset = this.presets.get(preset.getFolderName());
+                        if (file.getName().equals(Constants.DIMENSION_PRESET_CONFIG_FILE)) {
+                            DimensionPreset preset = loadPreset(presetDir.toPath());
+                            DimensionPreset existingPreset = this.presets.get(preset.getFolderName());
                             existingPreset.update(preset);
                             break;
                         }
@@ -97,12 +97,12 @@ public class SharedPresetBiomeLoader extends LocalPresetLoader {
     }
 
     public void registerBiomes(WritableRegistry<Biome> biomeRegistry) {
-        for (Preset preset : this.presets.values()) {
+        for (DimensionPreset preset : this.presets.values()) {
             registerBiomesForPreset(preset, biomeRegistry);
         }
     }
 
-    private void registerBiomesForPreset(Preset preset, WritableRegistry<Biome> biomeRegistry) {
+    private void registerBiomesForPreset(DimensionPreset preset, WritableRegistry<Biome> biomeRegistry) {
         if (!BIOME_DATA_INITIALIZED) {
             throw new IllegalStateException("BiomeDataMixin not initialized");
         }
@@ -112,7 +112,7 @@ public class SharedPresetBiomeLoader extends LocalPresetLoader {
         List<ResourceKey<Biome>> presetBiomes = new ArrayList<>();
         this.biomesByPresetFolderName.put(preset.getFolderName(), presetBiomes);
 
-        PresetSettings presetConfig = preset.getPresetConfig();
+        DimensionPresetSettings presetConfig = preset.getConfig();
 
         List<BiomeConfig> biomeConfigs = preset.getBiomeConfigList();
         List<BiomeTemplate> biomeTemplates = preset.getBiomeTemplateList();
@@ -125,7 +125,7 @@ public class SharedPresetBiomeLoader extends LocalPresetLoader {
 
         for (BiomeConfig biomeConfig : biomeConfigs) {
             if (!biomeConfig.getIdentitySettings().isTemplateForBiome()) {
-                IBiomeResourceLocation otgLocation = new OTGBiomeResourceLocation(preset.getPresetFolder(), preset.getPresetRegistryName(), biomeConfig.getIdentitySettings().getBiomeName());
+                IBiomeResourceLocation otgLocation = new OTGBiomeResourceLocation(preset.getFolder(), preset.getRegistryName(), biomeConfig.getIdentitySettings().getBiomeName());
                 biomeConfig.setRegistryKey(otgLocation);
                 biomeConfigsByResourceLocation.put(otgLocation, biomeConfig);
                 biomeConfigsByName.put(biomeConfig.getIdentitySettings().getBiomeName(), biomeConfig);
@@ -146,7 +146,7 @@ public class SharedPresetBiomeLoader extends LocalPresetLoader {
         putGlobalIdMapping(preset.getFolderName(), result.globalIdMapping());
 
         BiomeLayerData data = new BiomeLayerData(
-                preset.getPresetFolder(), presetConfig, plan.oceanBiomeConfig(), plan.oceanTemperatures(),
+                preset.getFolder(), presetConfig, plan.oceanBiomeConfig(), plan.oceanTemperatures(),
                 plan.groupRegistry(), plan.biomeDepths(), plan.groupDepths(),
                 plan.isleBiomesAtDepth(), plan.borderBiomesAtDepth(), plan.biomeIdsByName(),
                 plan.biomeColorMap(), result.globalIdMapping()
@@ -157,18 +157,18 @@ public class SharedPresetBiomeLoader extends LocalPresetLoader {
 
     private void processTemplateBiomes(
         String presetFolderName,
-        PresetSettings presetConfig,
+        DimensionPresetSettings presetConfig,
         List<BiomeTemplate> biomeTemplates,
         Map<IBiomeResourceLocation, BiomeSettings> biomeConfigsByResourceLocation,
         Map<String, BiomeSettings> biomeConfigsByName,
         List<String> blackListedBiomes,
         Registry<Biome> biomeRegistry
     ) {
-        if (!(presetConfig instanceof PresetConfig)) {
+        if (!(presetConfig instanceof DimensionPresetConfig)) {
             return;
         }
 
-        for (TemplateBiome templateBiome : ((PresetConfig) presetConfig).getGenerationSettings().getTemplateBiomes()) {
+        for (TemplateBiome templateBiome : ((DimensionPresetConfig) presetConfig).getGenerationSettings().getTemplateBiomes()) {
             OTGLog.info(LogCategory.BIOME_REGISTRY, "Processing template biome: {}", templateBiome);
 
             BiomeTemplate biomeTemplate = biomeTemplates.stream()

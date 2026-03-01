@@ -6,7 +6,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.pg85.otg.OTG;
 import com.pg85.otg.dimensions.DimensionInfo;
-import com.pg85.otg.presets.Preset;
+import com.pg85.otg.presets.DimensionPreset;
 import com.pg85.otg.shared.dimensions.DimensionKeys;
 import com.pg85.otg.shared.dimensions.DimensionManager;
 import com.pg85.otg.shared.dimensions.PlatformDimensionHelper;
@@ -27,8 +27,8 @@ import java.util.List;
 public class DimensionCommands {
 
     private static final SuggestionProvider<CommandSourceStack> PRESET_SUGGESTIONS = (context, builder) -> {
-        List<String> presets = OTG.getEngine().getPresetLoader().getAllPresets().stream()
-                .map(Preset::getFolderName)
+        List<String> presets = OTG.getEngine().getDimensionPresetLoader().getAllDimensionPresets().stream()
+                .map(DimensionPreset::getFolderName)
                 .toList();
         return SharedSuggestionProvider.suggest(presets, builder);
     };

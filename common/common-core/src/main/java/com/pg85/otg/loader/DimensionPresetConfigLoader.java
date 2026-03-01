@@ -3,7 +3,7 @@ package com.pg85.otg.loader;
 import com.pg85.otg.config.io.FileSettingsReader;
 import com.pg85.otg.config.io.FileSettingsWriter;
 import com.pg85.otg.config.io.SettingsMap;
-import com.pg85.otg.config.preset.PresetConfig;
+import com.pg85.otg.config.preset.DimensionPresetConfig;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.util.OTGMaterialReader;
 
@@ -12,7 +12,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PresetConfigLoader {
+public class DimensionPresetConfigLoader {
 
     public static ArrayList<String> getAllBiomeNamesInFolderRecursive(File biomesDirectory) {
         ArrayList<String> biomes = new ArrayList<>();
@@ -33,25 +33,25 @@ public class PresetConfigLoader {
         return biomes;
     }
 
-    public static PresetConfig loadPresetConfig(Path presetDir) {
+    public static DimensionPresetConfig loadPresetConfig(Path presetDir) {
 
         SettingsMap presetConfigSettings = readPresetConfig(presetDir);
 
-        PresetConfig presetConfig = createPresetConfig(presetDir, presetConfigSettings);
+        DimensionPresetConfig presetConfig = createPresetConfig(presetDir, presetConfigSettings);
 
         writePresetConfig(presetConfig, presetDir);
         return presetConfig;
     }
 
-    public static void writePresetConfig(PresetConfig presetConfig, Path presetDir) {
+    public static void writePresetConfig(DimensionPresetConfig presetConfig, Path presetDir) {
         File presetConfigFile = getPresetConfigFile(presetDir);
         FileSettingsWriter.writeToFile(presetConfig.getSettingsAsMap(), presetConfigFile, presetConfig.getPresetInfo().getSettingsMode());
     }
 
-    public static PresetConfig createPresetConfig(Path presetDir, SettingsMap presetConfigSettings) {
+    public static DimensionPresetConfig createPresetConfig(Path presetDir, SettingsMap presetConfigSettings) {
         File biomesDirectory = BiomeConfigLoader.getBiomeDirectory(presetDir);
 
-        return new PresetConfig(
+        return new DimensionPresetConfig(
                 presetDir,
                 presetConfigSettings,
                 getAllBiomeNamesInFolderRecursive(biomesDirectory)
@@ -69,7 +69,7 @@ public class PresetConfigLoader {
     }
 
     public static File getPresetConfigFile(Path presetDir) {
-        File presetConfigFile = new File(presetDir.toString(), Constants.PRESET_CONFIG_FILE);
+        File presetConfigFile = new File(presetDir.toString(), Constants.DIMENSION_PRESET_CONFIG_FILE);
         if (presetConfigFile.exists()) {
             return presetConfigFile;
         }

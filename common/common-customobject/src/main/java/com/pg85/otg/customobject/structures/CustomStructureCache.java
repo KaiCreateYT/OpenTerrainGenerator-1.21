@@ -195,7 +195,7 @@ public class CustomStructureCache
 				IStructuredCustomObject object = structureGen.getObjects(worldGenRegion.getPresetFolderName(), otgRootFolder, customObjectManager, materialReader, manager, modLoadedChecker).get(objectNumber);
 				if(object != null && object instanceof BO3)
 				{
-					return (BO3CustomStructureCoordinate)((BO3)object).makeCustomStructureCoordinate(worldGenRegion.getPresetFolderName(), worldGenRegion.getPresetConfig().getResourceSettings().isUseOldBO3StructureRarity(), random, chunkX, chunkZ);
+					return (BO3CustomStructureCoordinate)((BO3)object).makeCustomStructureCoordinate(worldGenRegion.getPresetFolderName(), worldGenRegion.getConfig().getResourceSettings().isUseOldBO3StructureRarity(), random, chunkX, chunkZ);
 				} else {
 					if(worldGenRegion.getLogger().isEnabled(LogLevel.INFO, LogCategory.CUSTOM_OBJECTS))
 					{

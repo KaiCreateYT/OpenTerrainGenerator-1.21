@@ -46,7 +46,7 @@ public class ImageSettings extends ConfigSection {
     public static final Setting<String> IMAGE_FILE = Settings.stringSetting(
             "ImageFile", "map.png",
             t -> ((ImageSettings) t).getImageFile(),
-            "The image which will provide the Biomes must be a PNG file without transparency, once placed in the same folder as PresetConfig.ini OTG will use it as a reference for the Biomes generation.",
+            "The image which will provide the Biomes must be a PNG file without transparency, once placed in the same folder as DimensionPresetConfig.ini OTG will use it as a reference for the Biomes generation.",
             "Source png file name for FromImage biome mode."
     );
     public static final Setting<Integer> IMAGE_X_OFFSET = Settings.intSetting(
