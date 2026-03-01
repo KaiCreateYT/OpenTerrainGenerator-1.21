@@ -110,6 +110,8 @@ public class DimensionManager {
             try {
                 datapack.deleteDimensionFiles(normalizedName);
                 storage.removeDimension(normalizedName);
+                GameRuleManager.unregister(DimensionKeys.otg(normalizedName));
+                storage.removeGameRules("otg:" + normalizedName);
             } catch (Exception ignored) { OTGLog.error("Failed to cleanup after failed dimension creation: {}", ignored.getMessage()); }
             return CreateResult.error("Failed to create dimension: " + e.getMessage());
         }
