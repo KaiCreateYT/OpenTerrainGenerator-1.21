@@ -53,7 +53,10 @@ public class CustomObjectResource extends BiomeResourceBase implements ICustomOb
 				if (result == null) {
 					result = new ArrayList<>();
 					for (String objectName : this.objectNames) {
-						result.add(customObjectManager.getGlobalObjects().getObjectByName(objectName, presetFolderName, otgRootFolder, customObjectManager, materialReader, manager, modLoadedChecker));
+						CustomObject obj = customObjectManager.getGlobalObjects().getObjectByName(objectName, presetFolderName, otgRootFolder, customObjectManager, materialReader, manager, modLoadedChecker);
+						if (obj != null) {
+							result.add(obj);
+						}
 					}
 					this.objects = List.copyOf(result);
 					result = this.objects;

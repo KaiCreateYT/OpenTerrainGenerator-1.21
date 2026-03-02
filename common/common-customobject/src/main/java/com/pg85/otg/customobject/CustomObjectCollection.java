@@ -33,6 +33,8 @@ public class CustomObjectCollection {
     private final HashMap<String, HashMap<String, File>> boTemplateFilesPerPreset = new HashMap<>();
 
     private static final Set<String> CUSTOM_OBJECT_EXTENSIONS = Set.of(".bo2", ".bo3", ".bo4", ".bo4data");
+    private static final Set<String> LEGACY_OBJECT_NAMES = Set.of("useworld", "useworldall", "usebiome", "usebiomeall");
+    private final HashSet<String> loggedLegacyObjects = new HashSet<>();
 
     public CustomObject loadObject(File file, String presetFolderName, Path otgRootFolder, CustomObjectManager customObjectManager, IMaterialReader materialReader, CustomObjectResourcesManager manager, IModLoadedChecker modLoadedChecker) {
         synchronized (this.indexingFilesLock) {
@@ -287,6 +289,14 @@ public class CustomObjectCollection {
      */
     private CustomObject getObjectByName(String name, String presetFolderName, boolean searchGlobalObjects, Path otgRootFolder, CustomObjectManager customObjectManager, IMaterialReader materialReader, CustomObjectResourcesManager manager, IModLoadedChecker modLoadedChecker) {
         synchronized (this.indexingFilesLock) {
+            // UseWorld/UseBiome are legacy special objects not used by OTG, skip them.
+            if (LEGACY_OBJECT_NAMES.contains(name.toLowerCase())) {
+                if (this.loggedLegacyObjects.add(name.toLowerCase())) {
+                    OTGLog.info(LogCategory.CUSTOM_OBJECTS, "{} is not used by OTG, skipping.", name);
+                }
+                return null;
+            }
+
             String nameLower = name.toLowerCase();
 
             // Check preset object cache
