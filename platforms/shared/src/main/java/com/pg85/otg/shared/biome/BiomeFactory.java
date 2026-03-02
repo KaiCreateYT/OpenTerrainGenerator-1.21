@@ -75,7 +75,15 @@ public final class BiomeFactory {
         }
         for (Map.Entry<GenerationStep.Decoration, List<ResourceKey<PlacedFeature>>> entry : featuresByStep.entrySet()) {
             entry.getValue().sort(Comparator.comparing(ResourceKey::location));
-            for (ResourceKey<PlacedFeature> featureKey : entry.getValue()) {
+            // Deduplicate — duplicate Holders create self-referential ordering edges
+            // in MC's FeatureSorter, causing "Feature order cycle found" crashes.
+            Set<ResourceKey<PlacedFeature>> seen = new LinkedHashSet<>(entry.getValue());
+            if (seen.size() < entry.getValue().size()) {
+                OTGLog.warn(LogCategory.DECORATION,
+                    "Biome {} has duplicate Registry() features in step {} — duplicates removed",
+                    biomeConfig.getIdentitySettings().getBiomeName(), entry.getKey());
+            }
+            for (ResourceKey<PlacedFeature> featureKey : seen) {
                 generationSettings.addFeature(entry.getKey(), featureKey);
             }
         }
