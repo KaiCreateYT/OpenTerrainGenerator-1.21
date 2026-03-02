@@ -31,7 +31,8 @@ public final class SharedPortalConfigResolver {
             return false;
         }
         for (LocalMaterialData material : frameBlocks) {
-            if (((IBlockStateMaterial) material).getState().getBlock() == block) {
+            if (material instanceof IBlockStateMaterial blockMaterial
+                    && blockMaterial.getState().getBlock() == block) {
                 return true;
             }
         }
@@ -45,13 +46,15 @@ public final class SharedPortalConfigResolver {
     public static BlockState getFrameBlock(ServerLevel level, String portalColor) {
         if (level.getChunkSource().getGenerator() instanceof SharedOTGChunkGenerator gen) {
             List<LocalMaterialData> portalBlocks = gen.getPortalBlocks();
-            if (portalBlocks != null && !portalBlocks.isEmpty()) {
-                return ((IBlockStateMaterial) portalBlocks.get(0)).getState();
+            if (portalBlocks != null && !portalBlocks.isEmpty()
+                    && portalBlocks.get(0) instanceof IBlockStateMaterial blockMaterial) {
+                return blockMaterial.getState();
             }
         }
 
         return findSettingsByColor(portalColor)
-                .filter(s -> s.getPortalBlocks() != null && !s.getPortalBlocks().isEmpty())
+                .filter(s -> s.getPortalBlocks() != null && !s.getPortalBlocks().isEmpty()
+                        && s.getPortalBlocks().get(0) instanceof IBlockStateMaterial)
                 .map(s -> ((IBlockStateMaterial) s.getPortalBlocks().get(0)).getState())
                 .orElse(Blocks.QUARTZ_BLOCK.defaultBlockState());
     }
