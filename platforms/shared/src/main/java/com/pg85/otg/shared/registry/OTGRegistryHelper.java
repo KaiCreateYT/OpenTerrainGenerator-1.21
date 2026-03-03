@@ -31,6 +31,8 @@ import net.minecraft.world.level.levelgen.presets.WorldPreset;
 import net.minecraft.world.level.levelgen.synth.NormalNoise;
 import org.jetbrains.annotations.NotNull;
 
+import com.pg85.otg.shared.i18n.OTGTranslations;
+
 import java.util.*;
 import java.util.function.Function;
 
@@ -155,6 +157,9 @@ public final class OTGRegistryHelper {
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, preset.getRegistryName().toLowerCase(Locale.ROOT));
         ResourceKey<WorldPreset> key = ResourceKey.create(Registries.WORLD_PRESET, id);
         worldPresets.register(key, worldPreset, RegistrationInfo.BUILT_IN);
+        OTGTranslations.put(
+            "generator." + Constants.MOD_ID_SHORT + "." + preset.getRegistryName().toLowerCase(Locale.ROOT),
+            preset.getConfig().getPresetInfo().getDisplayName());
         OTGLog.info("Registered world preset: {}", key.location());
     }
 

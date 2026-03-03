@@ -7,6 +7,7 @@
     "BiomeDataMixin",
     "ChunkAccessAccessor",
     "CocoaDecoratorMixin",
+    "LanguageMixin",
     "LevelGameRulesMixin",
     "MappedRegistryAccessor",
     "MinecraftServerAccessor",

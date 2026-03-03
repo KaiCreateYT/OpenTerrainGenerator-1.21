@@ -19,6 +19,8 @@ import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 import net.minecraft.world.level.levelgen.presets.WorldPreset;
 
+import com.pg85.otg.shared.i18n.OTGTranslations;
+
 import java.util.*;
 
 /**
@@ -80,6 +82,9 @@ public class WorldPresetRegistrar {
                 ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID_SHORT, normalizedId));
 
             worldPresets.register(key, preset, RegistrationInfo.BUILT_IN);
+            OTGTranslations.put(
+                "generator." + Constants.MOD_ID_SHORT + "." + normalizedId,
+                config.DisplayName);
 
             registeredNames.add(normalizedId);
             OTGLog.info("Registered WorldPreset '{}' as otg:{}", config.DisplayName, normalizedId);

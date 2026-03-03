@@ -49,7 +49,7 @@ Dependency flow: `common-core` → `common-generator` + `common-customobject` + 
 Most runtime logic lives in `platforms/shared/`. Fabric (~820 LOC, 17 files) and NeoForge (~740 LOC, 16 files) are thin wrappers (median ~50 LOC/file, range 11-101). Two patterns:
 
 1. **Abstract shared base** — `SharedOTGChunkGenerator`, `SharedOTGBiomeProvider`, `SharedDimensionHelper`, `SharedNBTHelper`, `SharedWorldGenRegion` contain all logic; platform subclasses add only CODEC definitions
-2. **Composition** — `SharedPresetBiomeLoader` + `BiomePlatformAdapter` injected via constructor
+2. **Composition** — `SharedDimensionPresetBiomeLoader` + `BiomePlatformAdapter` injected via constructor
 
 **Only genuinely platform-specific:** CODEC definitions, mod loader API (`FabricLoader` vs `ModList`), data attachments (Cardinals vs NeoForge Attachments), event bus wiring.
 
@@ -57,13 +57,14 @@ Most runtime logic lives in `platforms/shared/`. Fabric (~820 LOC, 17 files) and
 
 | Package | Contents |
 |---------|----------|
-| `shared.biome` | `SharedOTGBiomeProvider`, `SharedPresetBiomeLoader`, `BiomeRegistrar`, `BiomeFactory`, `BiomePlanResolver`, `BiomeTagMapper` |
+| `shared.biome` | `SharedOTGBiomeProvider`, `SharedDimensionPresetBiomeLoader`, `BiomeRegistrar`, `BiomeFactory`, `BiomePlanResolver`, `BiomeTagMapper` |
 | `shared.gen` | `SharedOTGChunkGenerator`, `SharedWorldGenRegion`, `SharedShadowChunkGenerator`, `SharedChunkBuffer` |
 | `shared.materials` | `SharedMaterials`, `SharedMaterialData`, `SharedMaterialReader`, `SharedMaterialTag` |
 | `shared.dimensions` | `SharedDimensionHelper`, `DimensionManager`, `DimensionKeys` |
 | `shared.commands` | `OTGCommandRegistrar`, `DimensionCommands`, `ExportCommand`, `SpawnCommand`, `StructureCommand` |
 | `shared.portals` | `SharedOTGPortalBlock`, `SharedOTGTeleporter`, portal config/ignition |
-| `shared.mixin` | 6 shared mixins: `BiomeDataMixin`, `WorldPresetTagsMixin`, `ChunkAccessAccessor`, `MappedRegistryAccessor`, `MinecraftServerAccessor`, `CocoaDecoratorMixin` |
+| `shared.mixin` | 7 shared mixins: `BiomeDataMixin`, `WorldPresetTagsMixin`, `LevelGameRulesMixin`, `ChunkAccessAccessor`, `MappedRegistryAccessor`, `MinecraftServerAccessor`, `CocoaDecoratorMixin` |
+| `shared.gamerules` | `GameRuleManager`, `GameRuleApplier` — per-dimension GameRules via mixin |
 | `platform.noise` | `OTGNoiseRouterData` — custom noise router with tunable cave scales |
 
 #### Access wideners
@@ -84,19 +85,28 @@ Dependencies are relocated to avoid classpath conflicts:
 | Chunk generation (shared) | `platforms/shared/.../gen/SharedOTGChunkGenerator.java` |
 | Chunk generation (common) | `common/common-core/.../gen/OTGChunkGenerator.java` |
 | Biome provider | `platforms/shared/.../biome/SharedOTGBiomeProvider.java` |
-| Biome loading | `platforms/shared/.../biome/SharedPresetBiomeLoader.java` |
+| Biome loading | `platforms/shared/.../biome/SharedDimensionPresetBiomeLoader.java` |
 | Tree spawning | `common/common-customobject/.../customobject/TreeObject.java` |
 | Cave/Ravine carvers | `common/common-generator/.../gen/carver/` |
 | Materials mapping | `platforms/shared/.../materials/SharedMaterials.java` |
 | World height constants | `common/common-util/.../constants/Constants.java` |
 | Dimension settings | `common/common-util/.../config/settings/preset/DimensionSettings.java` |
+| GameRule manager | `platforms/shared/.../gamerules/GameRuleManager.java` |
+| GameRule applier | `platforms/shared/.../gamerules/GameRuleApplier.java` |
+| World storage | `common/common-core/.../dimensions/OTGWorldStorage.java` |
 | Noise router (caves) | `platforms/shared/.../noise/OTGNoiseRouterData.java` |
 
 ### Configuration Files
 
-- **PresetConfig.ini**: World generation settings (height, caves, biome distribution)
-- **\*.bc files**: Biome configurations in `resources/Presets/DefaultPreset/Biomes/`
-- **DimensionConfigs/\*.yaml**: Dimension setup examples
+- **DimensionPresetConfig.ini**: Per-dimension generation settings (height, caves, biome distribution, GameRules)
+- **\*.bc files**: Biome configurations in `resources/DimensionPresets/DefaultPreset/Biomes/`
+- **WorldPresets/\*.yaml**: World preset configs — compose full worlds from multiple DimensionPresets with per-dimension GameRules
+
+### Naming Conventions
+
+- **DimensionPreset** (formerly "Preset"): defines terrain generation for a single dimension. Class: `DimensionPreset`, config: `DimensionPresetConfig.ini`, folder: `DimensionPresets/`
+- **WorldPreset**: YAML file composing a full world from multiple DimensionPresets. Class: `WorldPresetConfig`, folder: `WorldPresets/`
+- **GameRules hierarchy**: `DimensionPresetConfig.ini` (base) → WorldPreset YAML world-level (override) → WorldPreset YAML per-dimension (override)
 
 ## MC 1.20.1 Specifics
 
