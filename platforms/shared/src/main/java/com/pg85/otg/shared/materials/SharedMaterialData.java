@@ -19,7 +19,7 @@ import net.minecraft.world.level.block.state.properties.Property;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class SharedMaterialData extends LocalMaterialData {
+public class SharedMaterialData extends LocalMaterialData implements IBlockStateMaterial {
     @Getter
     static final LocalMaterialData blank = new SharedMaterialData(null, null);
     @Getter
