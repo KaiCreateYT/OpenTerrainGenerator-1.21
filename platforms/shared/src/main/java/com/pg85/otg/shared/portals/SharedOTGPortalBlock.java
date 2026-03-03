@@ -1,10 +1,13 @@
 package com.pg85.otg.shared.portals;
 
+import com.pg85.otg.config.dimensions.WorldPresetConfig;
+import com.pg85.otg.config.dimensions.WorldPresetConfig.OTGDimension;
 import com.pg85.otg.shared.commands.OTGCommandRegistrar;
 import com.pg85.otg.shared.dimensions.DimensionKeys;
 import com.pg85.otg.shared.dimensions.DimensionManager;
 import com.pg85.otg.shared.gen.SharedOTGChunkGenerator;
 import com.pg85.otg.presets.DimensionPreset;
+import com.pg85.otg.util.DimensionNameUtils;
 import com.pg85.otg.util.materials.LocalMaterialData;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.core.BlockPos;
@@ -22,6 +25,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 public class SharedOTGPortalBlock extends NetherPortalBlock {
@@ -100,7 +104,8 @@ public class SharedOTGPortalBlock extends NetherPortalBlock {
         }
 
         if (currentLevel.getChunkSource().getGenerator() instanceof SharedOTGChunkGenerator) {
-            String dimColor = getWorldPortalColor(currentLevel);
+            WorldPresetConfig activePreset = WorldPresetPortalResolver.getActiveWorldPreset();
+            String dimColor = getEffectivePortalColor(currentLevel, activePreset);
             if (this.portalColor.equals(dimColor)) {
                 return server.overworld();
             }
@@ -110,6 +115,9 @@ public class SharedOTGPortalBlock extends NetherPortalBlock {
     }
 
     private ServerLevel findOTGDimensionByColor(MinecraftServer server, String targetColor) {
+        WorldPresetConfig activePreset = WorldPresetPortalResolver.getActiveWorldPreset();
+        Set<String> allowedPresets = WorldPresetPortalResolver.getAllowedPresetFolders(activePreset);
+
         for (ServerLevel level : server.getAllLevels()) {
             if (level.dimension() == Level.OVERWORLD ||
                 level.dimension() == Level.NETHER ||
@@ -117,8 +125,15 @@ public class SharedOTGPortalBlock extends NetherPortalBlock {
                 continue;
             }
 
-            if (level.getChunkSource().getGenerator() instanceof SharedOTGChunkGenerator) {
-                String dimColor = getWorldPortalColor(level);
+            if (level.getChunkSource().getGenerator() instanceof SharedOTGChunkGenerator otgGen) {
+                // R2: Skip levels whose preset isn't in the allowed set
+                DimensionPreset preset = otgGen.getPreset();
+                if (allowedPresets != null && preset != null && !allowedPresets.contains(preset.getFolderName())) {
+                    continue;
+                }
+
+                // R1: Use effective color (with YAML override)
+                String dimColor = getEffectivePortalColor(level, activePreset);
                 if (targetColor.equals(dimColor)) {
                     return level;
                 }
@@ -168,9 +183,26 @@ public class SharedOTGPortalBlock extends NetherPortalBlock {
         }
     }
 
-    private String getWorldPortalColor(ServerLevel level) {
+    /**
+     * Returns the effective portal color for a level, considering YAML overrides (R1).
+     * Falls back to the DimensionPreset color if no YAML override is present.
+     */
+    private String getEffectivePortalColor(ServerLevel level, WorldPresetConfig activePreset) {
         if (level.getChunkSource().getGenerator() instanceof SharedOTGChunkGenerator gen) {
-            return SharedPortalConfigResolver.normalizeColor(gen.getPortalColor());
+            String baseColor = gen.getPortalColor();
+
+            // R1: Check for YAML color override
+            if (activePreset != null) {
+                DimensionPreset preset = gen.getPreset();
+                if (preset != null) {
+                    OTGDimension dimEntry = WorldPresetPortalResolver.findDimensionEntry(activePreset, preset.getFolderName());
+                    if (dimEntry != null && WorldPresetPortalResolver.hasOverride(dimEntry.PortalColor)) {
+                        baseColor = dimEntry.PortalColor;
+                    }
+                }
+            }
+
+            return DimensionNameUtils.normalizeColor(baseColor);
         }
         return "default";
     }

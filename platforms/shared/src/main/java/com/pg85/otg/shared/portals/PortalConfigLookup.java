@@ -1,11 +1,14 @@
 package com.pg85.otg.shared.portals;
 
 import com.pg85.otg.OTG;
+import com.pg85.otg.config.dimensions.WorldPresetConfig;
+import com.pg85.otg.config.dimensions.WorldPresetConfig.OTGDimension;
 import com.pg85.otg.config.settings.preset.PortalSettings;
 import com.pg85.otg.presets.DimensionPreset;
 import com.pg85.otg.util.DimensionNameUtils;
 
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Platform-agnostic portal configuration lookup.
@@ -16,21 +19,36 @@ public final class PortalConfigLookup {
     private PortalConfigLookup() {} // utility class
 
     /**
-     * Find a preset by its configured portal color.
+     * Find a preset by its effective portal color.
+     * Respects R1 (YAML color override) and R2 (gating by active WorldPreset).
      * @param portalColor The color to search for (case-insensitive)
      * @return Optional containing the matching preset, or empty if not found
      */
     public static Optional<DimensionPreset> findPresetByColor(String portalColor) {
         String targetColor = DimensionNameUtils.normalizeColor(portalColor);
+        WorldPresetConfig activePreset = WorldPresetPortalResolver.getActiveWorldPreset();
+        Set<String> allowedPresets = WorldPresetPortalResolver.getAllowedPresetFolders(activePreset);
+
         return OTG.getEngine().getDimensionPresetLoader().getAllDimensionPresets().stream()
                 .filter(p -> p.getConfig() != null)
                 .filter(p -> p.getConfig().getPortalSettings() != null)
+                // R2: Skip presets not in active WorldPreset YAML
+                .filter(p -> allowedPresets == null || allowedPresets.contains(p.getFolderName()))
                 .filter(p -> {
                     PortalSettings settings = p.getConfig().getPortalSettings();
                     return settings.getPortalBlocks() != null && !settings.getPortalBlocks().isEmpty();
                 })
-                .filter(p -> targetColor.equals(DimensionNameUtils.normalizeColor(
-                        p.getConfig().getPortalSettings().getPortalColor())))
+                .filter(p -> {
+                    // R1: Use effective color (YAML override if present)
+                    String effectiveColor = p.getConfig().getPortalSettings().getPortalColor();
+                    if (activePreset != null) {
+                        OTGDimension dimEntry = WorldPresetPortalResolver.findDimensionEntry(activePreset, p.getFolderName());
+                        if (dimEntry != null && WorldPresetPortalResolver.hasOverride(dimEntry.PortalColor)) {
+                            effectiveColor = dimEntry.PortalColor;
+                        }
+                    }
+                    return targetColor.equals(DimensionNameUtils.normalizeColor(effectiveColor));
+                })
                 .findFirst();
     }
 

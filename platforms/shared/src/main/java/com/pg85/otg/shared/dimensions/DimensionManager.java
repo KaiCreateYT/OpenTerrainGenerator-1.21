@@ -34,6 +34,7 @@ public class DimensionManager {
     private OTGWorldStorage storage;
     private DimensionDatapack datapack;
     private MinecraftServer server;
+    private @Nullable WorldPresetConfig activeWorldPresetConfig;
 
     public DimensionManager(PlatformDimensionHelper helper) {
         this.helper = helper;
@@ -77,6 +78,14 @@ public class DimensionManager {
 
         // Detect which WorldPreset YAML was used to create this world (first start only)
         detectWorldPreset(server, worldPresetConfigs);
+
+        // Cache active WorldPreset config for portal overrides and gating
+        String activePresetName = storage.getWorldPreset();
+        if (activePresetName != null) {
+            this.activeWorldPresetConfig = worldPresetConfigs.stream()
+                .filter(c -> activePresetName.equals(c.DisplayName))
+                .findFirst().orElse(null);
+        }
 
         // Apply WorldPreset GameRules (first-time only, per-dimension)
         applyWorldPresetGameRules(server, worldPresetConfigs);
@@ -202,6 +211,10 @@ public class DimensionManager {
 
     public PlatformDimensionHelper getHelper() {
         return helper;
+    }
+
+    public @Nullable WorldPresetConfig getActiveWorldPresetConfig() {
+        return activeWorldPresetConfig;
     }
 
     /**

@@ -1,6 +1,8 @@
 package com.pg85.otg.shared.portals;
 
 import com.pg85.otg.OTG;
+import com.pg85.otg.config.dimensions.WorldPresetConfig;
+import com.pg85.otg.config.dimensions.WorldPresetConfig.OTGDimension;
 import com.pg85.otg.config.settings.preset.PortalColors;
 import com.pg85.otg.config.settings.preset.PortalSettings;
 import com.pg85.otg.shared.gen.SharedOTGChunkGenerator;
@@ -23,6 +25,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 public final class SharedPortalIgnitionHandler {
 
@@ -87,20 +90,50 @@ public final class SharedPortalIgnitionHandler {
         List<PortalConfig> configs = new ArrayList<>();
         List<String> usedColors = new ArrayList<>();
 
+        WorldPresetConfig activePreset = WorldPresetPortalResolver.getActiveWorldPreset();
+        Set<String> allowedPresets = WorldPresetPortalResolver.getAllowedPresetFolders(activePreset);
+
         List<DimensionPreset> presets = new ArrayList<>(OTG.getEngine().getDimensionPresetLoader().getAllDimensionPresets());
         presets.sort(Comparator.comparing(DimensionPreset::getFolderName));
 
         for (DimensionPreset preset : presets) {
             if (preset.getConfig() == null) continue;
 
-            PortalSettings portalSettings = preset.getConfig().getPortalSettings();
-            if (portalSettings == null) continue;
-
-            if (portalSettings.getPortalBlocks() == null || portalSettings.getPortalBlocks().isEmpty()) {
+            // R2: Skip presets not in the active WorldPreset YAML
+            if (allowedPresets != null && !allowedPresets.contains(preset.getFolderName())) {
                 continue;
             }
 
-            String color = DimensionNameUtils.normalizeColor(portalSettings.getPortalColor());
+            PortalSettings portalSettings = preset.getConfig().getPortalSettings();
+            if (portalSettings == null) continue;
+
+            // Start with DimensionPreset defaults
+            List<LocalMaterialData> frameBlocks = portalSettings.getPortalBlocks();
+            String ignitionSource = portalSettings.getPortalIgnitionSource();
+            String rawColor = portalSettings.getPortalColor();
+
+            // R1: Apply YAML overrides if present
+            if (activePreset != null) {
+                OTGDimension dimEntry = WorldPresetPortalResolver.findDimensionEntry(activePreset, preset.getFolderName());
+                if (dimEntry != null) {
+                    ArrayList<LocalMaterialData> overrideBlocks = WorldPresetPortalResolver.parsePortalBlocks(dimEntry.PortalBlocks);
+                    if (overrideBlocks != null) {
+                        frameBlocks = overrideBlocks;
+                    }
+                    if (WorldPresetPortalResolver.hasOverride(dimEntry.PortalColor)) {
+                        rawColor = dimEntry.PortalColor;
+                    }
+                    if (WorldPresetPortalResolver.hasOverride(dimEntry.PortalIgnitionSource)) {
+                        ignitionSource = dimEntry.PortalIgnitionSource;
+                    }
+                }
+            }
+
+            if (frameBlocks == null || frameBlocks.isEmpty()) {
+                continue;
+            }
+
+            String color = DimensionNameUtils.normalizeColor(rawColor);
             while (usedColors.contains(color)) {
                 color = PortalColors.getNextColor(color);
             }
@@ -108,8 +141,8 @@ public final class SharedPortalIgnitionHandler {
 
             configs.add(new PortalConfig(
                     preset.getFolderName(),
-                    portalSettings.getPortalBlocks(),
-                    portalSettings.getPortalIgnitionSource(),
+                    frameBlocks,
+                    ignitionSource,
                     color,
                     portalSettings.getPortalMinWidth(),
                     portalSettings.getPortalMaxWidth(),
