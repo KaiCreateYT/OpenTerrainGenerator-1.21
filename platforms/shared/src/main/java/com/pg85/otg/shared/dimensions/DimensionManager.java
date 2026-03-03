@@ -88,7 +88,7 @@ public class DimensionManager {
         }
 
         // Apply WorldPreset GameRules (first-time only, per-dimension)
-        applyWorldPresetGameRules(server, worldPresetConfigs);
+        applyWorldPresetGameRules(server);
 
         // Fallback: Apply overworld GameRules from OTG preset if no WorldPreset was used
         if (storage.getGameRules("minecraft:overworld").isEmpty()) {
@@ -271,18 +271,9 @@ public class DimensionManager {
         return null;
     }
 
-    private void applyWorldPresetGameRules(MinecraftServer server, List<WorldPresetConfig> configs) {
-        String worldPresetName = storage.getWorldPreset();
-        if (worldPresetName == null) return;
-
-        WorldPresetConfig config = configs.stream()
-            .filter(c -> worldPresetName.equals(c.DisplayName))
-            .findFirst().orElse(null);
-
-        if (config == null) {
-            OTGLog.warn("WorldPreset '{}' not found on disk, skipping GameRules", worldPresetName);
-            return;
-        }
+    private void applyWorldPresetGameRules(MinecraftServer server) {
+        WorldPresetConfig config = this.activeWorldPresetConfig;
+        if (config == null) return;
 
         applyWorldPresetDimensionGameRules(config, config.Overworld, Level.OVERWORLD, "minecraft:overworld", server);
 

@@ -1,5 +1,7 @@
 package com.pg85.otg.shared.portals;
 
+import com.pg85.otg.config.dimensions.WorldPresetConfig;
+import com.pg85.otg.config.dimensions.WorldPresetConfig.OTGDimension;
 import com.pg85.otg.config.settings.preset.PortalSettings;
 import com.pg85.otg.shared.gen.SharedOTGChunkGenerator;
 import com.pg85.otg.shared.materials.IBlockStateMaterial;
@@ -11,6 +13,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,6 +48,22 @@ public final class SharedPortalConfigResolver {
 
     public static BlockState getFrameBlock(ServerLevel level, String portalColor) {
         if (level.getChunkSource().getGenerator() instanceof SharedOTGChunkGenerator gen) {
+            // Check YAML override first
+            WorldPresetConfig activeWorldPreset = WorldPresetPortalResolver.getActiveWorldPreset();
+            if (activeWorldPreset != null) {
+                DimensionPreset preset = gen.getPreset();
+                if (preset != null) {
+                    OTGDimension dimEntry = WorldPresetPortalResolver.findDimensionEntry(activeWorldPreset, preset.getFolderName());
+                    if (dimEntry != null) {
+                        ArrayList<LocalMaterialData> overrideBlocks = WorldPresetPortalResolver.parsePortalBlocks(dimEntry.PortalBlocks);
+                        if (overrideBlocks != null && overrideBlocks.get(0) instanceof IBlockStateMaterial blockMaterial) {
+                            return blockMaterial.getState();
+                        }
+                    }
+                }
+            }
+
+            // Fall back to DimensionPreset
             List<LocalMaterialData> portalBlocks = gen.getPortalBlocks();
             if (portalBlocks != null && !portalBlocks.isEmpty()
                     && portalBlocks.get(0) instanceof IBlockStateMaterial blockMaterial) {

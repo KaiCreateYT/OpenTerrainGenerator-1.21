@@ -104,8 +104,8 @@ public class SharedOTGPortalBlock extends NetherPortalBlock {
         }
 
         if (currentLevel.getChunkSource().getGenerator() instanceof SharedOTGChunkGenerator) {
-            WorldPresetConfig activePreset = WorldPresetPortalResolver.getActiveWorldPreset();
-            String dimColor = getEffectivePortalColor(currentLevel, activePreset);
+            WorldPresetConfig activeWorldPreset = WorldPresetPortalResolver.getActiveWorldPreset();
+            String dimColor = getEffectivePortalColor(currentLevel, activeWorldPreset);
             if (this.portalColor.equals(dimColor)) {
                 return server.overworld();
             }
@@ -115,8 +115,8 @@ public class SharedOTGPortalBlock extends NetherPortalBlock {
     }
 
     private ServerLevel findOTGDimensionByColor(MinecraftServer server, String targetColor) {
-        WorldPresetConfig activePreset = WorldPresetPortalResolver.getActiveWorldPreset();
-        Set<String> allowedPresets = WorldPresetPortalResolver.getAllowedPresetFolders(activePreset);
+        WorldPresetConfig activeWorldPreset = WorldPresetPortalResolver.getActiveWorldPreset();
+        Set<String> allowedPresets = WorldPresetPortalResolver.getAllowedPresetFolders(activeWorldPreset);
 
         for (ServerLevel level : server.getAllLevels()) {
             if (level.dimension() == Level.OVERWORLD ||
@@ -133,7 +133,7 @@ public class SharedOTGPortalBlock extends NetherPortalBlock {
                 }
 
                 // R1: Use effective color (with YAML override)
-                String dimColor = getEffectivePortalColor(level, activePreset);
+                String dimColor = getEffectivePortalColor(level, activeWorldPreset);
                 if (targetColor.equals(dimColor)) {
                     return level;
                 }
@@ -187,15 +187,15 @@ public class SharedOTGPortalBlock extends NetherPortalBlock {
      * Returns the effective portal color for a level, considering YAML overrides (R1).
      * Falls back to the DimensionPreset color if no YAML override is present.
      */
-    private String getEffectivePortalColor(ServerLevel level, WorldPresetConfig activePreset) {
+    private String getEffectivePortalColor(ServerLevel level, WorldPresetConfig activeWorldPreset) {
         if (level.getChunkSource().getGenerator() instanceof SharedOTGChunkGenerator gen) {
             String baseColor = gen.getPortalColor();
 
             // R1: Check for YAML color override
-            if (activePreset != null) {
+            if (activeWorldPreset != null) {
                 DimensionPreset preset = gen.getPreset();
                 if (preset != null) {
-                    OTGDimension dimEntry = WorldPresetPortalResolver.findDimensionEntry(activePreset, preset.getFolderName());
+                    OTGDimension dimEntry = WorldPresetPortalResolver.findDimensionEntry(activeWorldPreset, preset.getFolderName());
                     if (dimEntry != null && WorldPresetPortalResolver.hasOverride(dimEntry.PortalColor)) {
                         baseColor = dimEntry.PortalColor;
                     }

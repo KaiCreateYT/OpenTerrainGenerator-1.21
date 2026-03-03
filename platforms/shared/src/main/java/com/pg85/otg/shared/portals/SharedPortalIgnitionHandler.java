@@ -90,8 +90,8 @@ public final class SharedPortalIgnitionHandler {
         List<PortalConfig> configs = new ArrayList<>();
         List<String> usedColors = new ArrayList<>();
 
-        WorldPresetConfig activePreset = WorldPresetPortalResolver.getActiveWorldPreset();
-        Set<String> allowedPresets = WorldPresetPortalResolver.getAllowedPresetFolders(activePreset);
+        WorldPresetConfig activeWorldPreset = WorldPresetPortalResolver.getActiveWorldPreset();
+        Set<String> allowedPresets = WorldPresetPortalResolver.getAllowedPresetFolders(activeWorldPreset);
 
         List<DimensionPreset> presets = new ArrayList<>(OTG.getEngine().getDimensionPresetLoader().getAllDimensionPresets());
         presets.sort(Comparator.comparing(DimensionPreset::getFolderName));
@@ -113,8 +113,8 @@ public final class SharedPortalIgnitionHandler {
             String rawColor = portalSettings.getPortalColor();
 
             // R1: Apply YAML overrides if present
-            if (activePreset != null) {
-                OTGDimension dimEntry = WorldPresetPortalResolver.findDimensionEntry(activePreset, preset.getFolderName());
+            if (activeWorldPreset != null) {
+                OTGDimension dimEntry = WorldPresetPortalResolver.findDimensionEntry(activeWorldPreset, preset.getFolderName());
                 if (dimEntry != null) {
                     ArrayList<LocalMaterialData> overrideBlocks = WorldPresetPortalResolver.parsePortalBlocks(dimEntry.PortalBlocks);
                     if (overrideBlocks != null) {
