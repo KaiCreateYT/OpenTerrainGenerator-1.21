@@ -8,7 +8,6 @@ import com.pg85.otg.presets.DimensionPreset;
 import com.pg85.otg.util.DimensionNameUtils;
 import com.pg85.otg.util.materials.LocalMaterialData;
 
-import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Set;
 
@@ -36,29 +35,23 @@ public final class PortalConfigLookup {
                 .filter(p -> p.getConfig().getPortalSettings() != null)
                 // R2: Skip presets not in active WorldPreset YAML
                 .filter(p -> allowedPresets == null || allowedPresets.contains(p.getFolderName()))
-                // I1+R1: Check effective portal blocks (YAML override can provide blocks even if DimensionPreset has none)
+                // R1: Single pass — check effective blocks + match effective color
                 .filter(p -> {
                     PortalSettings settings = p.getConfig().getPortalSettings();
-                    boolean hasPresetBlocks = settings.getPortalBlocks() != null && !settings.getPortalBlocks().isEmpty();
-                    if (hasPresetBlocks) return true;
-                    // Check YAML override
-                    if (activeWorldPreset != null) {
-                        OTGDimension dimEntry = WorldPresetPortalResolver.findDimensionEntry(activeWorldPreset, p.getFolderName());
-                        if (dimEntry != null) {
-                            ArrayList<LocalMaterialData> overrideBlocks = WorldPresetPortalResolver.parsePortalBlocks(dimEntry.PortalBlocks);
-                            return overrideBlocks != null;
-                        }
+                    OTGDimension dimEntry = activeWorldPreset != null
+                            ? WorldPresetPortalResolver.findDimensionEntry(activeWorldPreset, p.getFolderName()) : null;
+
+                    // Effective portal blocks: YAML override > DimensionPreset
+                    boolean hasBlocks = settings.getPortalBlocks() != null && !settings.getPortalBlocks().isEmpty();
+                    if (!hasBlocks && dimEntry != null) {
+                        hasBlocks = WorldPresetPortalResolver.parsePortalBlocks(dimEntry.PortalBlocks) != null;
                     }
-                    return false;
-                })
-                // R1: Match effective color (YAML override if present)
-                .filter(p -> {
-                    String effectiveColor = p.getConfig().getPortalSettings().getPortalColor();
-                    if (activeWorldPreset != null) {
-                        OTGDimension dimEntry = WorldPresetPortalResolver.findDimensionEntry(activeWorldPreset, p.getFolderName());
-                        if (dimEntry != null && WorldPresetPortalResolver.hasOverride(dimEntry.PortalColor)) {
-                            effectiveColor = dimEntry.PortalColor;
-                        }
+                    if (!hasBlocks) return false;
+
+                    // Effective color: YAML override > DimensionPreset
+                    String effectiveColor = settings.getPortalColor();
+                    if (dimEntry != null && WorldPresetPortalResolver.hasOverride(dimEntry.PortalColor)) {
+                        effectiveColor = dimEntry.PortalColor;
                     }
                     return targetColor.equals(DimensionNameUtils.normalizeColor(effectiveColor));
                 })
