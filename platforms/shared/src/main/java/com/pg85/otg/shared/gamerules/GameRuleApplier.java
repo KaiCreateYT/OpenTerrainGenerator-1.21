@@ -48,13 +48,10 @@ public final class GameRuleApplier {
     ) {
         GameRules rules = new GameRules();
 
-        if (!presetRules.isOverrideGameRules()) {
-            OTGLog.info("OverrideGameRules is false — using vanilla defaults");
-            return rules;
+        // Layer 1: base from DimensionPresetConfig.ini (only if preset opts in)
+        if (presetRules.isOverrideGameRules()) {
+            applyFromPreset(rules, presetRules, server);
         }
-
-        // Layer 1: base from DimensionPresetConfig.ini
-        applyFromPreset(rules, presetRules, server);
 
         // Layer 2: world-level overrides from WorldPreset YAML
         if (worldLevelOverrides != null) {

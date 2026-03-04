@@ -106,6 +106,7 @@ public class WorldPresetConfig
 			clone.PortalColor = this.PortalColor;
 			clone.PortalMob = this.PortalMob;
 			clone.PortalIgnitionSource = this.PortalIgnitionSource;
+			clone.RespawnInDimension = this.RespawnInDimension;
 			clone.GameRules = this.GameRules == null ? null : this.GameRules.clone();
 			return clone;
 		}
@@ -119,6 +120,7 @@ public class WorldPresetConfig
 		public String PortalColor;
 		public String PortalMob;
 		public String PortalIgnitionSource;
+		public Boolean RespawnInDimension;
 		public GameRules GameRules;
 
 		public OTGDimension() {}
@@ -136,6 +138,7 @@ public class WorldPresetConfig
 			otgDimension.PortalColor = this.PortalColor;
 			otgDimension.PortalMob = this.PortalMob;
 			otgDimension.PortalIgnitionSource = this.PortalIgnitionSource;
+			otgDimension.RespawnInDimension = this.RespawnInDimension;
 			otgDimension.GameRules = this.GameRules == null ? null : this.GameRules.clone();
 			return otgDimension;
 		}
