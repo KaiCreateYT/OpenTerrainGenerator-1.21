@@ -17,8 +17,6 @@ import net.minecraft.world.level.material.FluidState;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class PreviewWorld implements BlockAndTintGetter {
 
@@ -33,10 +31,11 @@ public class PreviewWorld implements BlockAndTintGetter {
         int chunkHeight = access.getHeight();
         PreviewChunk chunk = new PreviewChunk(chunkMinY, chunkHeight);
 
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
                 for (int y = chunkMinY; y < chunkMinY + chunkHeight; y++) {
-                    BlockPos pos = new BlockPos(cx * 16 + x, y, cz * 16 + z);
+                    pos.set(cx * 16 + x, y, cz * 16 + z);
                     chunk.setBlockState(x, y, z, access.getBlockState(pos));
                 }
             }
@@ -64,12 +63,6 @@ public class PreviewWorld implements BlockAndTintGetter {
 
     public boolean hasChunk(int cx, int cz) {
         return chunks.containsKey(chunkKey(cx, cz));
-    }
-
-    public Set<long[]> getChunkPositions() {
-        return chunks.keySet().stream()
-            .map(key -> new long[]{(int)(key >> 32), (int)(key & 0xFFFFFFFFL)})
-            .collect(Collectors.toSet());
     }
 
     public Collection<Long> getChunkKeys() {

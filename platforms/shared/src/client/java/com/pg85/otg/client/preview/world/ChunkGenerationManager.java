@@ -16,7 +16,7 @@ public class ChunkGenerationManager {
 
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
     private final AtomicInteger completedChunks = new AtomicInteger(0);
-    private int totalChunks;
+    private volatile int totalChunks;
 
     /**
      * Generate chunks in spiral order from center and feed them to PreviewWorld.
@@ -25,7 +25,7 @@ public class ChunkGenerationManager {
      *
      * @param level          ServerLevel from TempServerManager
      * @param previewWorld   Target PreviewWorld to populate
-     * @param radiusChunks   Radius in chunks (e.g. 4 = 8x8 area)
+     * @param radiusChunks   Radius in chunks (e.g. 4 = 8x8 area, generates (2*4)²=64 chunks)
      * @param status         Target ChunkStatus (SURFACE, CARVERS, or FULL)
      * @param onProgress     Callback: (completed, total) — may be called from server thread
      * @param onChunkReady   Callback per completed chunk (for progressive rendering)
@@ -59,7 +59,8 @@ public class ChunkGenerationManager {
     }
 
     public float getProgress() {
-        return totalChunks > 0 ? (float) completedChunks.get() / totalChunks : 0f;
+        int total = totalChunks;
+        return total > 0 ? (float) completedChunks.get() / total : 0f;
     }
 
     public int getTotalChunks() {
@@ -72,13 +73,15 @@ public class ChunkGenerationManager {
 
     /**
      * Generate chunk positions in spiral order from (0,0) outward.
-     * For radiusChunks=4, generates positions from (-4,-4) to (3,3) = 64 chunks.
+     * For radiusChunks=4, generates (2*4)²=64 positions from (-4,-4) to (3,3).
+     * The spiral covers (2r+1)² positions total; bounds check clips to (2r)².
      */
     static List<ChunkPos> spiralOrder(int radius) {
-        List<ChunkPos> result = new ArrayList<>();
+        int diameter = radius * 2;
+        List<ChunkPos> result = new ArrayList<>(diameter * diameter);
         int x = 0, z = 0;
         int dx = 0, dz = -1;
-        int side = radius * 2;
+        int side = diameter + 1;
         int maxSteps = side * side;
 
         for (int i = 0; i < maxSteps; i++) {

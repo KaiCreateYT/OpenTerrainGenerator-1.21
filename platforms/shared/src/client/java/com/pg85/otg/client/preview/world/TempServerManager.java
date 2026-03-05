@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
@@ -119,33 +118,29 @@ public class TempServerManager {
     }
 
     /**
-     * Stop the server and schedule cleanup of temp save directory.
-     * Returns a CompletableFuture that completes after disconnect.
+     * Stop the server and clean up temp save directory.
+     * MUST be called on the render thread. Blocks until disconnect completes.
      */
-    public CompletableFuture<Void> stopServer() {
+    public void stopServer() {
         Minecraft mc = Minecraft.getInstance();
         String worldName = tempWorldName;
         tempWorldName = null;
 
-        return CompletableFuture.runAsync(() -> {
-            mc.execute(() -> {
-                mc.disconnect();
+        // disconnect() is synchronous — halts the IntegratedServer and waits
+        mc.disconnect();
 
-                // Delete temp save after disconnect
-                if (worldName != null) {
-                    try {
-                        Path savesDir = mc.getLevelSource().getBaseDir();
-                        Path worldDir = savesDir.resolve(worldName);
-                        if (Files.exists(worldDir)) {
-                            deleteDirRecursive(worldDir);
-                            LOG.info("Deleted temp preview world: {}", worldName);
-                        }
-                    } catch (Exception e) {
-                        LOG.warn("Failed to delete temp preview world: {}", worldName, e);
-                    }
+        if (worldName != null) {
+            try {
+                Path savesDir = mc.getLevelSource().getBaseDir();
+                Path worldDir = savesDir.resolve(worldName);
+                if (Files.exists(worldDir)) {
+                    deleteDirRecursive(worldDir);
+                    LOG.info("Deleted temp preview world: {}", worldName);
                 }
-            });
-        });
+            } catch (Exception e) {
+                LOG.warn("Failed to delete temp preview world: {}", worldName, e);
+            }
+        }
     }
 
     public String getTempWorldName() {
