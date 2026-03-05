@@ -100,3 +100,6 @@ Thumbs.db
 .DS_Store
 *.lock
 *.launch
+
+# MkDocs build output
+site/
