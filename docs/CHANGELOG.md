@@ -1,4 +1,4 @@
-## Minecraft 1.21.1
+## Minecraft 1.21.1 — Fabric + NeoForge
 
 ### Release: 0.4.0-dev2
 
