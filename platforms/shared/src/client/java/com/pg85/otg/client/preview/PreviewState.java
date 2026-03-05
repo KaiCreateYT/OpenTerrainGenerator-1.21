@@ -23,8 +23,8 @@ public class PreviewState {
 
     public enum Phase { IDLE, WAITING_FOR_SERVER, GENERATING_CHUNKS, COMPILING, DONE }
 
-    private static Phase phase = Phase.IDLE;
-    private static String statusText = "";
+    private static volatile Phase phase = Phase.IDLE;
+    private static volatile String statusText = "";
 
     // Shared data — survives screen transitions
     private static final PreviewWorld previewWorld = new PreviewWorld();

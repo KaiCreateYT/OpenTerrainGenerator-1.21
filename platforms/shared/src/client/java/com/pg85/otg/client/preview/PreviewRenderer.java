@@ -58,53 +58,54 @@ public class PreviewRenderer {
         Map<RenderType, ByteBufferBuilder> byteBuffers = new HashMap<>();
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
-        ModelBlockRenderer.enableCaching();
+        PreviewSection section = new PreviewSection();
+        try {
+            ModelBlockRenderer.enableCaching();
 
-        for (int x = 0; x < 16; x++) {
-            for (int y = 0; y < 16; y++) {
-                for (int z = 0; z < 16; z++) {
-                    pos.set(baseX + x, baseY + y, baseZ + z);
-                    BlockState state = world.getBlockState(pos);
+            for (int x = 0; x < 16; x++) {
+                for (int y = 0; y < 16; y++) {
+                    for (int z = 0; z < 16; z++) {
+                        pos.set(baseX + x, baseY + y, baseZ + z);
+                        BlockState state = world.getBlockState(pos);
 
-                    // Render fluids
-                    FluidState fluidState = state.getFluidState();
-                    if (!fluidState.isEmpty()) {
-                        RenderType fluidRenderType = ItemBlockRenderTypes.getRenderLayer(fluidState);
-                        BufferBuilder fluidBuilder = getOrCreateBuilder(builders, byteBuffers, fluidRenderType);
-                        dispatcher.renderLiquid(pos, world, fluidBuilder, state, fluidState);
-                    }
+                        // Render fluids
+                        FluidState fluidState = state.getFluidState();
+                        if (!fluidState.isEmpty()) {
+                            RenderType fluidRenderType = ItemBlockRenderTypes.getRenderLayer(fluidState);
+                            BufferBuilder fluidBuilder = getOrCreateBuilder(builders, byteBuffers, fluidRenderType);
+                            dispatcher.renderLiquid(pos, world, fluidBuilder, state, fluidState);
+                        }
 
-                    // Render blocks
-                    if (state.getRenderShape() == RenderShape.MODEL) {
-                        RenderType renderType = ItemBlockRenderTypes.getChunkRenderType(state);
-                        BufferBuilder builder = getOrCreateBuilder(builders, byteBuffers, renderType);
+                        // Render blocks
+                        if (state.getRenderShape() == RenderShape.MODEL) {
+                            RenderType renderType = ItemBlockRenderTypes.getChunkRenderType(state);
+                            BufferBuilder builder = getOrCreateBuilder(builders, byteBuffers, renderType);
 
-                        poseStack.pushPose();
-                        poseStack.translate(x, y, z);
-                        dispatcher.renderBatched(state, pos, world, poseStack, builder, true, random);
-                        poseStack.popPose();
+                            poseStack.pushPose();
+                            poseStack.translate(x, y, z);
+                            dispatcher.renderBatched(state, pos, world, poseStack, builder, true, random);
+                            poseStack.popPose();
+                        }
                     }
                 }
             }
-        }
 
-        ModelBlockRenderer.clearCache();
+            ModelBlockRenderer.clearCache();
 
-        // Upload to VBOs
-        PreviewSection section = new PreviewSection();
-        for (var entry : builders.entrySet()) {
-            MeshData meshData = entry.getValue().build();
-            if (meshData != null) {
-                VertexBuffer buffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
-                buffer.bind();
-                buffer.upload(meshData);
-                VertexBuffer.unbind();
-                section.setBuffer(entry.getKey(), buffer);
+            // Upload to VBOs
+            for (var entry : builders.entrySet()) {
+                MeshData meshData = entry.getValue().build();
+                if (meshData != null) {
+                    VertexBuffer buffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
+                    buffer.bind();
+                    buffer.upload(meshData);
+                    VertexBuffer.unbind();
+                    section.setBuffer(entry.getKey(), buffer);
+                }
             }
+        } finally {
+            byteBuffers.values().forEach(ByteBufferBuilder::close);
         }
-
-        // Close ByteBufferBuilders
-        byteBuffers.values().forEach(ByteBufferBuilder::close);
 
         long key = SectionPos.asLong(sectionX, sectionY, sectionZ);
         PreviewSection old = sections.put(key, section);
