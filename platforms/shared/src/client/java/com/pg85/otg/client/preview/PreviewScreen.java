@@ -199,8 +199,20 @@ public class PreviewScreen extends Screen {
             } else if (PreviewState.getPhase() != PreviewState.Phase.DONE) {
                 // Show progress during generation
                 String progress = PreviewState.getStatusText();
-                graphics.drawCenteredString(font, progress,
-                    viewportX + viewportW / 2, viewportY + viewportH / 2, 0x888888);
+                int centerX = viewportX + viewportW / 2;
+                int centerY = viewportY + viewportH / 2;
+                graphics.drawCenteredString(font, progress, centerX, centerY - 10, 0x888888);
+
+                // Progress bar
+                if (PreviewState.getPhase() == PreviewState.Phase.GENERATING_CHUNKS) {
+                    int barW = Math.min(viewportW - 40, 200);
+                    int barH = 6;
+                    int barX = centerX - barW / 2;
+                    int barY = centerY + 6;
+                    float pct = PreviewState.getProgress();
+                    graphics.fill(barX, barY, barX + barW, barY + barH, 0xFF333333);
+                    graphics.fill(barX, barY, barX + (int)(barW * pct), barY + barH, 0xFF44AA44);
+                }
             }
         }
 

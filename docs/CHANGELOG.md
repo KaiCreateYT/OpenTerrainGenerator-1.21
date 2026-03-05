@@ -18,6 +18,8 @@
 - **Preset selector**: Cycles through available DimensionPreset folder names in PreviewScreen
 - **Server lifecycle**: TempServerManager stays alive after terrain generation — reused between preview modes, only stops on reset()/screen close
 - **Viewport fixes**: `glViewport` set to panel area (was projecting on full window), depth buffer cleared before 3D render, depth test restored after pass, `onClose()` calls `PreviewState.reset()`, `compileSection()` wrapped in try-finally for ByteBufferBuilder leak prevention, `phase`/`statusText` marked volatile
+- **Progress bar**: Visual progress bar in viewport during chunk generation
+- **Error handling**: OOM catch with cleanup, 60s server start timeout, JVM shutdown hook cleans temp world saves on crash
 
 **2026-03-03–04 — Portal overrides & GameRule fixes**
 

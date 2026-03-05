@@ -43,6 +43,24 @@ public class TempServerManager {
     private static final Logger LOG = LoggerFactory.getLogger(TempServerManager.class);
     private String tempWorldName;
 
+    public TempServerManager() {
+        // Clean up temp world save on JVM shutdown (crash recovery)
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            String name = tempWorldName;
+            if (name != null) {
+                try {
+                    Path savesDir = Minecraft.getInstance().getLevelSource().getBaseDir();
+                    Path worldDir = savesDir.resolve(name);
+                    if (Files.exists(worldDir)) {
+                        deleteDirRecursive(worldDir);
+                    }
+                } catch (Exception e) {
+                    // Best-effort cleanup during shutdown
+                }
+            }
+        }, "OTG-Preview-Cleanup"));
+    }
+
     public boolean isRunning() {
         MinecraftServer srv = Minecraft.getInstance().getSingleplayerServer();
         return srv != null && srv.isReady();

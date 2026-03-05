@@ -44,6 +44,7 @@ public class PreviewState {
     public static PreviewRenderer getRenderer() { return renderer; }
     public static OrbitCamera getCamera() { return camera; }
     public static TempServerManager getServerManager() { return serverManager; }
+    public static float getProgress() { return chunkManager.getProgress(); }
 
     /**
      * Start terrain preview generation. Called from PreviewScreen on render thread.
@@ -57,6 +58,7 @@ public class PreviewState {
         chunkStatus = status;
         phase = Phase.WAITING_FOR_SERVER;
         statusText = "Starting server...";
+        waitStartTime = System.currentTimeMillis();
 
         // Stop existing server if running (different seed/preset)
         if (serverManager.isRunning()) {
@@ -93,6 +95,10 @@ public class PreviewState {
         statusText = "BO: " + objectName;
     }
 
+    // Server start timeout — 60 seconds
+    private static long waitStartTime;
+    private static final long SERVER_TIMEOUT_MS = 60_000;
+
     /**
      * Called every client tick from ClientTickMixin.
      */
@@ -102,6 +108,10 @@ public class PreviewState {
                 phase = Phase.GENERATING_CHUNKS;
                 statusText = "Generating chunks...";
                 generateChunksAsync();
+            } else if (System.currentTimeMillis() - waitStartTime > SERVER_TIMEOUT_MS) {
+                LOG.error("Server start timed out after {}ms", SERVER_TIMEOUT_MS);
+                statusText = "Error: server start timed out";
+                phase = Phase.IDLE;
             }
         }
     }
@@ -140,6 +150,15 @@ public class PreviewState {
                     statusText = "Ready — " + chunkManager.getCompletedChunks() + " chunks";
 
                     // Show PreviewScreen in view mode
+                    Minecraft.getInstance().setScreen(new PreviewScreen());
+                });
+            } catch (OutOfMemoryError e) {
+                LOG.error("Out of memory during chunk generation", e);
+                Minecraft.getInstance().execute(() -> {
+                    statusText = "Error: out of memory — try smaller size";
+                    previewWorld.clear();
+                    renderer.releaseBuffers();
+                    phase = Phase.IDLE;
                     Minecraft.getInstance().setScreen(new PreviewScreen());
                 });
             } catch (Exception e) {
