@@ -15,12 +15,12 @@ import net.minecraft.world.level.lighting.LevelLightEngine;
 import net.minecraft.world.level.material.FluidState;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PreviewWorld implements BlockAndTintGetter {
 
-    private final Map<Long, PreviewChunk> chunks = new HashMap<>();
+    private final Map<Long, PreviewChunk> chunks = new ConcurrentHashMap<>();
     private int minY = -64;
     private int maxY = 320;
 

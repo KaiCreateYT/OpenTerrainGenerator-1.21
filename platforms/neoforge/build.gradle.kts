@@ -42,6 +42,10 @@ dependencies {
 
 loom {
     accessWidenerPath = file("src/main/resources/META-INF/otg.accesswidener")
+    // NeoForge does NOT support splitEnvironmentSourceSets() — Architectury Loom 1.7
+    // throws UnsupportedOperationException("Using Forge with split jars is not supported!")
+    // in CompileConfiguration.java when extension.isForgeLike().
+    // Client code from platforms/shared reaches NeoForge via transformProductionNeoForge.
 }
 
 tasks {

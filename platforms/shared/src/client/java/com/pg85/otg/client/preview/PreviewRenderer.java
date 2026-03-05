@@ -90,8 +90,6 @@ public class PreviewRenderer {
                 }
             }
 
-            ModelBlockRenderer.clearCache();
-
             // Upload to VBOs
             for (var entry : builders.entrySet()) {
                 MeshData meshData = entry.getValue().build();
@@ -104,6 +102,7 @@ public class PreviewRenderer {
                 }
             }
         } finally {
+            ModelBlockRenderer.clearCache();
             byteBuffers.values().forEach(ByteBufferBuilder::close);
         }
 
@@ -148,9 +147,9 @@ public class PreviewRenderer {
         int baseZ = SectionPos.sectionToBlockCoord(sectionZ);
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
-        for (int x = 0; x < 16; x += 4) {
-            for (int y = 0; y < 16; y += 4) {
-                for (int z = 0; z < 16; z += 4) {
+        for (int x = 0; x < 16; x += 2) {
+            for (int y = 0; y < 16; y += 2) {
+                for (int z = 0; z < 16; z += 2) {
                     pos.set(baseX + x, baseY + y, baseZ + z);
                     if (!world.getBlockState(pos).isAir()) return true;
                 }

@@ -2,6 +2,9 @@ package com.pg85.otg.client.preview;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.pg85.otg.OTG;
+import com.pg85.otg.config.dimensions.WorldPresetConfig;
+import com.pg85.otg.constants.Constants;
+import com.pg85.otg.loader.WorldPresetConfigLoader;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -14,6 +17,7 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class PreviewScreen extends Screen {
 
@@ -23,15 +27,18 @@ public class PreviewScreen extends Screen {
     private static long seed = 12345L;
     private static int radiusChunks = 4;
     private static ChunkStatus chunkStatus = ChunkStatus.FULL;
-    private static String presetName = "";
+    private static String selectedPresetDisplay = "";
     private static String boObjectName = "";
+    // DimensionPreset folder name from the selected WorldPreset's Overworld
+    private static String dimensionPresetName = "";
 
     private EditBox seedInput;
     private EditBox boInput;
     private int viewportX, viewportY, viewportW, viewportH;
 
-    // Available preset names (populated in init)
-    private List<String> presetNames = new ArrayList<>();
+    // Available WorldPreset entries (populated in init)
+    private record PresetEntry(String displayName, String resourceId, String overworldPresetFolder) {}
+    private List<PresetEntry> presetEntries = new ArrayList<>();
     private int presetIndex = 0;
 
     public PreviewScreen() {
@@ -40,24 +47,37 @@ public class PreviewScreen extends Screen {
 
     @Override
     protected void init() {
-        // Load available preset names
-        presetNames = new ArrayList<>();
+        // Load available WorldPresets from YAML files
+        presetEntries = new ArrayList<>();
         try {
             var engine = OTG.getEngine();
             if (engine != null) {
-                presetNames.addAll(engine.getDimensionPresetLoader().getAllDimensionPresetFolderNames());
+                for (WorldPresetConfig config : WorldPresetConfigLoader.loadAll(engine.getOTGRootFolder())) {
+                    if (config.DisplayName == null || config.DisplayName.isBlank()) continue;
+                    String normalizedId = config.DisplayName.toLowerCase(Locale.ROOT)
+                        .replaceAll("[^a-z0-9_.-]", "_").replaceAll("_+", "_")
+                        .replaceAll("^_|_$", "");
+                    String resourceId = Constants.MOD_ID_SHORT + ":" + normalizedId;
+                    String overworldFolder = config.Overworld != null ? config.Overworld.PresetFolderName : "";
+                    presetEntries.add(new PresetEntry(config.DisplayName, resourceId, overworldFolder != null ? overworldFolder : ""));
+                }
             }
         } catch (Exception ignored) {}
 
-        if (presetNames.isEmpty()) {
-            presetNames.add("DefaultPreset");
+        if (presetEntries.isEmpty()) {
+            presetEntries.add(new PresetEntry("Vanilla", "", ""));
         }
 
         // Restore preset selection
-        if (presetName.isEmpty() || !presetNames.contains(presetName)) {
-            presetName = presetNames.getFirst();
+        presetIndex = 0;
+        for (int i = 0; i < presetEntries.size(); i++) {
+            if (presetEntries.get(i).displayName.equals(selectedPresetDisplay)) {
+                presetIndex = i;
+                break;
+            }
         }
-        presetIndex = presetNames.indexOf(presetName);
+        selectedPresetDisplay = presetEntries.get(presetIndex).displayName;
+        dimensionPresetName = presetEntries.get(presetIndex).overworldPresetFolder;
 
         int panelX = 10;
         int y = 35;
@@ -66,11 +86,13 @@ public class PreviewScreen extends Screen {
 
         // Preset selector button
         addRenderableWidget(Button.builder(
-            Component.literal("Preset: " + presetName),
+            Component.literal("Preset: " + selectedPresetDisplay),
             btn -> {
-                presetIndex = (presetIndex + 1) % presetNames.size();
-                presetName = presetNames.get(presetIndex);
-                btn.setMessage(Component.literal("Preset: " + presetName));
+                presetIndex = (presetIndex + 1) % presetEntries.size();
+                PresetEntry entry = presetEntries.get(presetIndex);
+                selectedPresetDisplay = entry.displayName;
+                dimensionPresetName = entry.overworldPresetFolder;
+                btn.setMessage(Component.literal("Preset: " + selectedPresetDisplay));
             }
         ).bounds(panelX, y, PANEL_WIDTH - 20, 20).build());
         y += 24;
@@ -117,7 +139,9 @@ public class PreviewScreen extends Screen {
             btn -> {
                 if (PreviewState.getPhase() == PreviewState.Phase.IDLE
                         || PreviewState.getPhase() == PreviewState.Phase.DONE) {
-                    PreviewState.startGeneration(null, seed, radiusChunks, chunkStatus);
+                    PreviewState.startGeneration(
+                        presetEntries.get(presetIndex).resourceId,
+                        seed, radiusChunks, chunkStatus);
                 }
             }
         ).bounds(panelX, y, PANEL_WIDTH - 20, 20).build());
@@ -140,7 +164,7 @@ public class PreviewScreen extends Screen {
                 if (!boObjectName.isEmpty() &&
                     (PreviewState.getPhase() == PreviewState.Phase.IDLE
                         || PreviewState.getPhase() == PreviewState.Phase.DONE)) {
-                    PreviewState.loadBO(boObjectName, presetName);
+                    PreviewState.loadBO(boObjectName, dimensionPresetName);
                     rebuildWidgets();
                 }
             }
