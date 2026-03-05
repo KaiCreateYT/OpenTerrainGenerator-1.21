@@ -47,6 +47,7 @@ dependencies {
 
 loom {
     accessWidenerPath = file("src/main/resources/META-INF/otg.accesswidener")
+    splitEnvironmentSourceSets()
 }
 
 tasks {

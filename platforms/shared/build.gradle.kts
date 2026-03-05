@@ -19,6 +19,7 @@ configurations {
 
 loom {
     accessWidenerPath = file("src/main/resources/otg-shared.accesswidener")
+    splitEnvironmentSourceSets()
 }
 
 dependencies {
