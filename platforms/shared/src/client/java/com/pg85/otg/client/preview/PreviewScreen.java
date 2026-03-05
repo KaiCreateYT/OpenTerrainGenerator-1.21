@@ -1,6 +1,7 @@
 package com.pg85.otg.client.preview;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.pg85.otg.OTG;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -11,6 +12,9 @@ import net.minecraft.world.level.chunk.status.ChunkStatus;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class PreviewScreen extends Screen {
 
     private static final int PANEL_WIDTH = 150;
@@ -19,9 +23,16 @@ public class PreviewScreen extends Screen {
     private static long seed = 12345L;
     private static int radiusChunks = 4;
     private static ChunkStatus chunkStatus = ChunkStatus.FULL;
+    private static String presetName = "";
+    private static String boObjectName = "";
 
     private EditBox seedInput;
+    private EditBox boInput;
     private int viewportX, viewportY, viewportW, viewportH;
+
+    // Available preset names (populated in init)
+    private List<String> presetNames = new ArrayList<>();
+    private int presetIndex = 0;
 
     public PreviewScreen() {
         super(Component.literal("OTG Editor — Preview"));
@@ -29,8 +40,40 @@ public class PreviewScreen extends Screen {
 
     @Override
     protected void init() {
+        // Load available preset names
+        presetNames = new ArrayList<>();
+        try {
+            var engine = OTG.getEngine();
+            if (engine != null) {
+                presetNames.addAll(engine.getDimensionPresetLoader().getAllDimensionPresetFolderNames());
+            }
+        } catch (Exception ignored) {}
+
+        if (presetNames.isEmpty()) {
+            presetNames.add("DefaultPreset");
+        }
+
+        // Restore preset selection
+        if (presetName.isEmpty() || !presetNames.contains(presetName)) {
+            presetName = presetNames.getFirst();
+        }
+        presetIndex = presetNames.indexOf(presetName);
+
         int panelX = 10;
         int y = 35;
+
+        // --- TERRAIN SECTION ---
+
+        // Preset selector button
+        addRenderableWidget(Button.builder(
+            Component.literal("Preset: " + presetName),
+            btn -> {
+                presetIndex = (presetIndex + 1) % presetNames.size();
+                presetName = presetNames.get(presetIndex);
+                btn.setMessage(Component.literal("Preset: " + presetName));
+            }
+        ).bounds(panelX, y, PANEL_WIDTH - 20, 20).build());
+        y += 24;
 
         // Seed input
         seedInput = new EditBox(font, panelX, y, PANEL_WIDTH - 20, 20, Component.literal("Seed"));
@@ -39,7 +82,7 @@ public class PreviewScreen extends Screen {
             try { seed = Long.parseLong(s); } catch (NumberFormatException ignored) {}
         });
         addRenderableWidget(seedInput);
-        y += 28;
+        y += 24;
 
         // Size buttons
         int btnX = panelX;
@@ -51,7 +94,7 @@ public class PreviewScreen extends Screen {
             ).bounds(btnX, y, 30, 20).build());
             btnX += 33;
         }
-        y += 28;
+        y += 24;
 
         // Generation level buttons
         record GenLevel(String label, ChunkStatus status) {}
@@ -64,9 +107,9 @@ public class PreviewScreen extends Screen {
                 Component.literal(level.label),
                 btn -> chunkStatus = level.status
             ).bounds(panelX, y, PANEL_WIDTH - 20, 20).build());
-            y += 24;
+            y += 22;
         }
-        y += 8;
+        y += 4;
 
         // Generate button
         addRenderableWidget(Button.builder(
@@ -80,7 +123,33 @@ public class PreviewScreen extends Screen {
         ).bounds(panelX, y, PANEL_WIDTH - 20, 20).build());
         y += 28;
 
-        // Reset button (only when we have data)
+        // --- BO SECTION ---
+
+        // BO object name input
+        boInput = new EditBox(font, panelX, y, PANEL_WIDTH - 20, 20, Component.literal("BO Name"));
+        boInput.setValue(boObjectName);
+        boInput.setResponder(s -> boObjectName = s);
+        boInput.setHint(Component.literal("BO3/BO4 name"));
+        addRenderableWidget(boInput);
+        y += 24;
+
+        // Load BO button
+        addRenderableWidget(Button.builder(
+            Component.literal("Load BO"),
+            btn -> {
+                if (!boObjectName.isEmpty() &&
+                    (PreviewState.getPhase() == PreviewState.Phase.IDLE
+                        || PreviewState.getPhase() == PreviewState.Phase.DONE)) {
+                    PreviewState.loadBO(boObjectName, presetName);
+                    rebuildWidgets();
+                }
+            }
+        ).bounds(panelX, y, PANEL_WIDTH - 20, 20).build());
+        y += 28;
+
+        // --- CONTROLS ---
+
+        // Clear button (only when we have data)
         if (PreviewState.getPhase() == PreviewState.Phase.DONE) {
             addRenderableWidget(Button.builder(
                 Component.literal("Clear"),
@@ -125,8 +194,13 @@ public class PreviewScreen extends Screen {
             // Empty viewport placeholder
             graphics.fill(viewportX, viewportY, viewportX + viewportW, viewportY + viewportH, 0xFF1A1A1A);
             if (PreviewState.getPhase() == PreviewState.Phase.IDLE) {
-                graphics.drawCenteredString(font, "Click 'Generate Preview' to start",
+                graphics.drawCenteredString(font, "Click 'Generate Preview' or 'Load BO' to start",
                     viewportX + viewportW / 2, viewportY + viewportH / 2, 0x666666);
+            } else if (PreviewState.getPhase() != PreviewState.Phase.DONE) {
+                // Show progress during generation
+                String progress = PreviewState.getStatusText();
+                graphics.drawCenteredString(font, progress,
+                    viewportX + viewportW / 2, viewportY + viewportH / 2, 0x888888);
             }
         }
 

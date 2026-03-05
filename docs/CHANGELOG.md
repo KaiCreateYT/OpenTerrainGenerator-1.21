@@ -14,6 +14,10 @@
 - **PreviewState**: Static state machine (IDLE → WAITING → GENERATING → COMPILING → DONE) that survives screen transitions during `createFreshLevel` flow
 - **PreviewScreen**: Full UI with seed input, size/generation level selectors, 3D viewport with orbit camera, generate/clear/back controls
 - **ClientTickMixin**: Polls `PreviewState.tick()` to detect when server is ready for chunk generation
+- **BO3/BO4 preview**: `BOPreviewHelper` loads custom objects via `OTG.getEngine()` managers, iterates block functions, resolves `IBlockStateMaterial` → `BlockState`, places into PreviewWorld with direct `setBlockState`. Camera auto-fits to object bounds.
+- **Preset selector**: Cycles through available DimensionPreset folder names in PreviewScreen
+- **Server lifecycle**: TempServerManager stays alive after terrain generation — reused between preview modes, only stops on reset()/screen close
+- **Viewport fixes**: `glViewport` set to panel area (was projecting on full window), depth buffer cleared before 3D render, depth test restored after pass, `onClose()` calls `PreviewState.reset()`, `compileSection()` wrapped in try-finally for ByteBufferBuilder leak prevention, `phase`/`statusText` marked volatile
 
 **2026-03-03–04 — Portal overrides & GameRule fixes**
 

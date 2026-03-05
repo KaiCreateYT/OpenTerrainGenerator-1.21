@@ -57,6 +57,21 @@ public class PreviewWorld implements BlockAndTintGetter {
         maxY = Math.max(maxY, chunkMinY + chunkHeight);
     }
 
+    /**
+     * Set a block directly (for BO preview). Creates chunk on demand.
+     */
+    public void setBlockState(BlockPos pos, BlockState state) {
+        int cx = pos.getX() >> 4;
+        int cz = pos.getZ() >> 4;
+        long key = chunkKey(cx, cz);
+        PreviewChunk chunk = chunks.get(key);
+        if (chunk == null) {
+            chunk = new PreviewChunk(minY, maxY - minY);
+            chunks.put(key, chunk);
+        }
+        chunk.setBlockState(pos.getX() & 15, pos.getY(), pos.getZ() & 15, state);
+    }
+
     public void clear() {
         chunks.clear();
     }

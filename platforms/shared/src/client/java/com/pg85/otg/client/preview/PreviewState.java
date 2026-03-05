@@ -13,9 +13,10 @@ import org.slf4j.LoggerFactory;
  * Static state machine for the preview generation flow.
  *
  * States:
- * IDLE → WAITING_FOR_SERVER → GENERATING_CHUNKS → COMPILING → DONE
+ * IDLE -> WAITING_FOR_SERVER -> GENERATING_CHUNKS -> COMPILING -> DONE
  *
- * The tick() method is called from ClientTickMixin each frame.
+ * The server stays alive after generation completes — it is reused for BO preview.
+ * Server only stops on reset() or screen close.
  */
 public class PreviewState {
 
@@ -45,7 +46,7 @@ public class PreviewState {
     public static TempServerManager getServerManager() { return serverManager; }
 
     /**
-     * Start preview generation. Called from PreviewScreen on render thread.
+     * Start terrain preview generation. Called from PreviewScreen on render thread.
      */
     public static void startGeneration(String presetId, long seed, int radius, ChunkStatus status) {
         if (phase != Phase.IDLE && phase != Phase.DONE) return;
@@ -57,7 +58,39 @@ public class PreviewState {
         phase = Phase.WAITING_FOR_SERVER;
         statusText = "Starting server...";
 
+        // Stop existing server if running (different seed/preset)
+        if (serverManager.isRunning()) {
+            serverManager.stopServer();
+        }
+
         serverManager.startServer(presetId, seed, s -> statusText = s);
+    }
+
+    /**
+     * Load a BO3/BO4 custom object into the preview. No server needed.
+     * Called from PreviewScreen on render thread.
+     */
+    public static void loadBO(String objectName, String presetName) {
+        if (phase != Phase.IDLE && phase != Phase.DONE) return;
+
+        renderer.releaseBuffers();
+        previewWorld.clear();
+        phase = Phase.COMPILING;
+        statusText = "Loading " + objectName + "...";
+
+        BOPreviewHelper.BOBounds bounds = BOPreviewHelper.loadObject(objectName, presetName, previewWorld);
+        if (bounds == null) {
+            statusText = "Failed to load " + objectName;
+            phase = Phase.IDLE;
+            return;
+        }
+
+        statusText = "Compiling meshes...";
+        renderer.compileAll();
+        camera.fitTo(bounds.center(), bounds.radius());
+
+        phase = Phase.DONE;
+        statusText = "BO: " + objectName;
     }
 
     /**
@@ -91,7 +124,7 @@ public class PreviewState {
                     () -> {}
                 );
 
-                // Switch back to render thread for compilation and disconnect
+                // Switch back to render thread for compilation — keep server alive
                 Minecraft.getInstance().execute(() -> {
                     phase = Phase.COMPILING;
                     statusText = "Compiling meshes...";
@@ -102,9 +135,7 @@ public class PreviewState {
                         radiusChunks * 16f
                     );
 
-                    statusText = "Disconnecting...";
-                    serverManager.stopServer();
-
+                    // Server stays alive — reused for BO preview
                     phase = Phase.DONE;
                     statusText = "Ready — " + chunkManager.getCompletedChunks() + " chunks";
 
@@ -115,7 +146,6 @@ public class PreviewState {
                 LOG.error("Chunk generation failed", e);
                 Minecraft.getInstance().execute(() -> {
                     statusText = "Error: " + e.getMessage();
-                    serverManager.stopServer();
                     phase = Phase.IDLE;
                     Minecraft.getInstance().setScreen(new PreviewScreen());
                 });
@@ -125,7 +155,7 @@ public class PreviewState {
 
     public static void reset() {
         chunkManager.cancel();
-        if (phase == Phase.WAITING_FOR_SERVER || phase == Phase.GENERATING_CHUNKS) {
+        if (serverManager.isRunning()) {
             serverManager.stopServer();
         }
         renderer.releaseBuffers();
