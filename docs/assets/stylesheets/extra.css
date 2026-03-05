@@ -39,6 +39,20 @@
   color: #ef9a9a;
 }
 
+/* Changelog: bump heading sizes — H2 (MC version) looks like H1, H3 (release) looks like H2 */
+[data-md-component="content"] h2[id^="minecraft-"] {
+  font-size: 2em;
+  font-weight: 700;
+  margin-top: 1.6em;
+  padding-bottom: 0.2em;
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+
+[data-md-component="content"] h3[id^="release-"] {
+  font-size: 1.5625em;
+  font-weight: 600;
+}
+
 /* Config reference table styling */
 .md-typeset table:not([class]) th {
   min-width: 100px;

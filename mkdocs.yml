@@ -65,6 +65,7 @@ nav:
     - BO4: custom-objects/bo4.md
   - Commands: commands/index.md
   - Dimensions: dimensions/index.md
+  - Changelog: CHANGELOG.md
 
 exclude_docs: |
   plans/

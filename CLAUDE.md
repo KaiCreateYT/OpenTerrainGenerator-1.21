@@ -133,6 +133,15 @@ Carvers handle negative Y by using `y - otgWorldInfo.minY()` as BitSet index.
 ### Anti-Floating Terrain
 `OTGChunkGenerator` applies quadratic penalty for terrain above expected surface height to prevent floating islands.
 
+## Changelog
+
+**After every feature, bug fix, or version bump, update `docs/CHANGELOG.md`.**
+
+- Add entry under the current version/date section
+- For version bumps, add a new `── Release: x.y.z ──` separator
+- Keep entries concise but technical — what changed and why
+- Group related changes under a single date heading
+
 ## Reference
 
 See `OTG_1.20.1_UPGRADE_SUMMARY.md` for complete changelog of 1.20.1 migration fixes including tree validation, carver crashes, and noise generation updates.
