@@ -7,6 +7,9 @@
 - **Client source sets**: Added `splitEnvironmentSourceSets()` to shared and fabric modules; client-only code compiles separately from server code
 - **OTG Editor button**: TitleScreenMixin injects "OTG Editor" button on the title screen, opens empty PreviewScreen
 - **OrbitCamera**: Spherical coordinate camera with rotate/zoom/fitTo for 3D terrain preview
+- **PreviewWorld**: `BlockAndTintGetter` implementation backed by `PreviewChunk` array — stores blocks + biomes copied from generated chunks, full brightness fake lighting, biome tint support
+- **TempServerManager**: Uses MC's native `createFreshLevel` to spin up IntegratedServer with selected OTG preset; auto-cleans temp saves on stop
+- **ChunkGenerationManager**: Spiral-order chunk generation from ServerLevel, feeds chunks into PreviewWorld with progress callbacks
 
 **2026-03-03–04 — Portal overrides & GameRule fixes**
 
