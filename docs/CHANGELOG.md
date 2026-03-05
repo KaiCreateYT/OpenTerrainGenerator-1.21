@@ -10,6 +10,10 @@
 - **PreviewWorld**: `BlockAndTintGetter` implementation backed by `PreviewChunk` array — stores blocks + biomes copied from generated chunks, full brightness fake lighting, biome tint support
 - **TempServerManager**: Uses MC's native `createFreshLevel` to spin up IntegratedServer with selected OTG preset; auto-cleans temp saves on stop
 - **ChunkGenerationManager**: Spiral-order chunk generation from ServerLevel, feeds chunks into PreviewWorld with progress callbacks
+- **PreviewRenderer**: Compiles block meshes via MC's `BlockRenderDispatcher.renderBatched()` into per-section VBOs, renders using `CHUNK_OFFSET` uniform pattern matching MC's `LevelRenderer.renderSectionLayer`
+- **PreviewState**: Static state machine (IDLE → WAITING → GENERATING → COMPILING → DONE) that survives screen transitions during `createFreshLevel` flow
+- **PreviewScreen**: Full UI with seed input, size/generation level selectors, 3D viewport with orbit camera, generate/clear/back controls
+- **ClientTickMixin**: Polls `PreviewState.tick()` to detect when server is ready for chunk generation
 
 **2026-03-03–04 — Portal overrides & GameRule fixes**
 

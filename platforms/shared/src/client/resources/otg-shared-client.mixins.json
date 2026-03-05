@@ -4,6 +4,7 @@
   "package": "com.pg85.otg.client.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
+    "ClientTickMixin",
     "TitleScreenMixin"
   ],
   "injectors": {
