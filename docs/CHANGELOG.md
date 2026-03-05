@@ -2,6 +2,12 @@
 
 ### Release: 0.4.0-dev2
 
+**2026-03-05 — In-game editor & preview system (WIP)**
+
+- **Client source sets**: Added `splitEnvironmentSourceSets()` to shared and fabric modules; client-only code compiles separately from server code
+- **OTG Editor button**: TitleScreenMixin injects "OTG Editor" button on the title screen, opens empty PreviewScreen
+- **OrbitCamera**: Spherical coordinate camera with rotate/zoom/fitTo for 3D terrain preview
+
 **2026-03-03–04 — Portal overrides & GameRule fixes**
 
 - **SharedMaterialData interface**: Now implements IBlockStateMaterial for cross-module material comparison
