@@ -3,7 +3,9 @@
   "minVersion": "0.8",
   "package": "com.pg85.otg.client.mixin",
   "compatibilityLevel": "JAVA_21",
-  "client": [],
+  "client": [
+    "TitleScreenMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }
