@@ -2,6 +2,14 @@
 
 ### Release: 0.4.0-dev2
 
+**2026-03-19 — In-game editor Phase 1: UI framework + World Settings**
+
+- **EditorHubScreen**: Hub screen with DimensionPreset selector (◀/▶ cycling), 4 navigation cards (World Settings active, Biome/Group/BO Store disabled for future phases), Preview World button
+- **WorldSettingsScreen**: Full property grid editor for `DimensionPresetConfig.ini` — category tabs, search filter, type-dependent editors (boolean toggle, enum cycler, text input), save to disk with comment/structure preservation
+- **Data layer**: `PropertyType`/`PropertyCategory` enums, `PropertyDefinition` record, `PropertyValue` with dirty tracking, `PropertyExtractor` (reflects OTG Setting classes), `ConfigLoader`/`ConfigWriter` (round-trip .ini parsing)
+- **Widget layer**: `ScrollableListWidget`, `CategoryTabsWidget`, `SearchBoxWidget`, `PropertyRowWidget`, `PropertyGridWidget` — reusable components for future editor phases
+- **TitleScreenMixin**: "OTG Editor" button now opens EditorHubScreen instead of PreviewScreen
+
 **2026-03-05 — In-game editor & preview system (WIP)**
 
 - **Client source sets**: Added `splitEnvironmentSourceSets()` to shared and fabric modules; client-only code compiles separately from server code
