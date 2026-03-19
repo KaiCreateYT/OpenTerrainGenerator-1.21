@@ -8,6 +8,7 @@ public enum PropertyCategory {
     STRUCTURES("Structures"),
     DIMENSIONS("Dimensions"),
     GAME_RULES("Game Rules"),
+    BIOME_PLACEMENT("Placement"),
     BIOME_TERRAIN("Terrain"),
     VEGETATION("Vegetation"),
     ORES("Ores"),

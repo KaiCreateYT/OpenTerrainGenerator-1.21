@@ -1,6 +1,9 @@
 package com.pg85.otg.client.editor.data;
 
 import com.pg85.otg.config.settings.ConfigSection;
+import com.pg85.otg.config.settings.biome.*;
+import com.pg85.otg.config.settings.biome.generated.BiomePlacementSettings;
+import com.pg85.otg.config.settings.biome.generated.BiomeStructureTagSettings;
 import com.pg85.otg.config.settings.preset.*;
 import com.pg85.otg.config.settingtype.*;
 import org.slf4j.Logger;
@@ -28,6 +31,40 @@ public class PropertyExtractor {
         PRESET_SETTING_CLASSES.put(PortalSettings.class, PropertyCategory.DIMENSIONS);
         PRESET_SETTING_CLASSES.put(ImageSettings.class, PropertyCategory.ADVANCED);
         PRESET_SETTING_CLASSES.put(GameRuleSettings.class, PropertyCategory.GAME_RULES);
+    }
+
+    private static final Map<Class<? extends ConfigSection>, PropertyCategory> BIOME_SETTING_CLASSES = new LinkedHashMap<>();
+    static {
+        BIOME_SETTING_CLASSES.put(IdentitySettings.class, PropertyCategory.BIOME_TERRAIN);
+        BIOME_SETTING_CLASSES.put(BiomeTagSettings.class, PropertyCategory.BIOME_TERRAIN);
+        BIOME_SETTING_CLASSES.put(BiomeTerrainSettings.class, PropertyCategory.BIOME_TERRAIN);
+        BIOME_SETTING_CLASSES.put(SurfaceSettings.class, PropertyCategory.BIOME_TERRAIN);
+        BIOME_SETTING_CLASSES.put(BiomePlacementSettings.class, PropertyCategory.BIOME_PLACEMENT);
+        BIOME_SETTING_CLASSES.put(BiomeVisualSettings.class, PropertyCategory.ADVANCED);
+        BIOME_SETTING_CLASSES.put(BiomeStructureSettings.class, PropertyCategory.BIOME_STRUCTURES);
+        BIOME_SETTING_CLASSES.put(BiomeStructureTagSettings.class, PropertyCategory.BIOME_STRUCTURES);
+        BIOME_SETTING_CLASSES.put(MobSettings.class, PropertyCategory.MOBS);
+        BIOME_SETTING_CLASSES.put(UndergroundBiomeSettings.class, PropertyCategory.ADVANCED);
+    }
+
+    public static Map<String, PropertyDefinition> extractBiomeDefinitions() {
+        Map<String, PropertyDefinition> definitions = new LinkedHashMap<>();
+
+        for (var entry : BIOME_SETTING_CLASSES.entrySet()) {
+            Map<String, Setting<?>> settings = ConfigSection.getSettings(entry.getKey());
+            PropertyCategory category = entry.getValue();
+
+            for (var settingEntry : settings.entrySet()) {
+                Setting<?> setting = settingEntry.getValue();
+                PropertyDefinition def = fromSetting(setting, category);
+                if (def != null) {
+                    definitions.put(setting.getName(), def);
+                }
+            }
+        }
+
+        LOG.info("Extracted {} property definitions for biome .bc files", definitions.size());
+        return definitions;
     }
 
     public static Map<String, PropertyDefinition> extractPresetDefinitions() {
