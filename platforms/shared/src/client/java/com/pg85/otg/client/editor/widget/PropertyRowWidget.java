@@ -21,6 +21,7 @@ public class PropertyRowWidget {
     private final boolean showOverride, showMerge, showOpv;
     private EditBox editBox;
     private Consumer<String> onValueChanged;
+    private Consumer<PropertyRowWidget> onDropdownRequested;
 
     private int x, y, width;
 
@@ -49,8 +50,12 @@ public class PropertyRowWidget {
     }
 
     public void setOnValueChanged(Consumer<String> callback) { this.onValueChanged = callback; }
+    public void setOnDropdownRequested(Consumer<PropertyRowWidget> callback) { this.onDropdownRequested = callback; }
     public EditBox getEditBox() { return editBox; }
     public PropertyValue getProperty() { return property; }
+    public int getEnumBoxX() { return x + NAME_WIDTH + 4; }
+    public int getEnumBoxY() { return y + ROW_HEIGHT; }
+    public int getEnumBoxWidth() { return calcEditWidth(); }
 
     public void render(GuiGraphics graphics, int mouseX, int mouseY) {
         Font font = Minecraft.getInstance().font;
@@ -139,17 +144,13 @@ public class PropertyRowWidget {
             }
         }
 
-        // Enum cycle
+        // Enum dropdown
         if (type == PropertyType.ENUM) {
             int bx = x + NAME_WIDTH + 4;
             int bw = calcEditWidth();
             if (mouseX >= bx && mouseX < bx + bw) {
-                List<String> vals = property.getDefinition().enumValues();
-                if (vals != null && !vals.isEmpty()) {
-                    int idx = vals.indexOf(property.getValue());
-                    int next = (idx + 1) % vals.size();
-                    property.setValue(vals.get(next));
-                    if (onValueChanged != null) onValueChanged.accept(property.getValue());
+                if (onDropdownRequested != null) {
+                    onDropdownRequested.accept(this);
                 }
                 return true;
             }

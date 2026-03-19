@@ -28,6 +28,10 @@ public class PropertyGridWidget {
 
     private List<EditBox> activeEditBoxes = new ArrayList<>();
 
+    // Dropdown state — only one open at a time
+    private DropdownWidget activeDropdown;
+    private PropertyRowWidget dropdownOwner;
+
     public PropertyGridWidget(int x, int y, int width, int height,
                                boolean showOverride, boolean showMerge, boolean showOpv) {
         this.x = x;
@@ -84,6 +88,7 @@ public class PropertyGridWidget {
                 pv.setValue(val);
                 if (onValueChanged != null) onValueChanged.accept(pv);
             });
+            row.setOnDropdownRequested(this::openDropdown);
             if (row.getEditBox() != null) {
                 activeEditBoxes.add(row.getEditBox());
             }
@@ -100,9 +105,26 @@ public class PropertyGridWidget {
             row.render(graphics, mouseX, mouseY);
         }
         graphics.disableScissor();
+
+        // Dropdown overlay — renders on top of everything, outside scissor
+        if (activeDropdown != null) {
+            activeDropdown.render(graphics, mouseX, mouseY);
+        }
     }
 
     public boolean mouseClicked(double mouseX, double mouseY) {
+        // Dropdown takes priority
+        if (activeDropdown != null) {
+            String selected = activeDropdown.mouseClicked(mouseX, mouseY);
+            if (selected != null && dropdownOwner != null) {
+                dropdownOwner.getProperty().setValue(selected);
+                if (onValueChanged != null) onValueChanged.accept(dropdownOwner.getProperty());
+            }
+            // Close dropdown on any click (inside = selected, outside = cancelled)
+            closeDropdown();
+            return true;
+        }
+
         if (tabs.mouseClicked(mouseX, mouseY)) return true;
         for (PropertyRowWidget row : visibleRows) {
             if (row.mouseClicked(mouseX, mouseY)) return true;
@@ -111,13 +133,37 @@ public class PropertyGridWidget {
     }
 
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        // Dropdown scroll
+        if (activeDropdown != null && activeDropdown.mouseScrolled(mouseX, mouseY, delta)) {
+            return true;
+        }
+
         if (mouseX < x || mouseX > x + width || mouseY < y || mouseY > y + height) return false;
+        closeDropdown();
         Font font = Minecraft.getInstance().font;
         int maxScroll = Math.max(0, getFilteredCount() - getMaxVisibleRows());
         scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int) delta));
         rebuildRows(font);
         return true;
     }
+
+    private void openDropdown(PropertyRowWidget row) {
+        var vals = row.getProperty().getDefinition().enumValues();
+        if (vals == null || vals.isEmpty()) return;
+        dropdownOwner = row;
+        activeDropdown = new DropdownWidget(
+            row.getEnumBoxX(), row.getEnumBoxY(),
+            row.getEnumBoxWidth(), vals,
+            row.getProperty().getValue()
+        );
+    }
+
+    private void closeDropdown() {
+        activeDropdown = null;
+        dropdownOwner = null;
+    }
+
+    public boolean hasActiveDropdown() { return activeDropdown != null; }
 
     private int getFilteredCount() {
         PropertyCategory selectedCat = categories.isEmpty() ? null : categories.get(tabs.getSelectedIndex());
