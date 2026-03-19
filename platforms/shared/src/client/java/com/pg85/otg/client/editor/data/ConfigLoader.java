@@ -13,7 +13,8 @@ public class ConfigLoader {
 
     public record LoadResult(
         List<PropertyValue> properties,
-        List<String> rawLines
+        List<String> rawLines,
+        List<String> resourceQueueLines
     ) {}
 
     public static LoadResult load(Path iniPath, Map<String, PropertyDefinition> definitions) {
@@ -26,11 +27,15 @@ public class ConfigLoader {
         }
 
         Map<String, PropertyValue> propertyMap = new LinkedHashMap<>();
+        List<String> resourceQueueLines = new ArrayList<>();
 
         for (String line : lines) {
             String trimmed = line.trim();
             if (trimmed.isEmpty() || trimmed.startsWith("#") || trimmed.startsWith("<")) continue;
-            if (trimmed.contains("(")) continue;
+            if (trimmed.contains("(")) {
+                resourceQueueLines.add(trimmed);
+                continue;
+            }
 
             int colonIdx = trimmed.indexOf(':');
             if (colonIdx < 0) continue;
@@ -55,6 +60,6 @@ public class ConfigLoader {
         }
 
         LOG.info("Loaded {} properties from {}", propertyMap.size(), iniPath.getFileName());
-        return new LoadResult(new ArrayList<>(propertyMap.values()), lines);
+        return new LoadResult(new ArrayList<>(propertyMap.values()), lines, resourceQueueLines);
     }
 }
