@@ -112,9 +112,24 @@ public class PropertyGridWidget {
 
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         if (mouseX < x || mouseX > x + width || mouseY < y || mouseY > y + height) return false;
-        scrollOffset = Math.max(0, scrollOffset - (int) delta);
-        rebuildRows(Minecraft.getInstance().font);
+        Font font = Minecraft.getInstance().font;
+        int maxScroll = Math.max(0, getFilteredCount() - getMaxVisibleRows());
+        scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int) delta));
+        rebuildRows(font);
         return true;
+    }
+
+    private int getFilteredCount() {
+        PropertyCategory selectedCat = categories.isEmpty() ? null : categories.get(tabs.getSelectedIndex());
+        return (int) allProperties.stream()
+            .filter(p -> p.getDefinition().category() == selectedCat)
+            .filter(p -> searchFilter.isEmpty() || p.getDefinition().name().toLowerCase().contains(searchFilter.toLowerCase()))
+            .count();
+    }
+
+    private int getMaxVisibleRows() {
+        int availableHeight = height - 44 - 30;
+        return availableHeight / PropertyRowWidget.ROW_HEIGHT;
     }
 
     public EditBox getSearchEditBox() { return searchBox.getEditBox(); }

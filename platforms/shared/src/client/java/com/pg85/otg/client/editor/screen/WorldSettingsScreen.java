@@ -21,20 +21,29 @@ public class WorldSettingsScreen extends Screen {
     private static final Logger LOG = LoggerFactory.getLogger(WorldSettingsScreen.class);
 
     private final DimensionPreset preset;
+    private final int hubPresetIndex;
     private PropertyGridWidget propertyGrid;
     private List<PropertyValue> properties = List.of();
     private List<String> rawLines = List.of();
     private Path configPath;
     private String errorMessage;
 
-    public WorldSettingsScreen(DimensionPreset preset) {
+    // Track registered property EditBoxes so we can swap them on scroll/tab change
+    private final List<EditBox> registeredPropertyEditBoxes = new ArrayList<>();
+
+    public WorldSettingsScreen(DimensionPreset preset, int hubPresetIndex) {
         super(Component.literal("OTG Editor — World Settings — " +
             (preset != null ? preset.getFolderName() : "?")));
         this.preset = preset;
+        this.hubPresetIndex = hubPresetIndex;
     }
 
     @Override
     protected void init() {
+        // Back button — always present, even on error
+        addRenderableWidget(Button.builder(Component.literal("Back"), btn -> onClose())
+            .bounds(width - 70, height - 30, 60, 20).build());
+
         if (preset == null) {
             errorMessage = "No preset selected";
             return;
@@ -44,9 +53,16 @@ public class WorldSettingsScreen extends Screen {
         // and must NOT reload, otherwise unsaved edits are lost on scroll/tab change.
         if (properties.isEmpty()) {
             configPath = preset.getFolder().resolve(Constants.DIMENSION_PRESET_CONFIG_FILE);
-            Map<String, PropertyDefinition> definitions = PropertyExtractor.extractPresetDefinitions();
-            ConfigLoader.LoadResult result = ConfigLoader.load(configPath, definitions);
+            LOG.info("Loading config from: {}", configPath);
 
+            Map<String, PropertyDefinition> definitions = PropertyExtractor.extractPresetDefinitions();
+            if (definitions.isEmpty()) {
+                errorMessage = "Failed to extract property definitions";
+                LOG.error("PropertyExtractor returned empty definitions");
+                return;
+            }
+
+            ConfigLoader.LoadResult result = ConfigLoader.load(configPath, definitions);
             if (result == null) {
                 errorMessage = "Failed to load " + configPath.getFileName();
                 return;
@@ -67,9 +83,11 @@ public class WorldSettingsScreen extends Screen {
         // Register search EditBox
         addRenderableWidget(propertyGrid.getSearchEditBox());
 
-        // Register all property EditBoxes
+        // Register property EditBoxes
+        registeredPropertyEditBoxes.clear();
         for (EditBox eb : propertyGrid.getActiveEditBoxes()) {
             addRenderableWidget(eb);
+            registeredPropertyEditBoxes.add(eb);
         }
 
         // Bottom buttons
@@ -80,9 +98,23 @@ public class WorldSettingsScreen extends Screen {
         addRenderableWidget(Button.builder(Component.literal("Preview"), btn -> {
             minecraft.setScreen(new PreviewScreen());
         }).bounds(80, btnY, 60, 20).build());
+    }
 
-        addRenderableWidget(Button.builder(Component.literal("Back"), btn -> onClose())
-            .bounds(width - 70, btnY, 60, 20).build());
+    /**
+     * Swap property EditBoxes without full rebuildWidgets().
+     * Removes old EditBoxes from screen, rebuilds rows in PropertyGridWidget,
+     * then registers the new EditBoxes.
+     */
+    private void refreshPropertyEditBoxes() {
+        for (EditBox eb : registeredPropertyEditBoxes) {
+            removeWidget(eb);
+        }
+        registeredPropertyEditBoxes.clear();
+
+        for (EditBox eb : propertyGrid.getActiveEditBoxes()) {
+            addRenderableWidget(eb);
+            registeredPropertyEditBoxes.add(eb);
+        }
     }
 
     private void save() {
@@ -102,9 +134,10 @@ public class WorldSettingsScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+        // Render background + widgets (buttons, EditBoxes)
+        super.render(graphics, mouseX, mouseY, partialTick);
 
-        // Title
+        // Draw text AFTER super.render() so it's on top of blur/background
         graphics.drawCenteredString(font, title, width / 2, 5, 0xFFFFFF);
 
         // Error message
@@ -112,7 +145,7 @@ public class WorldSettingsScreen extends Screen {
             graphics.drawCenteredString(font, errorMessage, width / 2, height / 2, 0xFF4444);
         }
 
-        // Property grid
+        // Property grid (custom rendering — tabs, row backgrounds, labels)
         if (propertyGrid != null) {
             propertyGrid.render(graphics, mouseX, mouseY);
         }
@@ -121,15 +154,13 @@ public class WorldSettingsScreen extends Screen {
         if (hasDirtyProperties()) {
             graphics.drawString(font, "\u25CF Unsaved changes", width - 130, height - 25, 0xFFAA8844);
         }
-
-        super.render(graphics, mouseX, mouseY, partialTick);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (propertyGrid != null && propertyGrid.mouseClicked(mouseX, mouseY)) {
-            // Rebuild EditBoxes after click (category change, etc.)
-            rebuildWidgets();
+            // Tab change — need to swap EditBoxes (different category = different rows)
+            refreshPropertyEditBoxes();
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
@@ -138,7 +169,8 @@ public class WorldSettingsScreen extends Screen {
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double deltaH, double deltaV) {
         if (propertyGrid != null && propertyGrid.mouseScrolled(mouseX, mouseY, deltaV)) {
-            rebuildWidgets();
+            // Scroll — swap EditBoxes without full rebuildWidgets()
+            refreshPropertyEditBoxes();
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, deltaH, deltaV);
@@ -146,7 +178,7 @@ public class WorldSettingsScreen extends Screen {
 
     @Override
     public void onClose() {
-        minecraft.setScreen(new EditorHubScreen());
+        minecraft.setScreen(new EditorHubScreen(hubPresetIndex));
     }
 
     @Override

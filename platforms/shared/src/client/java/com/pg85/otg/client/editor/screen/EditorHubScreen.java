@@ -9,19 +9,30 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 public class EditorHubScreen extends Screen {
 
+    private static final Logger LOG = LoggerFactory.getLogger(EditorHubScreen.class);
+
     private record PresetEntry(String displayName, String folderName, String resourceId, DimensionPreset preset) {}
 
     private final List<PresetEntry> presets = new ArrayList<>();
-    private int presetIndex = 0;
+    private int presetIndex;
+    private String errorMessage;
 
     public EditorHubScreen() {
+        this(0);
+    }
+
+    public EditorHubScreen(int presetIndex) {
         super(Component.literal("OTG Editor"));
+        this.presetIndex = presetIndex;
     }
 
     @Override
@@ -37,9 +48,22 @@ public class EditorHubScreen extends Screen {
                     presets.add(new PresetEntry(display, preset.getFolderName(), resId, preset));
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            LOG.error("Failed to load presets", e);
+            errorMessage = "Failed to load presets: " + e.getMessage();
+        }
 
-        if (presets.isEmpty()) return;
+        // Back button — always present
+        addRenderableWidget(Button.builder(Component.literal("Back"), btn -> {
+            onClose();
+        }).bounds(width / 2 - 40, height - 30, 80, 20).build());
+
+        if (presets.isEmpty()) {
+            if (errorMessage == null) errorMessage = "No presets found";
+            return;
+        }
+
+        if (presetIndex >= presets.size()) presetIndex = 0;
 
         int cx = width / 2;
         int y = 50;
@@ -63,7 +87,7 @@ public class EditorHubScreen extends Screen {
         int gap = 10;
 
         addRenderableWidget(Button.builder(Component.literal("World Settings"), btn -> {
-            minecraft.setScreen(new WorldSettingsScreen(getSelectedPreset()));
+            minecraft.setScreen(new WorldSettingsScreen(getSelectedPreset(), presetIndex));
         }).bounds(cx - cardW - gap / 2, y, cardW, cardH).build());
 
         addRenderableWidget(Button.builder(Component.literal("Biome Editor"), btn -> {
@@ -87,15 +111,14 @@ public class EditorHubScreen extends Screen {
             minecraft.setScreen(new PreviewScreen());
         }).bounds(cx - 60, y, 120, 20).build());
 
-        // Back
-        addRenderableWidget(Button.builder(Component.literal("Back"), btn -> {
-            onClose();
-        }).bounds(cx - 40, height - 30, 80, 20).build());
+        // Back button already added above (before empty presets check)
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+        super.render(graphics, mouseX, mouseY, partialTick);
+
+        // Draw text AFTER super.render() so it's on top of blur/background
         graphics.drawCenteredString(font, title, width / 2, 10, 0xFFFFFF);
 
         if (!presets.isEmpty()) {
@@ -103,7 +126,9 @@ public class EditorHubScreen extends Screen {
             graphics.drawCenteredString(font, "Preset: " + presetName, width / 2, 54, 0xFFFFFF);
         }
 
-        super.render(graphics, mouseX, mouseY, partialTick);
+        if (errorMessage != null) {
+            graphics.drawCenteredString(font, errorMessage, width / 2, height / 2, 0xFF4444);
+        }
     }
 
     private DimensionPreset getSelectedPreset() {
