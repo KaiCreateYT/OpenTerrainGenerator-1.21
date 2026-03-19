@@ -68,7 +68,9 @@ public class ScrollableListWidget {
 
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         if (mouseX < x || mouseX > x + width || mouseY < y || mouseY > y + height) return false;
-        scrollOffset = Math.max(0, scrollOffset - (int) delta);
+        int maxVisible = height / itemHeight;
+        int maxScroll = Math.max(0, items.size() - maxVisible);
+        scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int) delta));
         return true;
     }
 }

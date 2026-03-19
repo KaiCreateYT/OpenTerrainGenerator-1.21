@@ -1,5 +1,7 @@
 package com.pg85.otg.client.editor.data;
 
+import java.util.Objects;
+
 public class PropertyValue {
     private final PropertyDefinition definition;
     private String value;
@@ -21,7 +23,7 @@ public class PropertyValue {
     public boolean isDirty() { return dirty; }
 
     public void setValue(String value) {
-        if (!this.value.equals(value)) {
+        if (!Objects.equals(this.value, value)) {
             this.value = value;
             this.dirty = true;
         }
