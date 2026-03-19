@@ -91,8 +91,8 @@ public class EditorHubScreen extends Screen {
         }).bounds(cx - cardW - gap / 2, y, cardW, cardH).build());
 
         addRenderableWidget(Button.builder(Component.literal("Biome Editor"), btn -> {
-            // Phase 2
-        }).bounds(cx + gap / 2, y, cardW, cardH).build()).active = false;
+            minecraft.setScreen(new BiomeEditorScreen(getSelectedPreset(), presetIndex));
+        }).bounds(cx + gap / 2, y, cardW, cardH).build());
 
         y += cardH + gap;
 
