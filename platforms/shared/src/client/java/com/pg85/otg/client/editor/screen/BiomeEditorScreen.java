@@ -346,6 +346,18 @@ public class BiomeEditorScreen extends Screen {
     }
 
     @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (biomeList != null && biomeList.mouseDragged(mouseX, mouseY)) return true;
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (biomeList != null && biomeList.mouseReleased()) return true;
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
     public void onClose() {
         minecraft.setScreen(new EditorHubScreen(hubPresetIndex));
     }

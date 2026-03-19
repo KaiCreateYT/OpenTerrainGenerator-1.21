@@ -15,6 +15,7 @@ public class ScrollableListWidget {
     private int selectedIndex = -1;
     private int scrollOffset = 0;
     private IntConsumer onSelect;
+    private boolean draggingScrollbar = false;
 
     public ScrollableListWidget(int x, int y, int width, int height, int itemHeight) {
         this.x = x;
@@ -75,6 +76,12 @@ public class ScrollableListWidget {
 
     public boolean mouseClicked(double mouseX, double mouseY) {
         if (mouseX < x || mouseX > x + width || mouseY < y || mouseY > y + height) return false;
+        // Scrollbar click — start drag
+        if (mouseX >= x + width - 6 && items != null && items.size() > height / itemHeight) {
+            draggingScrollbar = true;
+            scrollToY(mouseY);
+            return true;
+        }
         int clicked = (int) ((mouseY - y) / itemHeight) + scrollOffset;
         if (clicked >= 0 && clicked < items.size()) {
             selectedIndex = clicked;
@@ -82,6 +89,30 @@ public class ScrollableListWidget {
             return true;
         }
         return false;
+    }
+
+    public boolean mouseDragged(double mouseX, double mouseY) {
+        if (draggingScrollbar) {
+            scrollToY(mouseY);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean mouseReleased() {
+        if (draggingScrollbar) {
+            draggingScrollbar = false;
+            return true;
+        }
+        return false;
+    }
+
+    private void scrollToY(double mouseY) {
+        if (items == null || items.isEmpty()) return;
+        int maxVisible = height / itemHeight;
+        int maxScroll = Math.max(0, items.size() - maxVisible);
+        float ratio = (float) Math.clamp((mouseY - y) / height, 0, 1);
+        scrollOffset = Math.round(ratio * maxScroll);
     }
 
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {

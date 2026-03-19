@@ -25,6 +25,7 @@ public class TreeListWidget {
     private int scrollOffset = 0;
     private int selectedIndex = -1;
     private Consumer<TreeNode> onSelect;
+    private boolean draggingScrollbar = false;
 
     public record TreeNode(String name, String fullPath, int depth, boolean isFolder, List<TreeNode> children) {
         private static final List<TreeNode> NO_CHILDREN = List.of();
@@ -237,29 +238,54 @@ public class TreeListWidget {
     public boolean mouseClicked(double mouseX, double mouseY) {
         if (mouseX < x || mouseX > x + width || mouseY < y || mouseY > y + height) return false;
 
+        // Scrollbar click — start drag
+        if (mouseX >= x + width - 6 && visibleNodes.size() > height / itemHeight) {
+            draggingScrollbar = true;
+            scrollToY(mouseY);
+            return true;
+        }
+
         int clicked = (int) ((mouseY - y) / itemHeight) + scrollOffset;
         if (clicked < 0 || clicked >= visibleNodes.size()) return false;
 
         TreeNode node = visibleNodes.get(clicked);
 
         if (node.isFolder()) {
-            // Toggle expand/collapse
             if (expandedPaths.contains(node.fullPath())) {
                 expandedPaths.remove(node.fullPath());
             } else {
                 expandedPaths.add(node.fullPath());
             }
             rebuildVisible();
-            // Keep selection stable
-            if (selectedIndex >= 0 && selectedIndex < visibleNodes.size()) {
-                // Selection may have shifted — don't update
-            }
             return true;
         } else {
             selectedIndex = clicked;
             if (onSelect != null) onSelect.accept(node);
             return true;
         }
+    }
+
+    public boolean mouseDragged(double mouseX, double mouseY) {
+        if (draggingScrollbar) {
+            scrollToY(mouseY);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean mouseReleased() {
+        if (draggingScrollbar) {
+            draggingScrollbar = false;
+            return true;
+        }
+        return false;
+    }
+
+    private void scrollToY(double mouseY) {
+        int maxVisible = height / itemHeight;
+        int maxScroll = Math.max(0, visibleNodes.size() - maxVisible);
+        float ratio = (float) Math.clamp((mouseY - y) / height, 0, 1);
+        scrollOffset = Math.round(ratio * maxScroll);
     }
 
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
