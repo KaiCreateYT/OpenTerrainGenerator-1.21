@@ -97,6 +97,7 @@ public class PropertyGridWidget {
     }
 
     public void render(GuiGraphics graphics, int mouseX, int mouseY) {
+        if (tabs == null) return;
         graphics.fill(x, y, x + width, y + height, 0xFF222222);
         tabs.render(graphics);
 
@@ -125,6 +126,7 @@ public class PropertyGridWidget {
             return true;
         }
 
+        if (tabs == null) return false;
         if (tabs.mouseClicked(mouseX, mouseY)) return true;
         for (PropertyRowWidget row : visibleRows) {
             if (row.mouseClicked(mouseX, mouseY)) return true;
