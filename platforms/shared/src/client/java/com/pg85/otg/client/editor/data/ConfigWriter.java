@@ -1,0 +1,64 @@
+package com.pg85.otg.client.editor.data;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.file.*;
+import java.util.*;
+
+public class ConfigWriter {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ConfigWriter.class);
+
+    public static boolean save(Path iniPath, List<String> rawLines, List<PropertyValue> properties) {
+        Map<String, String> changes = new HashMap<>();
+        for (PropertyValue pv : properties) {
+            if (pv.isDirty()) {
+                changes.put(pv.getDefinition().name(), pv.getValue());
+            }
+        }
+
+        if (changes.isEmpty()) {
+            LOG.info("No changes to save");
+            return true;
+        }
+
+        List<String> output = new ArrayList<>(rawLines.size());
+        for (String line : rawLines) {
+            String trimmed = line.trim();
+
+            if (!trimmed.isEmpty() && !trimmed.startsWith("#") && !trimmed.startsWith("<")
+                    && !trimmed.contains("(") && trimmed.contains(":")) {
+                int colonIdx = trimmed.indexOf(':');
+                String key = trimmed.substring(0, colonIdx).trim();
+
+                if (changes.containsKey(key)) {
+                    String indent = line.substring(0, line.indexOf(trimmed));
+                    output.add(indent + key + ": " + changes.get(key));
+                    changes.remove(key);
+                    continue;
+                }
+            }
+
+            output.add(line);
+        }
+
+        if (!changes.isEmpty()) {
+            output.add("");
+            output.add("# Added by OTG Editor");
+            for (var entry : changes.entrySet()) {
+                output.add(entry.getKey() + ": " + entry.getValue());
+            }
+        }
+
+        try {
+            Files.write(iniPath, output);
+            LOG.info("Saved {} changes to {}", properties.stream().filter(PropertyValue::isDirty).count(), iniPath.getFileName());
+            return true;
+        } catch (IOException e) {
+            LOG.error("Failed to write config file: {}", iniPath, e);
+            return false;
+        }
+    }
+}
