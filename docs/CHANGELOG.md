@@ -2,6 +2,18 @@
 
 ### Release: 0.4.0-dev2
 
+**2026-03-19 — In-game editor Phase 2: Biome Editor**
+
+- **BiomeEditorScreen**: Split-pane biome editor — left panel with searchable biome list, right panel with PropertyGridWidget for .bc file editing (category tabs, search, Override/Merge toggles)
+- **Biome CRUD**: New (generates .bc from defaults), Clone (file copy), Delete — all update biome list immediately
+- **BiomeFileScanner**: Discovers .bc/.biome files in preset's Biomes/ folder with legacy WorldBiomes/ fallback
+- **Biome property extraction**: `PropertyExtractor.extractBiomeDefinitions()` scans 10 biome ConfigSection subclasses including annotation-generated BiomePlacementSettings/BiomeStructureTagSettings
+- **ConfigLoader resource queue**: Collects ConfigFunction lines (Ore, Tree, CustomObject) for read-only display
+- **ConfigWriter.createFromDefaults()**: Generates fresh .bc files grouped by category for new biome creation
+- **BOBrowserScreen**: Simple BO3/BO4 file browser with search and scrollable list
+- **Enum dropdowns**: Click on enum property opens overlay dropdown with value list instead of cycling
+- **EditorHubScreen**: Biome Editor button now active
+
 **2026-03-19 — In-game editor Phase 1: UI framework + World Settings**
 
 - **EditorHubScreen**: Hub screen with DimensionPreset selector (◀/▶ cycling), 4 navigation cards (World Settings active, Biome/Group/BO Store disabled for future phases), Preview World button
