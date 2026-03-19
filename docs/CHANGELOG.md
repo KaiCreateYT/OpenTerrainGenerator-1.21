@@ -2,12 +2,18 @@
 
 ### Release: 0.4.0-dev2
 
-**2026-03-20 — Editor review fixes**
+**2026-03-20 — Editor polish & review fixes**
 
-- **BiomeEditorScreen**: Index-based biome lookup via `filteredBiomeEntries` list — fixes wrong file loaded/deleted when two biomes in different subdirectories share the same name
-- **BiomeEditorScreen**: Delete confirmation — first click shows "Click Delete again to confirm", second click actually deletes; resets on biome select/new/clone/save
-- **PropertyExtractor**: DRY refactor — `extractPresetDefinitions()` and `extractBiomeDefinitions()` now delegate to shared `extractDefinitions()` helper
-- **BOBrowserScreen**: Rescan guard (`if (allObjectNames.isEmpty())`) prevents re-walking filesystem on every `init()` call; legacy `WorldObjects/` folder fallback when `Objects/` doesn't exist
+- **TreeListWidget**: Collapsible folder tree for BO browser — folders expand/collapse on click (▶/▼), sorted folders-first, search auto-expands matching branches
+- **Scrollbar**: Visual scrollbar with click-to-jump and drag support on ScrollableListWidget (biome list) and TreeListWidget (BO browser)
+- **PropertyGridWidget.syncEditBoxes()**: DRY helper eliminates duplicate `refreshPropertyEditBoxes()` in WorldSettingsScreen and BiomeEditorScreen
+- **Resource queue display**: BiomeEditorScreen shows collected ConfigFunction lines (Ore, Tree, etc.) read-only below property grid with scroll
+- **PropertyCategory**: Unique display names — `BIOME_TERRAIN` → "Biome Terrain", `BIOME_STRUCTURES` → "Biome Structures"
+- **BiomeEditorScreen**: Index-based biome lookup via `filteredBiomeEntries` — fixes wrong file loaded/deleted when subdirectory biomes share names
+- **BiomeEditorScreen**: Delete confirmation — double-click required, resets on biome select/new/clone/save
+- **PropertyExtractor**: DRY — `extractPresetDefinitions()`/`extractBiomeDefinitions()` delegate to shared `extractDefinitions()` helper
+- **BOBrowserScreen**: Rescan guard + legacy `WorldObjects/` folder fallback
+- **PropertyGridWidget**: Null guard for uninitialized tabs (no biome selected crash fix)
 
 **2026-03-19 — In-game editor Phase 2: Biome Editor**
 
