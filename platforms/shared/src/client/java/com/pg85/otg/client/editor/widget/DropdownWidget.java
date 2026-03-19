@@ -39,6 +39,10 @@ public class DropdownWidget {
         int visibleCount = Math.min(values.size(), MAX_VISIBLE);
         int totalH = visibleCount * ITEM_HEIGHT + PADDING * 2;
 
+        // Push z-level forward so dropdown renders on top of everything (like MC tooltips)
+        graphics.pose().pushPose();
+        graphics.pose().translate(0, 0, 400);
+
         // Shadow
         graphics.fill(x + 2, y + 2, x + width + 2, y + totalH + 2, 0x88000000);
         // Background
@@ -80,6 +84,8 @@ public class DropdownWidget {
         if (scrollOffset + visibleCount < values.size()) {
             graphics.drawCenteredString(font, "\u25BC", x + width / 2, y + totalH - 9, 0xFF888888);
         }
+
+        graphics.pose().popPose();
     }
 
     /**
