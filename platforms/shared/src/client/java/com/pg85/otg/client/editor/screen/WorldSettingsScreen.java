@@ -52,7 +52,7 @@ public class WorldSettingsScreen extends Screen {
         // Only load from disk on first init — rebuildWidgets() calls init() again
         // and must NOT reload, otherwise unsaved edits are lost on scroll/tab change.
         if (properties.isEmpty()) {
-            configPath = preset.getFolder().resolve(Constants.DIMENSION_PRESET_CONFIG_FILE);
+            configPath = resolveConfigPath(preset.getFolder());
             LOG.info("Loading config from: {}", configPath);
 
             Map<String, PropertyDefinition> definitions = PropertyExtractor.extractPresetDefinitions();
@@ -115,6 +115,14 @@ public class WorldSettingsScreen extends Screen {
             addRenderableWidget(eb);
             registeredPropertyEditBoxes.add(eb);
         }
+    }
+
+    private static Path resolveConfigPath(Path presetFolder) {
+        Path newPath = presetFolder.resolve(Constants.DIMENSION_PRESET_CONFIG_FILE);
+        if (java.nio.file.Files.exists(newPath)) return newPath;
+        Path legacyPath = presetFolder.resolve(Constants.LEGACY_WORLD_CONFIG_FILE);
+        if (java.nio.file.Files.exists(legacyPath)) return legacyPath;
+        return newPath; // fallback — ConfigLoader will report the error
     }
 
     private void save() {
