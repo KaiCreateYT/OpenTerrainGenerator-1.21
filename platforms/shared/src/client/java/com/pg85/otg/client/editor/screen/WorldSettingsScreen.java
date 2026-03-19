@@ -100,21 +100,8 @@ public class WorldSettingsScreen extends Screen {
         }).bounds(80, btnY, 60, 20).build());
     }
 
-    /**
-     * Swap property EditBoxes without full rebuildWidgets().
-     * Removes old EditBoxes from screen, rebuilds rows in PropertyGridWidget,
-     * then registers the new EditBoxes.
-     */
     private void refreshPropertyEditBoxes() {
-        for (EditBox eb : registeredPropertyEditBoxes) {
-            removeWidget(eb);
-        }
-        registeredPropertyEditBoxes.clear();
-
-        for (EditBox eb : propertyGrid.getActiveEditBoxes()) {
-            addRenderableWidget(eb);
-            registeredPropertyEditBoxes.add(eb);
-        }
+        propertyGrid.syncEditBoxes(registeredPropertyEditBoxes, this::removeWidget, this::addRenderableWidget);
     }
 
     private static Path resolveConfigPath(Path presetFolder) {

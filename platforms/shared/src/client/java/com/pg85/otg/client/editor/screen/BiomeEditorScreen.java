@@ -38,6 +38,7 @@ public class BiomeEditorScreen extends Screen {
     private List<PropertyValue> properties = List.of();
     private List<String> rawLines = List.of();
     private List<String> resourceQueueLines = List.of();
+    private int resourceQueueScroll = 0;
     private Path currentBiomePath;
     private Map<String, PropertyDefinition> biomeDefinitions;
 
@@ -94,7 +95,7 @@ public class BiomeEditorScreen extends Screen {
         // Property grid (right of biome list)
         int gridX = LEFT_PANEL_WIDTH + 4;
         int gridW = width - gridX - 4;
-        int gridH = height - 70;
+        int gridH = height - 120;
         propertyGrid = new PropertyGridWidget(gridX, 14, gridW, gridH, true, true, false);
 
         // Load selected biome if any
@@ -265,14 +266,7 @@ public class BiomeEditorScreen extends Screen {
     }
 
     private void refreshPropertyEditBoxes() {
-        for (EditBox eb : registeredPropertyEditBoxes) {
-            removeWidget(eb);
-        }
-        registeredPropertyEditBoxes.clear();
-        for (EditBox eb : propertyGrid.getActiveEditBoxes()) {
-            addRenderableWidget(eb);
-            registeredPropertyEditBoxes.add(eb);
-        }
+        propertyGrid.syncEditBoxes(registeredPropertyEditBoxes, this::removeWidget, this::addRenderableWidget);
     }
 
     @Override
@@ -292,6 +286,25 @@ public class BiomeEditorScreen extends Screen {
         } else if (selectedBiomeIndex < 0) {
             graphics.drawCenteredString(font, "Select a biome to edit",
                 LEFT_PANEL_WIDTH + (width - LEFT_PANEL_WIDTH) / 2, height / 2, 0xFF666666);
+        }
+
+        // Resource queue read-only display
+        if (!resourceQueueLines.isEmpty() && selectedBiomeIndex >= 0) {
+            int rqX = LEFT_PANEL_WIDTH + 4;
+            int rqY = height - 88;
+            String header = "Resources (" + resourceQueueLines.size() + ")";
+            graphics.drawString(font, header, rqX, rqY, 0xFF888888);
+            rqY += 10;
+            int maxLines = 4;
+            int maxScroll = Math.max(0, resourceQueueLines.size() - maxLines);
+            resourceQueueScroll = Math.min(resourceQueueScroll, maxScroll);
+            graphics.enableScissor(rqX, rqY, width - 8, rqY + maxLines * 10);
+            for (int i = 0; i < maxLines && (i + resourceQueueScroll) < resourceQueueLines.size(); i++) {
+                String line = resourceQueueLines.get(i + resourceQueueScroll);
+                if (line.length() > 80) line = line.substring(0, 77) + "...";
+                graphics.drawString(font, line, rqX + 2, rqY + i * 10, 0xFF666666, false);
+            }
+            graphics.disableScissor();
         }
 
         if (errorMessage != null) {
@@ -321,6 +334,12 @@ public class BiomeEditorScreen extends Screen {
         if (biomeList != null && biomeList.mouseScrolled(mouseX, mouseY, deltaV)) return true;
         if (propertyGrid != null && propertyGrid.mouseScrolled(mouseX, mouseY, deltaV)) {
             refreshPropertyEditBoxes();
+            return true;
+        }
+        // Resource queue scroll
+        if (!resourceQueueLines.isEmpty() && mouseX > LEFT_PANEL_WIDTH && mouseY > height - 88 && mouseY < height - 48) {
+            int maxScroll = Math.max(0, resourceQueueLines.size() - 4);
+            resourceQueueScroll = Math.max(0, Math.min(maxScroll, resourceQueueScroll - (int) deltaV));
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, deltaH, deltaV);

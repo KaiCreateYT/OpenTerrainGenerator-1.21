@@ -46,6 +46,23 @@ public class PropertyGridWidget {
     public void setOnValueChanged(Consumer<PropertyValue> callback) { this.onValueChanged = callback; }
     public List<EditBox> getActiveEditBoxes() { return activeEditBoxes; }
 
+    /**
+     * Swap registered EditBoxes after scroll/tab change.
+     * Removes old EditBoxes via removeAction, clears the tracking list,
+     * then registers new ones via addAction.
+     * Eliminates duplicate refreshPropertyEditBoxes() in every Screen subclass.
+     */
+    public void syncEditBoxes(List<EditBox> registered,
+                               java.util.function.Consumer<EditBox> removeAction,
+                               java.util.function.Consumer<EditBox> addAction) {
+        for (EditBox eb : registered) removeAction.accept(eb);
+        registered.clear();
+        for (EditBox eb : activeEditBoxes) {
+            addAction.accept(eb);
+            registered.add(eb);
+        }
+    }
+
     public void init(Font font, List<PropertyValue> properties) {
         this.allProperties = properties;
 
