@@ -1,15 +1,20 @@
 package com.pg85.otg.client.preview.world;
 
+import com.pg85.otg.client.mixin.MinecraftClientAccessor;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.worldselection.WorldOpenFlows;
+import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelSettings;
 import net.minecraft.world.level.WorldDataConfiguration;
+import net.minecraft.world.level.block.entity.SkullBlockEntity;
 import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.levelgen.presets.WorldPreset;
 import net.minecraft.world.level.levelgen.presets.WorldPresets;
@@ -136,28 +141,57 @@ public class TempServerManager {
     }
 
     /**
-     * Stop the server and clean up temp save directory.
-     * MUST be called on the render thread. Blocks until disconnect completes.
+     * Stop the server and return to title screen. Non-blocking.
+     *
+     * Vanilla mc.disconnect() has a while(!isShutdown){runTick()} busy-wait
+     * loop that deadlocks with C2ME and other mods. We work around it by
+     * nulling singleplayerServer BEFORE halting — when the dying server
+     * triggers mc.disconnect() via the network callback, the while loop
+     * is skipped because integratedServer is already null.
      */
     public void stopServer() {
         Minecraft mc = Minecraft.getInstance();
+        MinecraftClientAccessor accessor = (MinecraftClientAccessor) mc;
         String worldName = tempWorldName;
         tempWorldName = null;
 
-        // disconnect() is synchronous — halts the IntegratedServer and waits
-        mc.disconnect();
+        LOG.info("stopServer: nulling server ref and halting");
 
+        // 1. Grab server ref and null it BEFORE halting.
+        //    When the server dies and triggers mc.disconnect() via onDisconnect
+        //    callback, disconnect() grabs this.singleplayerServer which is now
+        //    null → skips the while(!isShutdown) busy-wait loop entirely.
+        IntegratedServer server = mc.getSingleplayerServer();
+        accessor.otg$setSingleplayerServer(null);
+
+        // 2. Halt server (non-blocking — sets running=false, server thread exits)
+        if (server != null) {
+            server.halt(false);
+        }
+
+        // 3. Now call mc.disconnect() ourselves — the while loop is skipped
+        //    because singleplayerServer is already null. This cleanly handles
+        //    connection close, level teardown, screen transition, etc.
+        LOG.info("stopServer: calling disconnect (loop-safe)");
+        mc.disconnect(new TitleScreen());
+        LOG.info("stopServer: disconnect returned");
+
+        // 4. Clean up temp save directory in background (server may still be writing)
         if (worldName != null) {
-            try {
-                Path savesDir = mc.getLevelSource().getBaseDir();
-                Path worldDir = savesDir.resolve(worldName);
-                if (Files.exists(worldDir)) {
-                    deleteDirRecursive(worldDir);
-                    LOG.info("Deleted temp preview world: {}", worldName);
+            String name = worldName;
+            new Thread(() -> {
+                try { Thread.sleep(5000); } catch (InterruptedException ignored) {}
+                try {
+                    Path savesDir = mc.getLevelSource().getBaseDir();
+                    Path worldDir = savesDir.resolve(name);
+                    if (Files.exists(worldDir)) {
+                        deleteDirRecursive(worldDir);
+                        LOG.info("Deleted temp preview world: {}", name);
+                    }
+                } catch (Exception e) {
+                    LOG.warn("Failed to delete temp preview world: {}", name, e);
                 }
-            } catch (Exception e) {
-                LOG.warn("Failed to delete temp preview world: {}", worldName, e);
-            }
+            }, "OTG-Preview-Cleanup").start();
         }
     }
 

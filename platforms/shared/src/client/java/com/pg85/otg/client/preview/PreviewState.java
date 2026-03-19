@@ -60,11 +60,6 @@ public class PreviewState {
         statusText = "Starting server...";
         waitStartTime = System.currentTimeMillis();
 
-        // Stop existing server if running (different seed/preset)
-        if (serverManager.isRunning()) {
-            serverManager.stopServer();
-        }
-
         serverManager.startServer(presetId, seed, s -> statusText = s);
     }
 
@@ -99,20 +94,80 @@ public class PreviewState {
     private static long waitStartTime;
     private static final long SERVER_TIMEOUT_MS = 60_000;
 
+    // Pending close — set by PreviewScreen.Back, handled in tick()
+    private static volatile boolean pendingClose;
+    // Tick counter: 0 = not closing, 1 = screen closed this tick, 2 = disconnect next tick
+    private static int closeTickCounter;
+
     /**
      * Called every client tick from ClientTickMixin.
+     *
+     * After createFreshLevel(), the player is briefly in a live world (spectator mode).
+     * We show progress via the action bar, then disconnect when generation completes.
      */
+    public static void requestClose() {
+        pendingClose = true;
+    }
+
     public static void tick() {
+        Minecraft mc = Minecraft.getInstance();
+
+        // Two-tick close: tick 1 closes PreviewScreen (back to spectator),
+        // tick 2 calls disconnect (from clean in-game state, like vanilla Save & Quit).
+        // Single-tick setScreen(null)+disconnect() doesn't work — MC needs a full
+        // tick/frame without PreviewScreen before disconnect works.
+        if (pendingClose) {
+            pendingClose = false;
+            reset();
+            mc.setScreen(null); // close PreviewScreen → spectator
+            closeTickCounter = 1;
+            LOG.info("Close requested — PreviewScreen removed, will disconnect next tick");
+            return;
+        }
+        if (closeTickCounter > 0) {
+            closeTickCounter++;
+            if (closeTickCounter >= 3) {
+                closeTickCounter = 0;
+                LOG.info("Disconnecting (non-blocking — nulling server ref to skip while loop)...");
+                serverManager.stopServer();
+                LOG.info("Disconnect complete");
+                return;
+            }
+        }
+
         if (phase == Phase.WAITING_FOR_SERVER) {
-            if (serverManager.isRunning()) {
+            // Wait for BOTH server ready AND player connected.
+            // createFreshLevel() is async — server becomes ready before client connects.
+            // If we generate+disconnect before the player logs in, disconnect is a no-op
+            // and the player ends up in a live world.
+            if (serverManager.isRunning() && mc.player != null) {
+                LOG.info("Server ready and player connected — starting chunk generation");
                 phase = Phase.GENERATING_CHUNKS;
                 statusText = "Generating chunks...";
+                showActionBar(mc, "OTG Preview: generating chunks...");
                 generateChunksAsync();
             } else if (System.currentTimeMillis() - waitStartTime > SERVER_TIMEOUT_MS) {
                 LOG.error("Server start timed out after {}ms", SERVER_TIMEOUT_MS);
                 statusText = "Error: server start timed out";
                 phase = Phase.IDLE;
             }
+        }
+
+        // Show progress in action bar while in the temp world
+        if (phase == Phase.GENERATING_CHUNKS) {
+            int done = chunkManager.getCompletedChunks();
+            int total = chunkManager.getTotalChunks();
+            if (total > 0) {
+                showActionBar(mc, "OTG Preview: " + done + "/" + total + " chunks");
+            }
+        } else if (phase == Phase.COMPILING) {
+            showActionBar(mc, "OTG Preview: compiling meshes...");
+        }
+    }
+
+    private static void showActionBar(Minecraft mc, String message) {
+        if (mc.gui != null) {
+            mc.gui.setOverlayMessage(net.minecraft.network.chat.Component.literal(message), false);
         }
     }
 
@@ -125,6 +180,8 @@ public class PreviewState {
             return;
         }
 
+        LOG.info("Starting chunk generation: radius={}, status={}", radiusChunks, chunkStatus);
+
         // Generate chunks on the server thread
         overworld.getServer().execute(() -> {
             try {
@@ -134,23 +191,35 @@ public class PreviewState {
                     () -> {}
                 );
 
-                // Switch back to render thread for compilation — keep server alive
+                LOG.info("Chunk generation complete: {} chunks", chunkManager.getCompletedChunks());
+
+                // Switch back to render thread for compilation
                 Minecraft.getInstance().execute(() -> {
-                    phase = Phase.COMPILING;
-                    statusText = "Compiling meshes...";
+                    try {
+                        phase = Phase.COMPILING;
+                        statusText = "Compiling meshes...";
+                        LOG.info("Compiling meshes...");
 
-                    renderer.compileAll();
-                    camera.fitTo(
-                        new org.joml.Vector3f(0, 100, 0),
-                        radiusChunks * 16f
-                    );
+                        renderer.compileAll();
+                        camera.fitTo(
+                            new org.joml.Vector3f(0, 100, 0),
+                            radiusChunks * 16f
+                        );
 
-                    // Server stays alive — reused for BO preview
-                    phase = Phase.DONE;
-                    statusText = "Ready — " + chunkManager.getCompletedChunks() + " chunks";
+                        phase = Phase.DONE;
+                        statusText = "Ready — " + chunkManager.getCompletedChunks() + " chunks";
+                        LOG.info("Preview ready: {} chunks compiled", chunkManager.getCompletedChunks());
 
-                    // Show PreviewScreen in view mode
-                    Minecraft.getInstance().setScreen(new PreviewScreen());
+                        // Show PreviewScreen over the live world — server stays alive.
+                        // Server stops when user closes PreviewScreen (onClose → mc.disconnect()).
+                        Minecraft.getInstance().setScreen(new PreviewScreen());
+                        LOG.info("PreviewScreen set successfully");
+                    } catch (Exception e) {
+                        LOG.error("Error during compilation phase", e);
+                        phase = Phase.IDLE;
+                        statusText = "Error: " + e.getMessage();
+                        Minecraft.getInstance().setScreen(new PreviewScreen());
+                    }
                 });
             } catch (OutOfMemoryError e) {
                 LOG.error("Out of memory during chunk generation", e);
@@ -174,12 +243,12 @@ public class PreviewState {
 
     public static void reset() {
         chunkManager.cancel();
-        if (serverManager.isRunning()) {
-            serverManager.stopServer();
-        }
         renderer.releaseBuffers();
         previewWorld.clear();
         phase = Phase.IDLE;
         statusText = "Ready";
+        // Don't call serverManager.stopServer() here — mc.disconnect() blocks
+        // the render thread indefinitely. Let onClose() handle it by calling
+        // mc.disconnect() as the last action (result is title screen anyway).
     }
 }

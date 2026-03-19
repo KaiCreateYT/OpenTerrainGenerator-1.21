@@ -2,9 +2,8 @@ package com.pg85.otg.client.preview;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.pg85.otg.OTG;
-import com.pg85.otg.config.dimensions.WorldPresetConfig;
 import com.pg85.otg.constants.Constants;
-import com.pg85.otg.loader.WorldPresetConfigLoader;
+import com.pg85.otg.presets.DimensionPreset;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -47,19 +46,18 @@ public class PreviewScreen extends Screen {
 
     @Override
     protected void init() {
-        // Load available WorldPresets from YAML files
+        // Load available DimensionPresets from engine.
+        // Each DimensionPreset is registered as MC WorldPreset at otg:<registryName>
         presetEntries = new ArrayList<>();
         try {
             var engine = OTG.getEngine();
             if (engine != null) {
-                for (WorldPresetConfig config : WorldPresetConfigLoader.loadAll(engine.getOTGRootFolder())) {
-                    if (config.DisplayName == null || config.DisplayName.isBlank()) continue;
-                    String normalizedId = config.DisplayName.toLowerCase(Locale.ROOT)
-                        .replaceAll("[^a-z0-9_.-]", "_").replaceAll("_+", "_")
-                        .replaceAll("^_|_$", "");
-                    String resourceId = Constants.MOD_ID_SHORT + ":" + normalizedId;
-                    String overworldFolder = config.Overworld != null ? config.Overworld.PresetFolderName : "";
-                    presetEntries.add(new PresetEntry(config.DisplayName, resourceId, overworldFolder != null ? overworldFolder : ""));
+                for (DimensionPreset preset : engine.getDimensionPresetLoader().getAllDimensionPresets()) {
+                    String displayName = preset.getConfig().getPresetInfo().getDisplayName();
+                    if (displayName == null || displayName.isBlank()) displayName = preset.getFolderName();
+                    // Must match OTGRegistryHelper.registerWorldPresets() registration key
+                    String resourceId = Constants.MOD_ID_SHORT + ":" + preset.getRegistryName().toLowerCase(Locale.ROOT);
+                    presetEntries.add(new PresetEntry(displayName, resourceId, preset.getFolderName()));
                 }
             }
         } catch (Exception ignored) {}
@@ -84,7 +82,7 @@ public class PreviewScreen extends Screen {
 
         // --- TERRAIN SECTION ---
 
-        // Preset selector button
+        // Preset selector button — cycles through available WorldPresets
         addRenderableWidget(Button.builder(
             Component.literal("Preset: " + selectedPresetDisplay),
             btn -> {
@@ -92,7 +90,7 @@ public class PreviewScreen extends Screen {
                 PresetEntry entry = presetEntries.get(presetIndex);
                 selectedPresetDisplay = entry.displayName;
                 dimensionPresetName = entry.overworldPresetFolder;
-                btn.setMessage(Component.literal("Preset: " + selectedPresetDisplay));
+                rebuildWidgets();
             }
         ).bounds(panelX, y, PANEL_WIDTH - 20, 20).build());
         y += 24;
@@ -106,28 +104,32 @@ public class PreviewScreen extends Screen {
         addRenderableWidget(seedInput);
         y += 24;
 
-        // Size buttons
+        // Size buttons — selected one is highlighted with brackets
         int btnX = panelX;
         for (int size : new int[]{4, 8, 16, 32}) {
             final int r = size / 2;
+            boolean selected = radiusChunks == r;
+            String label = selected ? "[" + size + "]" : size + "x" + size;
             addRenderableWidget(Button.builder(
-                Component.literal(size + "x" + size),
-                btn -> radiusChunks = r
+                Component.literal(label),
+                btn -> { radiusChunks = r; rebuildWidgets(); }
             ).bounds(btnX, y, 30, 20).build());
             btnX += 33;
         }
         y += 24;
 
-        // Generation level buttons
+        // Generation level buttons — selected one is highlighted
         record GenLevel(String label, ChunkStatus status) {}
         for (var level : new GenLevel[]{
                 new GenLevel("Surface", ChunkStatus.SURFACE),
                 new GenLevel("Caves", ChunkStatus.CARVERS),
                 new GenLevel("Full", ChunkStatus.FULL)
         }) {
+            boolean selected = chunkStatus == level.status;
+            String label = selected ? "> " + level.label : "  " + level.label;
             addRenderableWidget(Button.builder(
-                Component.literal(level.label),
-                btn -> chunkStatus = level.status
+                Component.literal(label),
+                btn -> { chunkStatus = level.status; rebuildWidgets(); }
             ).bounds(panelX, y, PANEL_WIDTH - 20, 20).build());
             y += 22;
         }
@@ -316,8 +318,22 @@ public class PreviewScreen extends Screen {
     }
 
     @Override
+    public boolean isPauseScreen() {
+        return false;
+    }
+
+    @Override
+    public boolean shouldCloseOnEsc() {
+        // Don't allow ESC to close during generation — use Back button or wait
+        PreviewState.Phase ph = PreviewState.getPhase();
+        return ph == PreviewState.Phase.IDLE || ph == PreviewState.Phase.DONE;
+    }
+
+    @Override
     public void onClose() {
-        PreviewState.reset();
-        minecraft.setScreen(null);
+        // Don't disconnect here — mc.disconnect() causes black screen when called
+        // from any screen event context. Instead, request close via tick-delayed
+        // mechanism: tick 1 closes PreviewScreen, tick 2+ disconnects cleanly.
+        PreviewState.requestClose();
     }
 }
