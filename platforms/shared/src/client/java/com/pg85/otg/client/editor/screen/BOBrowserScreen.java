@@ -34,20 +34,25 @@ public class BOBrowserScreen extends Screen {
 
     @Override
     protected void init() {
-        Path objectsDir = preset.getFolder().resolve(com.pg85.otg.constants.Constants.OBJECTS_FOLDER);
-        allObjectNames.clear();
-        if (Files.isDirectory(objectsDir)) {
-            try (var walk = Files.walk(objectsDir)) {
-                allObjectNames = walk.filter(Files::isRegularFile)
-                    .filter(p -> {
-                        String name = p.getFileName().toString().toLowerCase();
-                        return name.endsWith(".bo3") || name.endsWith(".bo4");
-                    })
-                    .map(p -> objectsDir.relativize(p).toString())
-                    .sorted()
-                    .collect(Collectors.toList());
-            } catch (IOException e) {
-                LOG.error("Failed to scan Objects folder", e);
+        if (allObjectNames.isEmpty()) {
+            Path objectsDir = preset.getFolder().resolve(com.pg85.otg.constants.Constants.OBJECTS_FOLDER);
+            if (!Files.isDirectory(objectsDir)) {
+                objectsDir = preset.getFolder().resolve(com.pg85.otg.constants.Constants.LEGACY_WORLD_OBJECTS_FOLDER);
+            }
+            if (Files.isDirectory(objectsDir)) {
+                try (var walk = Files.walk(objectsDir)) {
+                    final Path finalObjectsDir = objectsDir;
+                    allObjectNames = walk.filter(Files::isRegularFile)
+                        .filter(p -> {
+                            String name = p.getFileName().toString().toLowerCase();
+                            return name.endsWith(".bo3") || name.endsWith(".bo4");
+                        })
+                        .map(p -> finalObjectsDir.relativize(p).toString())
+                        .sorted()
+                        .collect(Collectors.toList());
+                } catch (IOException e) {
+                    LOG.error("Failed to scan Objects folder", e);
+                }
             }
         }
 

@@ -2,6 +2,13 @@
 
 ### Release: 0.4.0-dev2
 
+**2026-03-20 — Editor review fixes**
+
+- **BiomeEditorScreen**: Index-based biome lookup via `filteredBiomeEntries` list — fixes wrong file loaded/deleted when two biomes in different subdirectories share the same name
+- **BiomeEditorScreen**: Delete confirmation — first click shows "Click Delete again to confirm", second click actually deletes; resets on biome select/new/clone/save
+- **PropertyExtractor**: DRY refactor — `extractPresetDefinitions()` and `extractBiomeDefinitions()` now delegate to shared `extractDefinitions()` helper
+- **BOBrowserScreen**: Rescan guard (`if (allObjectNames.isEmpty())`) prevents re-walking filesystem on every `init()` call; legacy `WorldObjects/` folder fallback when `Objects/` doesn't exist
+
 **2026-03-19 — In-game editor Phase 2: Biome Editor**
 
 - **BiomeEditorScreen**: Split-pane biome editor — left panel with searchable biome list, right panel with PropertyGridWidget for .bc file editing (category tabs, search, Override/Merge toggles)

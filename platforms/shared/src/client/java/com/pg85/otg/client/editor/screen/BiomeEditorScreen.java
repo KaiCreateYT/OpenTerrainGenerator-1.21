@@ -29,8 +29,10 @@ public class BiomeEditorScreen extends Screen {
     private List<BiomeFileScanner.BiomeEntry> biomeEntries = List.of();
     private ScrollableListWidget biomeList;
     private EditBox biomeSearchBox;
+    private List<BiomeFileScanner.BiomeEntry> filteredBiomeEntries = List.of();
     private List<String> filteredBiomeNames = List.of();
     private int selectedBiomeIndex = -1;
+    private boolean confirmingDelete = false;
 
     private PropertyGridWidget propertyGrid;
     private List<PropertyValue> properties = List.of();
@@ -96,7 +98,7 @@ public class BiomeEditorScreen extends Screen {
         propertyGrid = new PropertyGridWidget(gridX, 14, gridW, gridH, true, true, false);
 
         // Load selected biome if any
-        if (selectedBiomeIndex >= 0 && selectedBiomeIndex < filteredBiomeNames.size()) {
+        if (selectedBiomeIndex >= 0 && selectedBiomeIndex < filteredBiomeEntries.size()) {
             loadBiome(selectedBiomeIndex);
         }
 
@@ -125,17 +127,17 @@ public class BiomeEditorScreen extends Screen {
     }
 
     private void updateFilteredBiomes(String filter) {
+        List<BiomeFileScanner.BiomeEntry> filtered;
         if (filter == null || filter.isBlank()) {
-            filteredBiomeNames = biomeEntries.stream()
-                .map(BiomeFileScanner.BiomeEntry::name)
-                .collect(Collectors.toList());
+            filtered = new ArrayList<>(biomeEntries);
         } else {
             String lower = filter.toLowerCase();
-            filteredBiomeNames = biomeEntries.stream()
-                .map(BiomeFileScanner.BiomeEntry::name)
-                .filter(n -> n.toLowerCase().contains(lower))
+            filtered = biomeEntries.stream()
+                .filter(e -> e.name().toLowerCase().contains(lower))
                 .collect(Collectors.toList());
         }
+        filteredBiomeEntries = filtered;
+        filteredBiomeNames = filtered.stream().map(BiomeFileScanner.BiomeEntry::name).collect(Collectors.toList());
         if (biomeList != null) {
             biomeList.setItems(filteredBiomeNames);
             biomeList.setSelectedIndex(selectedBiomeIndex < filteredBiomeNames.size() ? selectedBiomeIndex : -1);
@@ -143,27 +145,24 @@ public class BiomeEditorScreen extends Screen {
     }
 
     private void onBiomeSelected(int index) {
-        if (index < 0 || index >= filteredBiomeNames.size()) return;
+        if (index < 0 || index >= filteredBiomeEntries.size()) return;
         if (hasDirtyProperties()) {
             statusMessage = "Unsaved changes! Save before switching biomes.";
             return;
         }
+        confirmingDelete = false;
         selectedBiomeIndex = index;
         properties = List.of();
         rebuildWidgets();
     }
 
     private void loadBiome(int index) {
-        String biomeName = filteredBiomeNames.get(index);
-        BiomeFileScanner.BiomeEntry entry = biomeEntries.stream()
-            .filter(e -> e.name().equals(biomeName))
-            .findFirst().orElse(null);
-        if (entry == null) return;
-
+        if (index < 0 || index >= filteredBiomeEntries.size()) return;
+        BiomeFileScanner.BiomeEntry entry = filteredBiomeEntries.get(index);
         currentBiomePath = entry.path();
         ConfigLoader.LoadResult result = ConfigLoader.load(currentBiomePath, biomeDefinitions);
         if (result == null) {
-            errorMessage = "Failed to load " + biomeName;
+            errorMessage = "Failed to load " + entry.name();
             properties = List.of();
             return;
         }
@@ -176,6 +175,7 @@ public class BiomeEditorScreen extends Screen {
     }
 
     private void save() {
+        confirmingDelete = false;
         if (currentBiomePath == null || properties.isEmpty()) return;
         boolean success = ConfigWriter.save(currentBiomePath, rawLines, properties);
         if (success) {
@@ -191,6 +191,7 @@ public class BiomeEditorScreen extends Screen {
     }
 
     private void newBiome() {
+        confirmingDelete = false;
         String name = "NewBiome";
         Path biomesDir = BiomeFileScanner.getBiomesDirectory(preset.getFolder());
         Path newPath = biomesDir.resolve(name + ".bc");
@@ -211,12 +212,10 @@ public class BiomeEditorScreen extends Screen {
     }
 
     private void cloneBiome() {
-        if (selectedBiomeIndex < 0 || selectedBiomeIndex >= filteredBiomeNames.size()) return;
-        String sourceName = filteredBiomeNames.get(selectedBiomeIndex);
-        BiomeFileScanner.BiomeEntry source = biomeEntries.stream()
-            .filter(e -> e.name().equals(sourceName))
-            .findFirst().orElse(null);
-        if (source == null) return;
+        confirmingDelete = false;
+        if (selectedBiomeIndex < 0 || selectedBiomeIndex >= filteredBiomeEntries.size()) return;
+        BiomeFileScanner.BiomeEntry source = filteredBiomeEntries.get(selectedBiomeIndex);
+        String sourceName = source.name();
 
         String cloneName = sourceName + "_copy";
         Path biomesDir = BiomeFileScanner.getBiomesDirectory(preset.getFolder());
@@ -242,12 +241,14 @@ public class BiomeEditorScreen extends Screen {
     }
 
     private void deleteBiome() {
-        if (selectedBiomeIndex < 0 || selectedBiomeIndex >= filteredBiomeNames.size()) return;
-        String biomeName = filteredBiomeNames.get(selectedBiomeIndex);
-        BiomeFileScanner.BiomeEntry entry = biomeEntries.stream()
-            .filter(e -> e.name().equals(biomeName))
-            .findFirst().orElse(null);
-        if (entry == null) return;
+        if (selectedBiomeIndex < 0 || selectedBiomeIndex >= filteredBiomeEntries.size()) return;
+        if (!confirmingDelete) {
+            confirmingDelete = true;
+            statusMessage = "Click Delete again to confirm";
+            return;
+        }
+        confirmingDelete = false;
+        BiomeFileScanner.BiomeEntry entry = filteredBiomeEntries.get(selectedBiomeIndex);
 
         try {
             Files.deleteIfExists(entry.path());

@@ -48,32 +48,19 @@ public class PropertyExtractor {
     }
 
     public static Map<String, PropertyDefinition> extractBiomeDefinitions() {
-        Map<String, PropertyDefinition> definitions = new LinkedHashMap<>();
-
-        for (var entry : BIOME_SETTING_CLASSES.entrySet()) {
-            Map<String, Setting<?>> settings = ConfigSection.getSettings(entry.getKey());
-            PropertyCategory category = entry.getValue();
-
-            for (var settingEntry : settings.entrySet()) {
-                Setting<?> setting = settingEntry.getValue();
-                PropertyDefinition def = fromSetting(setting, category);
-                if (def != null) {
-                    definitions.put(setting.getName(), def);
-                }
-            }
-        }
-
-        LOG.info("Extracted {} property definitions for biome .bc files", definitions.size());
-        return definitions;
+        return extractDefinitions(BIOME_SETTING_CLASSES, "biome .bc files");
     }
 
     public static Map<String, PropertyDefinition> extractPresetDefinitions() {
-        Map<String, PropertyDefinition> definitions = new LinkedHashMap<>();
+        return extractDefinitions(PRESET_SETTING_CLASSES, "DimensionPresetConfig.ini");
+    }
 
-        for (var entry : PRESET_SETTING_CLASSES.entrySet()) {
+    private static Map<String, PropertyDefinition> extractDefinitions(
+            Map<Class<? extends ConfigSection>, PropertyCategory> settingClasses, String label) {
+        Map<String, PropertyDefinition> definitions = new LinkedHashMap<>();
+        for (var entry : settingClasses.entrySet()) {
             Map<String, Setting<?>> settings = ConfigSection.getSettings(entry.getKey());
             PropertyCategory category = entry.getValue();
-
             for (var settingEntry : settings.entrySet()) {
                 Setting<?> setting = settingEntry.getValue();
                 PropertyDefinition def = fromSetting(setting, category);
@@ -82,8 +69,7 @@ public class PropertyExtractor {
                 }
             }
         }
-
-        LOG.info("Extracted {} property definitions for DimensionPresetConfig.ini", definitions.size());
+        LOG.info("Extracted {} property definitions for {}", definitions.size(), label);
         return definitions;
     }
 
