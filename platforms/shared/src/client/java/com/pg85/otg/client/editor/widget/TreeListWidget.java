@@ -220,6 +220,18 @@ public class TreeListWidget {
             }
         }
         graphics.disableScissor();
+
+        // Scrollbar
+        if (visibleNodes.size() > maxVisible) {
+            int sbX = x + width - 4;
+            int sbW = 3;
+            graphics.fill(sbX, y, sbX + sbW, y + height, 0xFF111111);
+            float ratio = (float) maxVisible / visibleNodes.size();
+            int thumbH = Math.max(8, (int) (height * ratio));
+            float scrollRatio = maxScroll > 0 ? (float) scrollOffset / maxScroll : 0;
+            int thumbY = y + (int) ((height - thumbH) * scrollRatio);
+            graphics.fill(sbX, thumbY, sbX + sbW, thumbY + thumbH, 0xFF555555);
+        }
     }
 
     public boolean mouseClicked(double mouseX, double mouseY) {

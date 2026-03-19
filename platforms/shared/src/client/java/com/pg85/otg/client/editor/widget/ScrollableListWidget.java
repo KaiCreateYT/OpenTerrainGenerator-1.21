@@ -53,6 +53,24 @@ public class ScrollableListWidget {
             graphics.drawString(font, items.get(idx), x + 6, iy + (itemHeight - 8) / 2, color);
         }
         graphics.disableScissor();
+
+        // Scrollbar
+        renderScrollbar(graphics, items.size(), maxVisible);
+    }
+
+    private void renderScrollbar(GuiGraphics graphics, int totalItems, int maxVisible) {
+        if (totalItems <= maxVisible) return;
+        int sbX = x + width - 4;
+        int sbW = 3;
+        // Track
+        graphics.fill(sbX, y, sbX + sbW, y + height, 0xFF111111);
+        // Thumb
+        float ratio = (float) maxVisible / totalItems;
+        int thumbH = Math.max(8, (int) (height * ratio));
+        int maxScroll = totalItems - maxVisible;
+        float scrollRatio = maxScroll > 0 ? (float) scrollOffset / maxScroll : 0;
+        int thumbY = y + (int) ((height - thumbH) * scrollRatio);
+        graphics.fill(sbX, thumbY, sbX + sbW, thumbY + thumbH, 0xFF555555);
     }
 
     public boolean mouseClicked(double mouseX, double mouseY) {
