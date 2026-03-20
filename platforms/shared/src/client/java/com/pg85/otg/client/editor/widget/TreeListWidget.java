@@ -159,7 +159,10 @@ public class TreeListWidget {
         for (TreeNode node : allNodes) {
             addVisible(node);
         }
-        scrollOffset = 0;
+        // Clamp scroll but don't reset — preserves position when expanding/collapsing
+        int maxVisible = height / itemHeight;
+        int maxScroll = Math.max(0, visibleNodes.size() - maxVisible);
+        scrollOffset = Math.min(scrollOffset, maxScroll);
     }
 
     private void addVisible(TreeNode node) {

@@ -65,9 +65,9 @@ public class BOBrowserScreen extends Screen {
         // Layout: left 1/3 for tree list, right 2/3 for viewport
         leftPanelW = Math.max(180, width / 3);
         viewportX = leftPanelW;
-        viewportY = 0;
+        viewportY = 4;
         viewportW = width - leftPanelW;
-        viewportH = height;
+        viewportH = height - 60; // leave room for metadata + bottom buttons
 
         // Search box
         searchBox = new EditBox(font, 10, 30, leftPanelW - 20, 16, Component.literal("Search"));
@@ -106,28 +106,7 @@ public class BOBrowserScreen extends Screen {
             boCamera.setPhi((float) (Math.PI / 3));
         }
 
-        // Direction buttons (N/S/E/W) — snap camera to compass directions
-        int dirY = viewportY + viewportH - 22;
-        int dirX = viewportX + viewportW - 110;
-        addRenderableWidget(Button.builder(Component.literal("N"), btn -> {
-            boCamera.setTheta(0f);
-            boCamera.setPhi(1.0f);
-        }).bounds(dirX, dirY, 22, 18).build());
-        dirX += 26;
-        addRenderableWidget(Button.builder(Component.literal("S"), btn -> {
-            boCamera.setTheta((float) Math.PI);
-            boCamera.setPhi(1.0f);
-        }).bounds(dirX, dirY, 22, 18).build());
-        dirX += 26;
-        addRenderableWidget(Button.builder(Component.literal("E"), btn -> {
-            boCamera.setTheta((float) (Math.PI / 2));
-            boCamera.setPhi(1.0f);
-        }).bounds(dirX, dirY, 22, 18).build());
-        dirX += 26;
-        addRenderableWidget(Button.builder(Component.literal("W"), btn -> {
-            boCamera.setTheta((float) (-Math.PI / 2));
-            boCamera.setPhi(1.0f);
-        }).bounds(dirX, dirY, 22, 18).build());
+        // Direction buttons removed — mouse drag is sufficient for orbiting
     }
 
     private List<String> scanObjects() {
@@ -258,22 +237,15 @@ public class BOBrowserScreen extends Screen {
         }
 
         // Metadata below viewport
-        int metaY = viewportY + viewportH - 40;
+        int metaY = viewportY + viewportH + 4;
         if (loadedObjectName != null && lastBounds != null) {
-            graphics.drawString(font, "Name: " + loadedObjectName, viewportX + 6, metaY, 0xFFCCCCCC);
-            String ext = selectedPath != null && selectedPath.contains(".")
-                ? selectedPath.substring(selectedPath.lastIndexOf('.')) : "?";
-            graphics.drawString(font, "Type: " + ext, viewportX + viewportW / 2, metaY, 0xFFCCCCCC);
-            metaY += 12;
             String size = lastBounds.sizeX() + "x" + lastBounds.sizeY() + "x" + lastBounds.sizeZ();
-            graphics.drawString(font, "Size: " + size, viewportX + 6, metaY, 0xFFCCCCCC);
-            graphics.drawString(font, "Blocks: " + lastBounds.blockCount(), viewportX + viewportW / 2, metaY, 0xFFCCCCCC);
-        }
-
-        // Status / info text in viewport area
-        if (statusMessage != null) {
-            graphics.drawString(font, statusMessage,
-                viewportX + 6, viewportH - 14, 0xFFAAAA44);
+            String ext = selectedPath != null && selectedPath.contains(".")
+                ? selectedPath.substring(selectedPath.lastIndexOf('.')) : "";
+            graphics.drawString(font, loadedObjectName + ext + "  " + size + "  " + lastBounds.blockCount() + " blocks",
+                viewportX + 6, metaY, 0xFFCCCCCC);
+        } else if (statusMessage != null) {
+            graphics.drawString(font, statusMessage, viewportX + 6, metaY, 0xFFAAAA44);
         }
 
         // Selected path below the tree
