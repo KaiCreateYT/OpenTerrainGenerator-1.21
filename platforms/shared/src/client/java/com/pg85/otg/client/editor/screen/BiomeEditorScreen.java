@@ -41,6 +41,7 @@ public class BiomeEditorScreen extends Screen {
     private int resourceQueueScroll = 0;
     private Path currentBiomePath;
     private Map<String, PropertyDefinition> biomeDefinitions;
+    private List<PropertyValue> presetProperties; // loaded once for terrain preview
 
     private String errorMessage;
     private String statusMessage;
@@ -64,6 +65,14 @@ public class BiomeEditorScreen extends Screen {
 
         if (biomeDefinitions == null) {
             biomeDefinitions = PropertyExtractor.extractBiomeDefinitions();
+        }
+
+        // Load preset properties once (for terrain preview — WaterLevelMax, Fracture*, HeightScale)
+        if (presetProperties == null) {
+            Path configPath = WorldSettingsScreen.resolveConfigPath(preset.getFolder());
+            Map<String, PropertyDefinition> presetDefs = PropertyExtractor.extractPresetDefinitions();
+            ConfigLoader.LoadResult presetResult = ConfigLoader.load(configPath, presetDefs);
+            presetProperties = presetResult != null ? presetResult.properties() : List.of();
         }
 
         if (biomeEntries.isEmpty()) {
@@ -123,7 +132,7 @@ public class BiomeEditorScreen extends Screen {
         addRenderableWidget(Button.builder(Component.literal("Terrain 3D"), btn -> {
             if (!properties.isEmpty() && selectedBiomeIndex >= 0) {
                 String name = filteredBiomeEntries.get(selectedBiomeIndex).name();
-                minecraft.setScreen(new BiomeTerrainPreviewScreen(this, properties, name));
+                minecraft.setScreen(new BiomeTerrainPreviewScreen(this, properties, presetProperties, name));
             }
         }).bounds(LEFT_PANEL_WIDTH + 126, btnBarY, 70, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Browse BO3"), btn ->

@@ -20,7 +20,8 @@ import java.util.List;
 public class BiomeTerrainPreviewScreen extends Screen {
 
     private final Screen parent;
-    private final List<PropertyValue> properties;
+    private final List<PropertyValue> biomeProperties;
+    private final List<PropertyValue> presetProperties;
     private final String biomeName;
 
     private PreviewWorld world;
@@ -32,12 +33,13 @@ public class BiomeTerrainPreviewScreen extends Screen {
     private long seed = 12345L;
     private int size = 64;
     private EditBox seedInput;
-    private EditBox sizeInput;
 
-    public BiomeTerrainPreviewScreen(Screen parent, List<PropertyValue> properties, String biomeName) {
+    public BiomeTerrainPreviewScreen(Screen parent, List<PropertyValue> biomeProperties,
+                                      List<PropertyValue> presetProperties, String biomeName) {
         super(Component.literal("Terrain Preview — " + biomeName));
         this.parent = parent;
-        this.properties = properties;
+        this.biomeProperties = biomeProperties;
+        this.presetProperties = presetProperties;
         this.biomeName = biomeName;
     }
 
@@ -51,15 +53,21 @@ public class BiomeTerrainPreviewScreen extends Screen {
         seedInput.setHint(Component.literal("Seed"));
         addRenderableWidget(seedInput);
 
-        // Size input
-        sizeInput = new EditBox(font, 90, barY, 40, 18, Component.literal("Size"));
-        sizeInput.setValue(String.valueOf(size));
-        sizeInput.setHint(Component.literal("Size"));
-        addRenderableWidget(sizeInput);
+        // Size buttons
+        int sx = 90;
+        for (int s : new int[]{64, 128, 256}) {
+            final int sz = s;
+            var btn = addRenderableWidget(Button.builder(Component.literal(String.valueOf(s)), b -> {
+                size = sz;
+                regenerate();
+            }).bounds(sx, barY, 32, 20).build());
+            if (s == size) btn.active = false;
+            sx += 36;
+        }
 
-        // Generate button
+        // Generate (re-seed)
         addRenderableWidget(Button.builder(Component.literal("Generate"), btn -> regenerate())
-            .bounds(136, barY, 60, 20).build());
+            .bounds(sx + 4, barY, 60, 20).build());
 
         // Back button
         addRenderableWidget(Button.builder(Component.literal("Back"), btn -> onClose())
@@ -85,14 +93,7 @@ public class BiomeTerrainPreviewScreen extends Screen {
             seed = seedInput.getValue().hashCode();
         }
 
-        // Parse size
-        try {
-            size = Integer.parseInt(sizeInput.getValue().trim());
-            size = Math.max(16, Math.min(256, size));
-        } catch (NumberFormatException e) {
-            size = 64;
-        }
-        sizeInput.setValue(String.valueOf(size));
+        // Size already set by button click
 
         // Clean up old
         if (renderer != null) renderer.releaseBuffers();
@@ -101,7 +102,7 @@ public class BiomeTerrainPreviewScreen extends Screen {
         statusText = "Generating...";
         world = new PreviewWorld();
         BiomeHeightmapGenerator.GenerationResult result =
-            BiomeHeightmapGenerator.generate(world, properties, seed, size);
+            BiomeHeightmapGenerator.generate(world, biomeProperties, presetProperties, seed, size);
         renderer = new PreviewRenderer(world);
         renderer.compileAll();
         camera.fitTo(result.center(), result.radius());

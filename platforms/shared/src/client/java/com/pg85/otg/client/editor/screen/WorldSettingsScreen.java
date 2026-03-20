@@ -104,7 +104,7 @@ public class WorldSettingsScreen extends Screen {
         propertyGrid.syncEditBoxes(registeredPropertyEditBoxes, this::removeWidget, this::addRenderableWidget);
     }
 
-    private static Path resolveConfigPath(Path presetFolder) {
+    static Path resolveConfigPath(Path presetFolder) {
         Path newPath = presetFolder.resolve(Constants.DIMENSION_PRESET_CONFIG_FILE);
         if (java.nio.file.Files.exists(newPath)) return newPath;
         Path legacyPath = presetFolder.resolve(Constants.LEGACY_WORLD_CONFIG_FILE);

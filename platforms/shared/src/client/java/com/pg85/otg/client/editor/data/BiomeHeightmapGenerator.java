@@ -11,8 +11,11 @@ import org.joml.Vector3f;
 import java.util.List;
 
 /**
- * Generates a 3D terrain heightmap from biome settings for preview.
+ * Generates a 3D terrain heightmap from biome + preset settings for preview.
  * No MC server required — pure noise math + block placement.
+ *
+ * Uses biome settings: BiomeHeight, BiomeVolatility
+ * Uses preset settings: WaterLevelMax, WorldHeightScaleBits, FractureHorizontal, FractureVertical
  */
 public class BiomeHeightmapGenerator {
 
@@ -27,18 +30,35 @@ public class BiomeHeightmapGenerator {
     public record GenerationResult(Vector3f center, float radius) {}
 
     /**
-     * Generate terrain preview from biome property values.
-     *
-     * @param world       PreviewWorld to fill with blocks
-     * @param properties  biome PropertyValues (searches for BiomeHeight, BiomeVolatility, WaterLevelMax)
-     * @return center and radius for camera fitting
+     * @param biomeProperties  from .bc file (BiomeHeight, BiomeVolatility)
+     * @param presetProperties from DimensionPresetConfig.ini (WaterLevelMax, WorldHeightScaleBits, Fracture*)
      */
-    public static GenerationResult generate(PreviewWorld world, List<PropertyValue> properties, long seed, int size) {
+    public static GenerationResult generate(PreviewWorld world,
+                                             List<PropertyValue> biomeProperties,
+                                             List<PropertyValue> presetProperties,
+                                             long seed, int size) {
         world.clear();
 
-        float biomeHeight = getFloat(properties, "BiomeHeight", 0.1f);
-        float biomeVolatility = getFloat(properties, "BiomeVolatility", 0.3f);
-        int waterLevel = getInt(properties, "WaterLevelMax", 63);
+        // Biome settings
+        float biomeHeight = getFloat(biomeProperties, "BiomeHeight", 0.1f);
+        float biomeVolatility = getFloat(biomeProperties, "BiomeVolatility", 0.3f);
+
+        // Preset settings
+        int waterLevel = getInt(presetProperties, "WaterLevelMax", 63);
+        int heightScaleBits = getInt(presetProperties, "WorldHeightScaleBits", 8);
+        float fractureH = getFloat(presetProperties, "FractureHorizontal", 0f);
+        float fractureV = getFloat(presetProperties, "FractureVertical", 0f);
+
+        // WorldHeightScaleBits: 8 = 256 height, 7 = 128, 6 = 64, 9 = 512
+        float heightScale = (1 << heightScaleBits) / 256f;
+
+        // FractureHorizontal stretches/compresses terrain horizontally
+        // positive = wider features, negative = narrower
+        float hScale = 1.0f + fractureH * 0.002f;
+
+        // FractureVertical stretches/compresses terrain vertically
+        // positive = taller, negative = flatter
+        float vScale = 1.0f + fractureV * 0.002f;
 
         ImprovedNoise noise = new ImprovedNoise(RandomSource.create(seed));
 
@@ -46,15 +66,22 @@ public class BiomeHeightmapGenerator {
 
         for (int x = 0; x < size; x++) {
             for (int z = 0; z < size; z++) {
-                // Multi-octave noise modulated by biome settings
-                double n = 0;
-                n += noise.noise(x * 0.03, 0, z * 0.03) * 1.0;
-                n += noise.noise(x * 0.06, 0, z * 0.06) * 0.5;
-                n += noise.noise(x * 0.12, 0, z * 0.12) * 0.25;
+                // Sample coordinates scaled by fracture horizontal
+                double sx = x * 0.03 / hScale;
+                double sz = z * 0.03 / hScale;
 
-                // BiomeHeight shifts the base, BiomeVolatility scales the amplitude
-                int height = BASE_HEIGHT + (int)(biomeHeight * 20 + n * biomeVolatility * 30);
-                height = Math.max(1, Math.min(255, height));
+                // Multi-octave noise
+                double n = 0;
+                n += noise.noise(sx, 0, sz) * 1.0;
+                n += noise.noise(sx * 2, 0, sz * 2) * 0.5;
+                n += noise.noise(sx * 4, 0, sz * 4) * 0.25;
+
+                // Apply biome settings + preset scaling
+                float rawHeight = biomeHeight * 20 + (float) n * biomeVolatility * 30;
+                rawHeight *= vScale * heightScale;
+
+                int height = BASE_HEIGHT + (int) rawHeight;
+                height = Math.max(1, Math.min(319, height));
 
                 if (height < minY) minY = height;
                 if (height > maxY) maxY = height;
@@ -74,7 +101,6 @@ public class BiomeHeightmapGenerator {
 
                 // Surface block
                 if (height <= waterLevel + 2) {
-                    // Beach sand near water
                     world.setBlockState(new BlockPos(x, height, z), SAND);
                 } else {
                     world.setBlockState(new BlockPos(x, height, z), GRASS);
@@ -87,7 +113,6 @@ public class BiomeHeightmapGenerator {
             }
         }
 
-        // Center of the terrain
         float centerY = (minY + maxY) / 2f;
         Vector3f center = new Vector3f(size / 2f, centerY, size / 2f);
         float radius = Math.max(size, maxY - minY + 20);
@@ -96,6 +121,7 @@ public class BiomeHeightmapGenerator {
     }
 
     private static float getFloat(List<PropertyValue> properties, String name, float defaultVal) {
+        if (properties == null) return defaultVal;
         for (PropertyValue pv : properties) {
             if (pv.getDefinition().name().equals(name)) {
                 try { return Float.parseFloat(pv.getValue()); }
@@ -106,6 +132,7 @@ public class BiomeHeightmapGenerator {
     }
 
     private static int getInt(List<PropertyValue> properties, String name, int defaultVal) {
+        if (properties == null) return defaultVal;
         for (PropertyValue pv : properties) {
             if (pv.getDefinition().name().equals(name)) {
                 try { return Integer.parseInt(pv.getValue()); }
