@@ -11,7 +11,7 @@ import com.pg85.otg.gen.carver.Carver;
 import com.pg85.otg.gen.carver.CaveCarver;
 import com.pg85.otg.gen.carver.RavineCarver;
 import com.pg85.otg.gen.noise.OctavePerlinNoiseSampler;
-import com.pg85.otg.gen.noise.PerlinNoiseSampler;
+import com.pg85.otg.gen.noise.TerrainNoiseComputer;
 import com.pg85.otg.gen.noise.legacy.NoiseGeneratorPerlinMesaBlocks;
 import com.pg85.otg.interfaces.*;
 import com.pg85.otg.presets.DimensionPreset;
@@ -32,7 +32,6 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-import java.util.stream.IntStream;
 
 /**
  * Generates the base terrain, sets stone/ground/surface blocks and does SurfaceAndGroundControl, generates caves and canyons.
@@ -156,10 +155,11 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
         // Setup noises
         Random random = new Random(seed);
 
-        this.interpolationNoise = new OctavePerlinNoiseSampler(random, IntStream.rangeClosed(-7, 0));
-        this.lowerInterpolatedNoise = new OctavePerlinNoiseSampler(random, IntStream.rangeClosed(-15, 0));
-        this.upperInterpolatedNoise = new OctavePerlinNoiseSampler(random, IntStream.rangeClosed(-15, 0));
-        this.depthNoise = new OctavePerlinNoiseSampler(random, IntStream.rangeClosed(-15, 0));
+        var samplers = TerrainNoiseComputer.createNoiseSamplers(random);
+        this.interpolationNoise = samplers.interpolation();
+        this.lowerInterpolatedNoise = samplers.lower();
+        this.upperInterpolatedNoise = samplers.upper();
+        this.depthNoise = samplers.depth();
         this.biomeBlocksNoiseGen = new NoiseGeneratorPerlinMesaBlocks(random, 4);
     }
 
@@ -210,130 +210,32 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
     }
 
     private double sampleNoise(
-            int x,
-            int y,
-            int z,
-            double horizontalScale,
-            double verticalScale,
-            double horizontalStretch,
-            double verticalStretch,
-            double volatility1,
-            double volatility2,
-            double volatilityWeight1,
-            double volatilityWeight2
+            int x, int y, int z,
+            double horizontalScale, double verticalScale,
+            double horizontalStretch, double verticalStretch,
+            double volatility1, double volatility2,
+            double volatilityWeight1, double volatilityWeight2
     ) {
-        // The algorithm for noise generation varies slightly here as it calculates the interpolation first and then the interpolated noise to avoid sampling noise that will never be used.
-        // The end result is ~2x faster terrain generation.
-
-        double delta = getInterpolationNoise(x, y, z, horizontalStretch, verticalStretch);
-
-        if (delta < volatilityWeight1) {
-            return getInterpolatedNoise(this.lowerInterpolatedNoise, x, y, z, horizontalScale, verticalScale) / 512.0D
-                   * volatility1;
-        } else if (delta > volatilityWeight2) {
-            return getInterpolatedNoise(this.upperInterpolatedNoise, x, y, z, horizontalScale, verticalScale) / 512.0D
-                   * volatility2;
-        } else {
-            // TODO: should probably use clamping here to prevent weird artifacts
-            return MathHelper.lerp(
-                    delta,
-                    getInterpolatedNoise(this.lowerInterpolatedNoise, x, y, z, horizontalScale, verticalScale) / 512.0D
-                    * volatility1,
-                    getInterpolatedNoise(this.upperInterpolatedNoise, x, y, z, horizontalScale, verticalScale) / 512.0D
-                    * volatility2
-            );
-        }
+        return TerrainNoiseComputer.sampleNoise(
+                x, y, z,
+                horizontalScale, verticalScale,
+                horizontalStretch, verticalStretch,
+                volatility1, volatility2,
+                volatilityWeight1, volatilityWeight2,
+                this.interpolationNoise, this.lowerInterpolatedNoise, this.upperInterpolatedNoise
+        );
     }
 
     private double getInterpolationNoise(int x, int y, int z, double horizontalStretch, double verticalStretch) {
-        double interpolation = 0.0D;
-        double amplitude = 1.0D;
-        PerlinNoiseSampler interpolationSampler;
-        for (int i = 0; i < 8; i++) {
-            interpolationSampler = this.interpolationNoise.getOctave(i);
-            if (interpolationSampler != null) {
-                interpolation += interpolationSampler.sample(
-                        OctavePerlinNoiseSampler.maintainPrecision((double) x * horizontalStretch * amplitude),
-                        OctavePerlinNoiseSampler.maintainPrecision((double) y * verticalStretch * amplitude),
-                        OctavePerlinNoiseSampler.maintainPrecision((double) z * horizontalStretch * amplitude),
-                        verticalStretch * amplitude,
-                        (double) y * verticalStretch * amplitude
-                ) / amplitude;
-            }
-
-            amplitude /= 2.0D;
-        }
-
-        return (interpolation / 10.0D + 1.0D) / 2.0D;
+        return TerrainNoiseComputer.getInterpolationNoise(this.interpolationNoise, x, y, z, horizontalStretch, verticalStretch);
     }
 
-    private double getInterpolatedNoise(
-            OctavePerlinNoiseSampler sampler,
-            int x,
-            int y,
-            int z,
-            double horizontalScale,
-            double verticalScale
-    ) {
-        double noise = 0.0D;
-        double amplitude = 1.0D;
-        double scaledX;
-        double scaledY;
-        double scaledZ;
-        double scaledVerticalScale;
-        PerlinNoiseSampler perlinNoiseSampler;
-        for (int i = 0; i < Constants.CHUNK_SIZE; ++i) {
-            scaledX = OctavePerlinNoiseSampler.maintainPrecision((double) x * horizontalScale * amplitude);
-            scaledY = OctavePerlinNoiseSampler.maintainPrecision((double) y * verticalScale * amplitude);
-            scaledZ = OctavePerlinNoiseSampler.maintainPrecision((double) z * horizontalScale * amplitude);
-            scaledVerticalScale = verticalScale * amplitude;
-
-            perlinNoiseSampler = sampler.getOctave(i);
-            if (perlinNoiseSampler != null) {
-                noise += perlinNoiseSampler.sample(
-                        scaledX,
-                        scaledY,
-                        scaledZ,
-                        scaledVerticalScale,
-                        (double) y * scaledVerticalScale
-                ) / amplitude;
-            }
-
-            amplitude /= 2.0D;
-        }
-
-        return noise;
+    private double getInterpolatedNoise(OctavePerlinNoiseSampler sampler, int x, int y, int z, double horizontalScale, double verticalScale) {
+        return TerrainNoiseComputer.getInterpolatedNoise(sampler, x, y, z, horizontalScale, verticalScale);
     }
 
     private double getExtraHeightAt(int x, int z, double maxAverageDepth, double maxAverageHeight) {
-        double noiseHeight = this.depthNoise.sample(x * 200, 10.0D, z * 200, 1.0D, 0.0D, true) * 65535.0 / 8000.0;
-
-        if (noiseHeight < 0.0D) {
-            noiseHeight = -noiseHeight * 0.3D;
-        }
-        noiseHeight = noiseHeight * 3.0D - 2.0D;
-
-        if (noiseHeight < 0.0D) {
-            noiseHeight /= 2.0D;
-            if (noiseHeight < -1.0D) {
-                noiseHeight = -1.0D;
-            }
-            // Guard against division by near-zero or negative maxAverageDepth which causes terrain spikes
-            // Only divide when maxAverageDepth is positive and significant
-            if (maxAverageDepth > 0.1) {
-                noiseHeight /= maxAverageDepth;
-            }
-            noiseHeight /= 1.4D;
-            noiseHeight /= 2.0D;
-        } else {
-            if (noiseHeight > 1.0D) {
-                noiseHeight = 1.0D;
-            }
-            noiseHeight *= maxAverageHeight;
-            noiseHeight /= 8.0D;
-        }
-
-        return noiseHeight;
+        return TerrainNoiseComputer.getExtraHeightAt(this.depthNoise, x, z, maxAverageDepth, maxAverageHeight);
     }
 
     public void getNoiseColumn(double[] buffer, int x, int z) {
