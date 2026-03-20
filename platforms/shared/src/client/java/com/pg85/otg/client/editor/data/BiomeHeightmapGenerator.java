@@ -43,8 +43,11 @@ public class BiomeHeightmapGenerator {
         float biomeHeight = getFloat(biomeProperties, "BiomeHeight", 0.1f);
         float biomeVolatility = getFloat(biomeProperties, "BiomeVolatility", 0.3f);
 
-        // Preset settings
-        int waterLevel = getInt(presetProperties, "WaterLevelMax", 63);
+        // Water level: biome UseWorldWaterLevel=true (default) → use preset, else use biome's own
+        boolean useWorldWater = getBool(biomeProperties, "UseWorldWaterLevel", true);
+        int waterLevel = useWorldWater
+            ? getInt(presetProperties, "WaterLevelMax", 63)
+            : getInt(biomeProperties, "WaterLevelMax", 63);
         int heightScaleBits = getInt(presetProperties, "WorldHeightScaleBits", 8);
         float fractureH = getFloat(presetProperties, "FractureHorizontal", 0f);
         float fractureV = getFloat(presetProperties, "FractureVertical", 0f);
@@ -126,6 +129,16 @@ public class BiomeHeightmapGenerator {
             if (pv.getDefinition().name().equals(name)) {
                 try { return Float.parseFloat(pv.getValue()); }
                 catch (NumberFormatException e) { return defaultVal; }
+            }
+        }
+        return defaultVal;
+    }
+
+    private static boolean getBool(List<PropertyValue> properties, String name, boolean defaultVal) {
+        if (properties == null) return defaultVal;
+        for (PropertyValue pv : properties) {
+            if (pv.getDefinition().name().equals(name)) {
+                return "true".equalsIgnoreCase(pv.getValue());
             }
         }
         return defaultVal;
