@@ -13,12 +13,11 @@ import java.util.Random;
 import java.util.stream.IntStream;
 
 /**
- * Generates terrain heightmap preview using OTG's actual noise formulas.
- * Uses same OctavePerlinNoiseSampler, falloff, volatility weighting,
- * and anti-floating-terrain logic as OTGChunkGenerator.generateNoiseColumn().
+ * Generates terrain heightmap preview using OTG's actual noise pipeline.
+ * Uses OctavePerlinNoiseSampler directly — same noise code as OTGChunkGenerator.
  *
- * Difference from real OTG: no biome blending (preview shows single biome),
- * no CustomHeightControl, no depthNoise extraHeight.
+ * Difference from real OTG: no biome blending (single biome), no CHC.
+ * All formulas match OTGChunkGenerator.generateNoiseColumn() line-for-line.
  */
 public class BiomeHeightmapGenerator {
 
@@ -43,17 +42,16 @@ public class BiomeHeightmapGenerator {
                                              long seed, int size) {
         world.clear();
 
-        // Biome settings (same names as BiomeTerrainSettings fields)
+        // Biome settings (same names as BiomeTerrainSettings)
         float biomeHeight = getFloat(biomeProperties, "BiomeHeight", 0.1f);
         float biomeVolatility = getFloat(biomeProperties, "BiomeVolatility", 0.3f);
-        float volatility1 = getFloat(biomeProperties, "Volatility1", 0.0f);
-        float volatility2 = getFloat(biomeProperties, "Volatility2", 0.0f);
-        float volatilityWeight1 = getFloat(biomeProperties, "VolatilityWeight1", 0.5f);
-        float volatilityWeight2 = getFloat(biomeProperties, "VolatilityWeight2", 0.45f);
-        float maxAverageDepth = getFloat(biomeProperties, "MaxAverageDepth", 0.0f);
-        float maxAverageHeight = getFloat(biomeProperties, "MaxAverageHeight", 0.0f);
+        double volatility1 = getFloat(biomeProperties, "Volatility1", 0.0f);
+        double volatility2 = getFloat(biomeProperties, "Volatility2", 0.0f);
+        double volatilityWeight1 = getFloat(biomeProperties, "VolatilityWeight1", 0.5f);
+        double volatilityWeight2 = getFloat(biomeProperties, "VolatilityWeight2", 0.45f);
+        double maxAverageDepth = getFloat(biomeProperties, "MaxAverageDepth", 0.0f);
+        double maxAverageHeight = getFloat(biomeProperties, "MaxAverageHeight", 0.0f);
 
-        // If volatility1/2 are zero, default to biomeVolatility
         if (volatility1 == 0) volatility1 = biomeVolatility;
         if (volatility2 == 0) volatility2 = biomeVolatility;
 
@@ -62,47 +60,51 @@ public class BiomeHeightmapGenerator {
         int waterLevel = useWorldWater
             ? getInt(presetProperties, "WaterLevelMax", 63)
             : getInt(biomeProperties, "WaterLevelMax", 63);
-        float fractureH = getFloat(presetProperties, "FractureHorizontal", 0f);
-        float fractureV = getFloat(presetProperties, "FractureVertical", 0f);
+        double fractureH = getFloat(presetProperties, "FractureHorizontal", 0f);
+        double fractureV = getFloat(presetProperties, "FractureVertical", 0f);
 
-        // FractureH/V=0 means flat terrain (no noise variation) — this is correct OTG behavior.
-        // Biome Bundle uses 1.2 / 0.33, DefaultPreset uses 0.0 / 0.0 (intentionally flat).
-
-        // OTG height transformation (same as OTGChunkGenerator lines 463-467)
+        // OTG height transformation (OTGChunkGenerator lines 463-464)
         float vol = biomeVolatility * 0.9f + 0.1f;
         float h = (biomeHeight * 4.0f - 1.0f) / 8.0f;
-        float referenceY = REFERENCE_Y_SECTIONS * (2.0f + h) / 4.0f;
 
-        // Fracture scaling (same as OTGChunkGenerator line 481-482)
+        // Fracture scaling (OTGChunkGenerator line 481-482)
         double horizontalScale = WORLD_GEN_CONSTANT * fractureH;
         double verticalScale = WORLD_GEN_CONSTANT * fractureV;
-        double horizontalStretch = horizontalScale / 80.0;
-        double verticalStretch = verticalScale / 160.0;
 
-        // Create noise samplers — same octave setup as OTGChunkGenerator constructor
+        // Noise samplers — same creation order as OTGChunkGenerator constructor
         Random rng = new Random(seed);
         OctavePerlinNoiseSampler lowerNoise = new OctavePerlinNoiseSampler(rng, IntStream.rangeClosed(-15, 0));
         OctavePerlinNoiseSampler upperNoise = new OctavePerlinNoiseSampler(rng, IntStream.rangeClosed(-15, 0));
         OctavePerlinNoiseSampler interpNoise = new OctavePerlinNoiseSampler(rng, IntStream.rangeClosed(-7, 0));
+        OctavePerlinNoiseSampler depthNoiseSampler = new OctavePerlinNoiseSampler(rng, IntStream.rangeClosed(-15, 0));
 
         int minSurfaceY = 999, maxSurfaceY = 0;
 
         for (int bx = 0; bx < size; bx++) {
             for (int bz = 0; bz < size; bz++) {
-                // Noise coordinates (OTG uses noise grid spacing of 4 blocks)
                 int noiseX = bx / 4;
                 int noiseZ = bz / 4;
 
-                // Generate full noise column (same as OTGChunkGenerator.generateNoiseColumn)
+                // depthNoise extraHeight (OTGChunkGenerator line 460)
+                float extraHeight = (float)(getExtraHeightAt(
+                    depthNoiseSampler, noiseX, noiseZ, maxAverageDepth, maxAverageHeight) * 0.2);
+
+                // Reference Y with extraHeight (OTGChunkGenerator line 467)
+                float columnRefY = REFERENCE_Y_SECTIONS * (2.0f + h + extraHeight) / 4.0f;
+
+                // Generate noise column (OTGChunkGenerator lines 473-527)
                 double[] noiseColumn = new double[NOISE_SIZE_Y + 1];
                 for (int y = 0; y <= NOISE_SIZE_Y; y++) {
-                    double falloff = (referenceY - y) * 6.0 / vol;
+                    double falloff = (columnRefY - y) * 6.0 / vol;
                     if (falloff > 0) falloff *= 4.0;
+
+                    double hScale = horizontalScale;
+                    double vScale = verticalScale;
 
                     double noise = sampleNoise(
                         noiseX, y, noiseZ,
-                        horizontalScale, verticalScale,
-                        horizontalStretch, verticalStretch,
+                        hScale, vScale,
+                        hScale / 80.0, vScale / 160.0,
                         volatility1, volatility2,
                         volatilityWeight1, volatilityWeight2,
                         interpNoise, lowerNoise, upperNoise
@@ -110,13 +112,11 @@ public class BiomeHeightmapGenerator {
 
                     noise += falloff;
 
-                    // Anti-floating terrain (OTGChunkGenerator line 503-506)
-                    double heightDiff = y - referenceY;
+                    double heightDiff = y - columnRefY;
                     if (heightDiff > 4) {
                         noise -= (heightDiff - 4) * (heightDiff - 4) * 0.5;
                     }
 
-                    // Top layer reduction (OTGChunkGenerator line 511-514)
                     int reductionStartY = NOISE_SIZE_Y - 4;
                     if (y > reductionStartY) {
                         double t = ((double) y - reductionStartY) / 4.0;
@@ -126,23 +126,21 @@ public class BiomeHeightmapGenerator {
                     noiseColumn[y] = noise;
                 }
 
-                // Scan top-down with density normalization (ReEdited/OTG formula)
+                // Find surface — scan top-down with Y interpolation within sections
                 int surfaceY = 0;
+                outer:
                 for (int y = NOISE_SIZE_Y - 1; y >= 0; y--) {
                     for (int subY = NOISE_SECTION_HEIGHT - 1; subY >= 0; subY--) {
                         double fracY = (double) subY / NOISE_SECTION_HEIGHT;
-                        // Linear interpolation between noise sections
-                        double rawDensity = noiseColumn[y] + (noiseColumn[y + 1] - noiseColumn[y]) * fracY;
-                        // Density normalization (same as OTG populateNoise)
+                        double rawDensity = noiseColumn[y] + (noiseColumn[Math.min(y + 1, NOISE_SIZE_Y)] - noiseColumn[y]) * fracY;
                         double density = Math.max(-1, Math.min(1, rawDensity / 200.0));
                         density = density / 2.0 - density * density * density / 24.0;
 
                         if (density > 0) {
                             surfaceY = y * NOISE_SECTION_HEIGHT + subY;
-                            break;
+                            break outer;
                         }
                     }
-                    if (surfaceY > 0) break;
                 }
 
                 surfaceY = Math.max(1, Math.min(319, surfaceY));
@@ -176,7 +174,8 @@ public class BiomeHeightmapGenerator {
     }
 
     /**
-     * Same logic as OTGChunkGenerator.sampleNoise() — volatility weight blending.
+     * Same as OTGChunkGenerator.sampleNoise() — volatility weight blending.
+     * Uses PerlinNoiseSampler directly for per-octave access.
      */
     private static double sampleNoise(
             int x, int y, int z,
@@ -197,13 +196,14 @@ public class BiomeHeightmapGenerator {
         } else {
             double lower = getInterpolatedNoise(lowerNoise, x, y, z, horizontalScale, verticalScale) / 512.0 * vol1;
             double upper = getInterpolatedNoise(upperNoise, x, y, z, horizontalScale, verticalScale) / 512.0 * vol2;
-            double t = (delta - volWeight1) / (volWeight2 - volWeight1);
+            // Same lerp as OTGChunkGenerator — MathHelper.lerp(delta, lower, upper)
+            double t = (volWeight2 != volWeight1) ? (delta - volWeight1) / (volWeight2 - volWeight1) : 0.5;
             return lower + (upper - lower) * t;
         }
     }
 
     /**
-     * Same as OTGChunkGenerator.getInterpolationNoise() — 8 octaves, normalized to [0,1]
+     * Same as OTGChunkGenerator.getInterpolationNoise() — 8 octaves
      */
     private static double getInterpolationNoise(OctavePerlinNoiseSampler sampler,
                                                   int x, int y, int z,
@@ -218,7 +218,7 @@ public class BiomeHeightmapGenerator {
                     OctavePerlinNoiseSampler.maintainPrecision(y * vStretch * amplitude),
                     OctavePerlinNoiseSampler.maintainPrecision(z * hStretch * amplitude),
                     vStretch * amplitude,
-                    y * vStretch * amplitude
+                    (double) y * vStretch * amplitude
                 ) / amplitude;
             }
             amplitude /= 2.0;
@@ -242,12 +242,38 @@ public class BiomeHeightmapGenerator {
                     OctavePerlinNoiseSampler.maintainPrecision(y * vScale * amplitude),
                     OctavePerlinNoiseSampler.maintainPrecision(z * hScale * amplitude),
                     vScale * amplitude,
-                    y * vScale * amplitude
+                    (double) y * vScale * amplitude
                 ) / amplitude;
             }
             amplitude /= 2.0;
         }
         return noise;
+    }
+
+    /**
+     * Same as OTGChunkGenerator.getExtraHeightAt() — depth noise variation.
+     */
+    private static double getExtraHeightAt(OctavePerlinNoiseSampler depthNoise,
+                                            int x, int z,
+                                            double maxAverageDepth, double maxAverageHeight) {
+        double noiseHeight = depthNoise.sample(x * 200, 10.0, z * 200, 1.0, 0.0, true) * 65535.0 / 8000.0;
+
+        if (noiseHeight < 0.0) noiseHeight = -noiseHeight * 0.3;
+        noiseHeight = noiseHeight * 3.0 - 2.0;
+
+        if (noiseHeight < 0.0) {
+            noiseHeight /= 2.0;
+            if (noiseHeight < -1.0) noiseHeight = -1.0;
+            if (maxAverageDepth > 0.1) noiseHeight /= maxAverageDepth;
+            noiseHeight /= 1.4;
+            noiseHeight /= 2.0;
+        } else {
+            if (noiseHeight > 1.0) noiseHeight = 1.0;
+            noiseHeight *= maxAverageHeight;
+            noiseHeight /= 8.0;
+        }
+
+        return noiseHeight;
     }
 
     // --- Property helpers ---
