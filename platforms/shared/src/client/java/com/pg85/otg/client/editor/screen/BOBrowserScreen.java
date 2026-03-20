@@ -96,6 +96,29 @@ public class BOBrowserScreen extends Screen {
             boCamera.setTheta((float) (Math.PI / 4));
             boCamera.setPhi((float) (Math.PI / 3));
         }
+
+        // Direction buttons (N/S/E/W) — snap camera to compass directions
+        int dirY = viewportY + viewportH - 22;
+        int dirX = viewportX + viewportW - 110;
+        addRenderableWidget(Button.builder(Component.literal("N"), btn -> {
+            boCamera.setTheta(0f);
+            boCamera.setPhi(1.0f);
+        }).bounds(dirX, dirY, 22, 18).build());
+        dirX += 26;
+        addRenderableWidget(Button.builder(Component.literal("S"), btn -> {
+            boCamera.setTheta((float) Math.PI);
+            boCamera.setPhi(1.0f);
+        }).bounds(dirX, dirY, 22, 18).build());
+        dirX += 26;
+        addRenderableWidget(Button.builder(Component.literal("E"), btn -> {
+            boCamera.setTheta((float) (Math.PI / 2));
+            boCamera.setPhi(1.0f);
+        }).bounds(dirX, dirY, 22, 18).build());
+        dirX += 26;
+        addRenderableWidget(Button.builder(Component.literal("W"), btn -> {
+            boCamera.setTheta((float) (-Math.PI / 2));
+            boCamera.setPhi(1.0f);
+        }).bounds(dirX, dirY, 22, 18).build());
     }
 
     private List<String> scanObjects() {
@@ -205,6 +228,19 @@ public class BOBrowserScreen extends Screen {
             graphics.fill(viewportX, viewportY, viewportX + viewportW, viewportY + viewportH, 0xFF1A1A1A);
             graphics.drawCenteredString(font, "Select a BO3/BO4 to preview",
                 viewportX + viewportW / 2, viewportY + viewportH / 2, 0xFF666666);
+        }
+
+        // Metadata below viewport
+        int metaY = viewportY + viewportH - 40;
+        if (loadedObjectName != null && lastBounds != null) {
+            graphics.drawString(font, "Name: " + loadedObjectName, viewportX + 6, metaY, 0xFFCCCCCC);
+            String ext = selectedPath != null && selectedPath.contains(".")
+                ? selectedPath.substring(selectedPath.lastIndexOf('.')) : "?";
+            graphics.drawString(font, "Type: " + ext, viewportX + viewportW / 2, metaY, 0xFFCCCCCC);
+            metaY += 12;
+            String size = lastBounds.sizeX() + "x" + lastBounds.sizeY() + "x" + lastBounds.sizeZ();
+            graphics.drawString(font, "Size: " + size, viewportX + 6, metaY, 0xFFCCCCCC);
+            graphics.drawString(font, "Blocks: " + lastBounds.blockCount(), viewportX + viewportW / 2, metaY, 0xFFCCCCCC);
         }
 
         // Status / info text in viewport area
