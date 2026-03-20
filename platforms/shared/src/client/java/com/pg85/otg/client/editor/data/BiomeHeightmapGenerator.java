@@ -1,8 +1,7 @@
 package com.pg85.otg.client.editor.data;
 
 import com.pg85.otg.client.preview.world.PreviewWorld;
-import com.pg85.otg.gen.noise.OctavePerlinNoiseSampler;
-import com.pg85.otg.gen.noise.PerlinNoiseSampler;
+import com.pg85.otg.gen.noise.TerrainNoiseComputer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -10,7 +9,6 @@ import org.joml.Vector3f;
 
 import java.util.List;
 import java.util.Random;
-import java.util.stream.IntStream;
 
 /**
  * Generates terrain heightmap using OTG's actual noise pipeline.
@@ -19,8 +17,6 @@ import java.util.stream.IntStream;
  */
 public class BiomeHeightmapGenerator {
 
-    private static final double WORLD_GEN_CONSTANT = 684.412;
-    private static final float REFERENCE_Y_SECTIONS = 33.5f;
     private static final int NOISE_SECTION_HEIGHT = 8;
     private static final int NOISE_SIZE_Y = 48;
     private static final int NOISE_GRID_SPACING = 4; // blocks per noise grid cell
@@ -68,17 +64,13 @@ public class BiomeHeightmapGenerator {
         float vol = biomeVolatility * 0.9f + 0.1f;
         float h = (biomeHeight * 4.0f - 1.0f) / 8.0f;
 
-        double horizontalScale = WORLD_GEN_CONSTANT * fractureH;
-        double verticalScale = WORLD_GEN_CONSTANT * fractureV;
+        double horizontalScale = TerrainNoiseComputer.WORLD_GEN_CONSTANT * fractureH;
+        double verticalScale = TerrainNoiseComputer.WORLD_GEN_CONSTANT * fractureV;
         double horizontalStretch = horizontalScale / 80.0;
         double verticalStretch = verticalScale / 160.0;
 
-        // Noise samplers — same creation order as OTGChunkGenerator
-        Random rng = new Random(seed);
-        OctavePerlinNoiseSampler lowerNoise = new OctavePerlinNoiseSampler(rng, IntStream.rangeClosed(-15, 0));
-        OctavePerlinNoiseSampler upperNoise = new OctavePerlinNoiseSampler(rng, IntStream.rangeClosed(-15, 0));
-        OctavePerlinNoiseSampler interpNoise = new OctavePerlinNoiseSampler(rng, IntStream.rangeClosed(-7, 0));
-        OctavePerlinNoiseSampler depthNoiseSampler = new OctavePerlinNoiseSampler(rng, IntStream.rangeClosed(-15, 0));
+        // Noise samplers — canonical order via TerrainNoiseComputer factory
+        var samplers = TerrainNoiseComputer.createNoiseSamplers(new Random(seed));
 
         // === Phase 1: Compute noise columns at grid points (every 4 blocks) ===
         int noiseCountX = size / NOISE_GRID_SPACING + 1;
@@ -87,21 +79,22 @@ public class BiomeHeightmapGenerator {
 
         for (int nx = 0; nx < noiseCountX; nx++) {
             for (int nz = 0; nz < noiseCountZ; nz++) {
-                float extraHeight = (float)(getExtraHeightAt(
-                    depthNoiseSampler, nx, nz, maxAverageDepth, maxAverageHeight) * 0.2);
-                float columnRefY = REFERENCE_Y_SECTIONS * (2.0f + h + extraHeight) / 4.0f;
+                float extraHeight = (float)(TerrainNoiseComputer.getExtraHeightAt(
+                    samplers.depth(), nx, nz, maxAverageDepth, maxAverageHeight) * 0.2);
+                float columnRefY = TerrainNoiseComputer.REFERENCE_Y_SECTIONS * (2.0f + h + extraHeight) / 4.0f;
 
                 double[] column = new double[NOISE_SIZE_Y + 1];
                 for (int y = 0; y <= NOISE_SIZE_Y; y++) {
                     double falloff = (columnRefY - y) * 6.0 / vol;
                     if (falloff > 0) falloff *= 4.0;
 
-                    double noise = sampleNoise(nx, y, nz,
+                    double noise = TerrainNoiseComputer.sampleNoise(
+                        nx, y, nz,
                         horizontalScale, verticalScale,
                         horizontalStretch, verticalStretch,
                         volatility1, volatility2,
                         volatilityWeight1, volatilityWeight2,
-                        interpNoise, lowerNoise, upperNoise);
+                        samplers.interpolation(), samplers.lower(), samplers.upper());
 
                     noise += falloff;
 
@@ -196,85 +189,6 @@ public class BiomeHeightmapGenerator {
         float radius = Math.max(size, maxSurfaceY - minSurfaceY + 20);
 
         return new GenerationResult(center, radius, heightmap, size);
-    }
-
-    // === Noise methods — identical to OTGChunkGenerator ===
-
-    private static double sampleNoise(int x, int y, int z,
-            double hScale, double vScale, double hStretch, double vStretch,
-            double vol1, double vol2, double volW1, double volW2,
-            OctavePerlinNoiseSampler interpNoise,
-            OctavePerlinNoiseSampler lowerNoise, OctavePerlinNoiseSampler upperNoise) {
-
-        double delta = getInterpolationNoise(interpNoise, x, y, z, hStretch, vStretch);
-
-        if (delta < volW1) {
-            return getInterpolatedNoise(lowerNoise, x, y, z, hScale, vScale) / 512.0 * vol1;
-        } else if (delta > volW2) {
-            return getInterpolatedNoise(upperNoise, x, y, z, hScale, vScale) / 512.0 * vol2;
-        } else {
-            double lower = getInterpolatedNoise(lowerNoise, x, y, z, hScale, vScale) / 512.0 * vol1;
-            double upper = getInterpolatedNoise(upperNoise, x, y, z, hScale, vScale) / 512.0 * vol2;
-            double t = (volW2 != volW1) ? (delta - volW1) / (volW2 - volW1) : 0.5;
-            return lower + (upper - lower) * t;
-        }
-    }
-
-    private static double getInterpolationNoise(OctavePerlinNoiseSampler sampler,
-                                                  int x, int y, int z, double hS, double vS) {
-        double interp = 0.0;
-        double amp = 1.0;
-        for (int i = 0; i < 8; i++) {
-            PerlinNoiseSampler oct = sampler.getOctave(i);
-            if (oct != null) {
-                interp += oct.sample(
-                    OctavePerlinNoiseSampler.maintainPrecision(x * hS * amp),
-                    OctavePerlinNoiseSampler.maintainPrecision(y * vS * amp),
-                    OctavePerlinNoiseSampler.maintainPrecision(z * hS * amp),
-                    vS * amp, (double) y * vS * amp
-                ) / amp;
-            }
-            amp /= 2.0;
-        }
-        return (interp / 10.0 + 1.0) / 2.0;
-    }
-
-    private static double getInterpolatedNoise(OctavePerlinNoiseSampler sampler,
-                                                 int x, int y, int z, double hS, double vS) {
-        double noise = 0.0;
-        double amp = 1.0;
-        for (int i = 0; i < 16; i++) {
-            PerlinNoiseSampler oct = sampler.getOctave(i);
-            if (oct != null) {
-                noise += oct.sample(
-                    OctavePerlinNoiseSampler.maintainPrecision(x * hS * amp),
-                    OctavePerlinNoiseSampler.maintainPrecision(y * vS * amp),
-                    OctavePerlinNoiseSampler.maintainPrecision(z * hS * amp),
-                    vS * amp, (double) y * vS * amp
-                ) / amp;
-            }
-            amp /= 2.0;
-        }
-        return noise;
-    }
-
-    private static double getExtraHeightAt(OctavePerlinNoiseSampler depthNoise,
-                                            int x, int z, double maxAvgDepth, double maxAvgHeight) {
-        double h = depthNoise.sample(x * 200, 10.0, z * 200, 1.0, 0.0, true) * 65535.0 / 8000.0;
-        if (h < 0.0) h = -h * 0.3;
-        h = h * 3.0 - 2.0;
-        if (h < 0.0) {
-            h /= 2.0;
-            if (h < -1.0) h = -1.0;
-            if (maxAvgDepth > 0.1) h /= maxAvgDepth;
-            h /= 1.4;
-            h /= 2.0;
-        } else {
-            if (h > 1.0) h = 1.0;
-            h *= maxAvgHeight;
-            h /= 8.0;
-        }
-        return h;
     }
 
     // --- Property helpers ---
