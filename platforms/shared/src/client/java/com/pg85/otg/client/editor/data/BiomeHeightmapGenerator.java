@@ -16,7 +16,6 @@ import java.util.List;
  */
 public class BiomeHeightmapGenerator {
 
-    private static final int SIZE = 64; // 64x64 block area
     private static final int BASE_HEIGHT = 64;
     private static final BlockState STONE = Blocks.STONE.defaultBlockState();
     private static final BlockState GRASS = Blocks.GRASS_BLOCK.defaultBlockState();
@@ -34,20 +33,19 @@ public class BiomeHeightmapGenerator {
      * @param properties  biome PropertyValues (searches for BiomeHeight, BiomeVolatility, WaterLevelMax)
      * @return center and radius for camera fitting
      */
-    public static GenerationResult generate(PreviewWorld world, List<PropertyValue> properties) {
+    public static GenerationResult generate(PreviewWorld world, List<PropertyValue> properties, long seed, int size) {
         world.clear();
 
         float biomeHeight = getFloat(properties, "BiomeHeight", 0.1f);
         float biomeVolatility = getFloat(properties, "BiomeVolatility", 0.3f);
         int waterLevel = getInt(properties, "WaterLevelMax", 63);
 
-        // Create noise generator with fixed seed for consistent preview
-        ImprovedNoise noise = new ImprovedNoise(RandomSource.create(12345L));
+        ImprovedNoise noise = new ImprovedNoise(RandomSource.create(seed));
 
         int minY = 256, maxY = 0;
 
-        for (int x = 0; x < SIZE; x++) {
-            for (int z = 0; z < SIZE; z++) {
+        for (int x = 0; x < size; x++) {
+            for (int z = 0; z < size; z++) {
                 // Multi-octave noise modulated by biome settings
                 double n = 0;
                 n += noise.noise(x * 0.03, 0, z * 0.03) * 1.0;
@@ -91,8 +89,8 @@ public class BiomeHeightmapGenerator {
 
         // Center of the terrain
         float centerY = (minY + maxY) / 2f;
-        Vector3f center = new Vector3f(SIZE / 2f, centerY, SIZE / 2f);
-        float radius = Math.max(SIZE, maxY - minY + 20);
+        Vector3f center = new Vector3f(size / 2f, centerY, size / 2f);
+        float radius = Math.max(size, maxY - minY + 20);
 
         return new GenerationResult(center, radius);
     }

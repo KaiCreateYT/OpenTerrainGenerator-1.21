@@ -8,6 +8,7 @@ import com.pg85.otg.client.preview.PreviewRenderer;
 import com.pg85.otg.client.preview.world.PreviewWorld;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
@@ -25,8 +26,13 @@ public class BiomeTerrainPreviewScreen extends Screen {
     private PreviewWorld world;
     private PreviewRenderer renderer;
     private final OrbitCamera camera = new OrbitCamera();
-    private boolean generated = false;
-    private String statusText = "Generating...";
+    private String statusText;
+
+    // User-configurable params
+    private long seed = 12345L;
+    private int size = 64;
+    private EditBox seedInput;
+    private EditBox sizeInput;
 
     public BiomeTerrainPreviewScreen(Screen parent, List<PropertyValue> properties, String biomeName) {
         super(Component.literal("Terrain Preview — " + biomeName));
@@ -37,27 +43,76 @@ public class BiomeTerrainPreviewScreen extends Screen {
 
     @Override
     protected void init() {
-        addRenderableWidget(Button.builder(Component.literal("Back"), btn -> onClose())
-            .bounds(width / 2 - 40, height - 25, 80, 20).build());
+        int barY = height - 25;
 
-        if (!generated) {
-            world = new PreviewWorld();
-            BiomeHeightmapGenerator.GenerationResult result =
-                BiomeHeightmapGenerator.generate(world, properties);
-            renderer = new PreviewRenderer(world);
-            renderer.compileAll();
-            camera.fitTo(result.center(), result.radius());
-            generated = true;
-            statusText = null;
+        // Seed input
+        seedInput = new EditBox(font, 4, barY, 80, 18, Component.literal("Seed"));
+        seedInput.setValue(String.valueOf(seed));
+        seedInput.setHint(Component.literal("Seed"));
+        addRenderableWidget(seedInput);
+
+        // Size input
+        sizeInput = new EditBox(font, 90, barY, 40, 18, Component.literal("Size"));
+        sizeInput.setValue(String.valueOf(size));
+        sizeInput.setHint(Component.literal("Size"));
+        addRenderableWidget(sizeInput);
+
+        // Generate button
+        addRenderableWidget(Button.builder(Component.literal("Generate"), btn -> regenerate())
+            .bounds(136, barY, 60, 20).build());
+
+        // Back button
+        addRenderableWidget(Button.builder(Component.literal("Back"), btn -> onClose())
+            .bounds(width - 54, barY, 50, 20).build());
+
+        // Auto-generate on first open
+        if (world == null) {
+            regenerate();
         }
+    }
+
+    private void regenerate() {
+        // Parse seed
+        try {
+            String seedText = seedInput.getValue().trim();
+            if (seedText.isEmpty()) {
+                seed = System.currentTimeMillis();
+            } else {
+                seed = Long.parseLong(seedText);
+            }
+        } catch (NumberFormatException e) {
+            // Use string hash as seed
+            seed = seedInput.getValue().hashCode();
+        }
+
+        // Parse size
+        try {
+            size = Integer.parseInt(sizeInput.getValue().trim());
+            size = Math.max(16, Math.min(256, size));
+        } catch (NumberFormatException e) {
+            size = 64;
+        }
+        sizeInput.setValue(String.valueOf(size));
+
+        // Clean up old
+        if (renderer != null) renderer.releaseBuffers();
+        if (world != null) world.clear();
+
+        statusText = "Generating...";
+        world = new PreviewWorld();
+        BiomeHeightmapGenerator.GenerationResult result =
+            BiomeHeightmapGenerator.generate(world, properties, seed, size);
+        renderer = new PreviewRenderer(world);
+        renderer.compileAll();
+        camera.fitTo(result.center(), result.radius());
+        statusText = null;
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        // Background + buttons FIRST (so blur doesn't cover 3D viewport)
         super.render(graphics, mouseX, mouseY, partialTick);
 
-        int vpH = height - 35;
+        int vpH = height - 30;
 
         if (renderer != null && !renderer.isEmpty()) {
             graphics.enableScissor(0, 0, width, vpH);
@@ -99,20 +154,26 @@ public class BiomeTerrainPreviewScreen extends Screen {
             }
         }
 
-        // Title on top of everything
-        graphics.drawCenteredString(font, title, width / 2, height - 34, 0xFFFFFF);
+        // Title
+        graphics.drawCenteredString(font, title, width / 2, 4, 0xFFFFFF);
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        camera.rotate((float) (-dragX * 0.01), (float) (dragY * 0.01));
-        return true;
+        if (mouseY < height - 30) {
+            camera.rotate((float) (-dragX * 0.01), (float) (dragY * 0.01));
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double deltaH, double deltaV) {
-        camera.zoom((float) (deltaV * 120));
-        return true;
+        if (mouseY < height - 30) {
+            camera.zoom((float) (deltaV * 120));
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, deltaH, deltaV);
     }
 
     @Override
