@@ -65,14 +65,18 @@ public class BiomeHeightmapGenerator {
         float fractureH = getFloat(presetProperties, "FractureHorizontal", 0f);
         float fractureV = getFloat(presetProperties, "FractureVertical", 0f);
 
+        // FractureH/V=0 in config means "default" = 1.0 (0 * 684.412 = no noise = flat)
+        if (fractureH == 0) fractureH = 1.0f;
+        if (fractureV == 0) fractureV = 1.0f;
+
         // OTG height transformation (same as OTGChunkGenerator lines 463-467)
         float vol = biomeVolatility * 0.9f + 0.1f;
         float h = (biomeHeight * 4.0f - 1.0f) / 8.0f;
         float referenceY = REFERENCE_Y_SECTIONS * (2.0f + h) / 4.0f;
 
         // Fracture scaling (same as OTGChunkGenerator line 481-482)
-        double horizontalScale = WORLD_GEN_CONSTANT * (1.0 + fractureH * 0.001);
-        double verticalScale = WORLD_GEN_CONSTANT * (1.0 + fractureV * 0.001);
+        double horizontalScale = WORLD_GEN_CONSTANT * fractureH;
+        double verticalScale = WORLD_GEN_CONSTANT * fractureV;
         double horizontalStretch = horizontalScale / 80.0;
         double verticalStretch = verticalScale / 160.0;
 
@@ -90,13 +94,12 @@ public class BiomeHeightmapGenerator {
                 int noiseX = bx / 4;
                 int noiseZ = bz / 4;
 
-                // Find surface: scan noise column top-down for first positive density
-                int surfaceY = 0;
-                for (int y = NOISE_SIZE_Y; y >= 0; y--) {
+                // Generate full noise column (same as OTGChunkGenerator.generateNoiseColumn)
+                double[] noiseColumn = new double[NOISE_SIZE_Y + 1];
+                for (int y = 0; y <= NOISE_SIZE_Y; y++) {
                     double falloff = (referenceY - y) * 6.0 / vol;
                     if (falloff > 0) falloff *= 4.0;
 
-                    // sampleNoise — same as OTGChunkGenerator.sampleNoise()
                     double noise = sampleNoise(
                         noiseX, y, noiseZ,
                         horizontalScale, verticalScale,
@@ -108,23 +111,39 @@ public class BiomeHeightmapGenerator {
 
                     noise += falloff;
 
-                    // Anti-floating terrain (same as OTGChunkGenerator line 503-506)
+                    // Anti-floating terrain (OTGChunkGenerator line 503-506)
                     double heightDiff = y - referenceY;
                     if (heightDiff > 4) {
                         noise -= (heightDiff - 4) * (heightDiff - 4) * 0.5;
                     }
 
-                    // Top layer reduction (same as OTGChunkGenerator line 511-514)
+                    // Top layer reduction (OTGChunkGenerator line 511-514)
                     int reductionStartY = NOISE_SIZE_Y - 4;
                     if (y > reductionStartY) {
                         double t = ((double) y - reductionStartY) / 4.0;
                         noise = noise + (-10 - noise) * Math.max(0, Math.min(1, t));
                     }
 
-                    if (noise > 0) {
-                        surfaceY = y * NOISE_SECTION_HEIGHT;
-                        break;
+                    noiseColumn[y] = noise;
+                }
+
+                // Scan top-down with density normalization (ReEdited/OTG formula)
+                int surfaceY = 0;
+                for (int y = NOISE_SIZE_Y - 1; y >= 0; y--) {
+                    for (int subY = NOISE_SECTION_HEIGHT - 1; subY >= 0; subY--) {
+                        double fracY = (double) subY / NOISE_SECTION_HEIGHT;
+                        // Linear interpolation between noise sections
+                        double rawDensity = noiseColumn[y] + (noiseColumn[y + 1] - noiseColumn[y]) * fracY;
+                        // Density normalization (same as OTG populateNoise)
+                        double density = Math.max(-1, Math.min(1, rawDensity / 200.0));
+                        density = density / 2.0 - density * density * density / 24.0;
+
+                        if (density > 0) {
+                            surfaceY = y * NOISE_SECTION_HEIGHT + subY;
+                            break;
+                        }
                     }
+                    if (surfaceY > 0) break;
                 }
 
                 surfaceY = Math.max(1, Math.min(319, surfaceY));
