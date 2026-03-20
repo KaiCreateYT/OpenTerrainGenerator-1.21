@@ -16,6 +16,7 @@ import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public class BiomeTerrainPreviewScreen extends Screen {
 
@@ -28,6 +29,7 @@ public class BiomeTerrainPreviewScreen extends Screen {
     private PreviewRenderer renderer;
     private final OrbitCamera camera = new OrbitCamera();
     private String statusText;
+    private boolean generating = false;
 
     // User-configurable params
     private long seed = 12345L;
@@ -95,18 +97,31 @@ public class BiomeTerrainPreviewScreen extends Screen {
 
         // Size already set by button click
 
-        // Clean up old
-        if (renderer != null) renderer.releaseBuffers();
-        if (world != null) world.clear();
+        if (generating) return;
 
-        statusText = "Generating...";
-        world = new PreviewWorld();
-        BiomeHeightmapGenerator.GenerationResult result =
-            BiomeHeightmapGenerator.generate(world, biomeProperties, presetProperties, seed, size);
-        renderer = new PreviewRenderer(world);
-        renderer.compileAll();
-        camera.fitTo(result.center(), result.radius());
-        statusText = null;
+        // Clean up old
+        if (renderer != null) { renderer.releaseBuffers(); renderer = null; }
+        if (world != null) { world.clear(); }
+
+        generating = true;
+        statusText = "Generating " + size + "x" + size + "...";
+
+        // Heavy noise computation on background thread
+        final long genSeed = seed;
+        final int genSize = size;
+        PreviewWorld genWorld = new PreviewWorld();
+        world = genWorld;
+
+        CompletableFuture.supplyAsync(() ->
+            BiomeHeightmapGenerator.generate(genWorld, biomeProperties, presetProperties, genSeed, genSize)
+        ).thenAcceptAsync(result -> {
+            // Mesh compilation must happen on render thread
+            renderer = new PreviewRenderer(genWorld);
+            renderer.compileAll();
+            camera.fitTo(result.center(), result.radius());
+            generating = false;
+            statusText = null;
+        }, minecraft);
     }
 
     @Override
