@@ -2,6 +2,17 @@
 
 ### Release: 0.4.0-dev2
 
+**2026-03-20 — In-game editor Phase 4: BO Store with 3D Preview**
+
+- **BOBrowserScreen 3D viewport**: Embedded 3D BO2/BO3/BO4 preview — select object in tree, renders in right panel via PreviewRenderer/PreviewWorld/OrbitCamera. Drag to orbit, scroll to zoom.
+- **Direction buttons**: N/S/E/W snap buttons for camera orientation in BO preview
+- **Metadata panel**: Object name, type, size (XxYxZ), block count displayed below viewport
+- **Assign to Biome**: BiomeSelectDialog picker + appends `CustomObject(100, name)` to selected biome's .bc file
+- **BOBounds expanded**: Now includes blockCount, sizeX/Y/Z for metadata display
+- **OrbitCamera setters**: `setTheta()`/`setPhi()` for direction snapping
+- **BO Store button**: Enabled in EditorHubScreen, opens BOBrowserScreen from hub
+- **BOBrowserScreen parent navigation**: Constructor takes `Screen parent` for correct back-nav from both Hub and BiomeEditor
+
 **2026-03-20 — Editor polish & review fixes**
 
 - **TreeListWidget**: Collapsible folder tree for BO browser — folders expand/collapse on click (▶/▼), sorted folders-first, search auto-expands matching branches
