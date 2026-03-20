@@ -120,9 +120,15 @@ public class BiomeEditorScreen extends Screen {
         addRenderableWidget(Button.builder(Component.literal("Preview"), btn ->
             minecraft.setScreen(new PreviewScreen())
         ).bounds(LEFT_PANEL_WIDTH + 60, btnBarY, 60, 20).build());
+        addRenderableWidget(Button.builder(Component.literal("Terrain 3D"), btn -> {
+            if (!properties.isEmpty() && selectedBiomeIndex >= 0) {
+                String name = filteredBiomeEntries.get(selectedBiomeIndex).name();
+                minecraft.setScreen(new BiomeTerrainPreviewScreen(this, properties, name));
+            }
+        }).bounds(LEFT_PANEL_WIDTH + 126, btnBarY, 70, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Browse BO3"), btn ->
             minecraft.setScreen(new BOBrowserScreen(preset, this))
-        ).bounds(LEFT_PANEL_WIDTH + 126, btnBarY, 70, 20).build());
+        ).bounds(LEFT_PANEL_WIDTH + 200, btnBarY, 70, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Back"), btn -> onClose())
             .bounds(width - 54, btnBarY, 50, 20).build());
     }
