@@ -65,9 +65,8 @@ public class BiomeHeightmapGenerator {
         float fractureH = getFloat(presetProperties, "FractureHorizontal", 0f);
         float fractureV = getFloat(presetProperties, "FractureVertical", 0f);
 
-        // FractureH/V=0 in config means "default" = 1.0 (0 * 684.412 = no noise = flat)
-        if (fractureH == 0) fractureH = 1.0f;
-        if (fractureV == 0) fractureV = 1.0f;
+        // FractureH/V=0 means flat terrain (no noise variation) — this is correct OTG behavior.
+        // Biome Bundle uses 1.2 / 0.33, DefaultPreset uses 0.0 / 0.0 (intentionally flat).
 
         // OTG height transformation (same as OTGChunkGenerator lines 463-467)
         float vol = biomeVolatility * 0.9f + 0.1f;
