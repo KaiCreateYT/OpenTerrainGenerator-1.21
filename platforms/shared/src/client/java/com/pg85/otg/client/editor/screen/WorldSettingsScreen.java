@@ -96,7 +96,7 @@ public class WorldSettingsScreen extends Screen {
             .bounds(10, btnY, 60, 20).build());
 
         addRenderableWidget(Button.builder(Component.literal("Preview"), btn -> {
-            minecraft.setScreen(new PreviewScreen());
+            minecraft.setScreen(new PreviewScreen(this, preset != null ? preset.getFolderName() : null));
         }).bounds(80, btnY, 60, 20).build());
     }
 

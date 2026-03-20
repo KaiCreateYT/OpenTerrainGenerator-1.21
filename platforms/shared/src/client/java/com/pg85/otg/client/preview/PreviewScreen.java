@@ -40,8 +40,17 @@ public class PreviewScreen extends Screen {
     private List<PresetEntry> presetEntries = new ArrayList<>();
     private int presetIndex = 0;
 
+    private final Screen parentScreen;
+    private final String initialPresetFolder;
+
     public PreviewScreen() {
+        this(null, null);
+    }
+
+    public PreviewScreen(Screen parent, String presetFolderName) {
         super(Component.literal("OTG Editor — Preview"));
+        this.parentScreen = parent;
+        this.initialPresetFolder = presetFolderName;
     }
 
     @Override
@@ -66,12 +75,21 @@ public class PreviewScreen extends Screen {
             presetEntries.add(new PresetEntry("Vanilla", "", ""));
         }
 
-        // Restore preset selection
+        // Restore preset selection — prefer initialPresetFolder if provided
         presetIndex = 0;
-        for (int i = 0; i < presetEntries.size(); i++) {
-            if (presetEntries.get(i).displayName.equals(selectedPresetDisplay)) {
-                presetIndex = i;
-                break;
+        if (initialPresetFolder != null && !initialPresetFolder.isEmpty()) {
+            for (int i = 0; i < presetEntries.size(); i++) {
+                if (presetEntries.get(i).overworldPresetFolder.equals(initialPresetFolder)) {
+                    presetIndex = i;
+                    break;
+                }
+            }
+        } else {
+            for (int i = 0; i < presetEntries.size(); i++) {
+                if (presetEntries.get(i).displayName.equals(selectedPresetDisplay)) {
+                    presetIndex = i;
+                    break;
+                }
             }
         }
         selectedPresetDisplay = presetEntries.get(presetIndex).displayName;
@@ -202,7 +220,8 @@ public class PreviewScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+        // Background + widgets FIRST (so blur doesn't cover custom content)
+        super.render(graphics, mouseX, mouseY, partialTick);
 
         // Title
         graphics.drawCenteredString(font, title, width / 2, 5, 0xFFFFFF);
@@ -223,13 +242,11 @@ public class PreviewScreen extends Screen {
                 graphics.drawCenteredString(font, "Click 'Generate Preview' or 'Load BO' to start",
                     viewportX + viewportW / 2, viewportY + viewportH / 2, 0x666666);
             } else if (PreviewState.getPhase() != PreviewState.Phase.DONE) {
-                // Show progress during generation
                 String progress = PreviewState.getStatusText();
                 int centerX = viewportX + viewportW / 2;
                 int centerY = viewportY + viewportH / 2;
                 graphics.drawCenteredString(font, progress, centerX, centerY - 10, 0x888888);
 
-                // Progress bar
                 if (PreviewState.getPhase() == PreviewState.Phase.GENERATING_CHUNKS) {
                     int barW = Math.min(viewportW - 40, 200);
                     int barH = 6;
@@ -241,9 +258,6 @@ public class PreviewScreen extends Screen {
                 }
             }
         }
-
-        // UI widgets on top
-        super.render(graphics, mouseX, mouseY, partialTick);
     }
 
     private void renderViewport(GuiGraphics graphics, float partialTick) {
@@ -331,6 +345,8 @@ public class PreviewScreen extends Screen {
 
     @Override
     public void onClose() {
+        // Set return destination before close
+        PreviewState.setReturnScreen(parentScreen);
         // Don't disconnect here — mc.disconnect() causes black screen when called
         // from any screen event context. Instead, request close via tick-delayed
         // mechanism: tick 1 closes PreviewScreen, tick 2+ disconnects cleanly.

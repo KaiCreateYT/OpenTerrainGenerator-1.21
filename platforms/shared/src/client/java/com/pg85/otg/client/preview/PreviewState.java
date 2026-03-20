@@ -4,6 +4,7 @@ import com.pg85.otg.client.preview.world.ChunkGenerationManager;
 import com.pg85.otg.client.preview.world.PreviewWorld;
 import com.pg85.otg.client.preview.world.TempServerManager;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import org.slf4j.Logger;
@@ -98,6 +99,8 @@ public class PreviewState {
     private static volatile boolean pendingClose;
     // Tick counter: 0 = not closing, 1 = screen closed this tick, 2 = disconnect next tick
     private static int closeTickCounter;
+    // Screen to return to after disconnect (null = title screen)
+    private static Screen returnScreen;
 
     /**
      * Called every client tick from ClientTickMixin.
@@ -107,6 +110,10 @@ public class PreviewState {
      */
     public static void requestClose() {
         pendingClose = true;
+    }
+
+    public static void setReturnScreen(Screen screen) {
+        returnScreen = screen;
     }
 
     public static void tick() {
@@ -130,6 +137,11 @@ public class PreviewState {
                 closeTickCounter = 0;
                 LOG.info("Disconnecting (non-blocking — nulling server ref to skip while loop)...");
                 serverManager.stopServer();
+                // Return to parent screen after disconnect (if set)
+                if (returnScreen != null) {
+                    Minecraft.getInstance().setScreen(returnScreen);
+                    returnScreen = null;
+                }
                 LOG.info("Disconnect complete");
                 return;
             }

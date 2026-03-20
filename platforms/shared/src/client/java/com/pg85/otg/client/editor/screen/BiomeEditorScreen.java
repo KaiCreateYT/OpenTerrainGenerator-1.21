@@ -127,7 +127,7 @@ public class BiomeEditorScreen extends Screen {
         addRenderableWidget(Button.builder(Component.literal("Save"), btn -> save())
             .bounds(LEFT_PANEL_WIDTH + 4, btnBarY, 50, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Preview"), btn ->
-            minecraft.setScreen(new PreviewScreen())
+            minecraft.setScreen(new PreviewScreen(this, preset != null ? preset.getFolderName() : null))
         ).bounds(LEFT_PANEL_WIDTH + 60, btnBarY, 60, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Terrain 3D"), btn -> {
             if (!properties.isEmpty() && selectedBiomeIndex >= 0) {

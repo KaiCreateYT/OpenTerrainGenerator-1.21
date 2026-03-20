@@ -108,7 +108,8 @@ public class EditorHubScreen extends Screen {
 
         // Preview World
         addRenderableWidget(Button.builder(Component.literal("Preview World"), btn -> {
-            minecraft.setScreen(new PreviewScreen());
+            var p = getSelectedPreset();
+            minecraft.setScreen(new PreviewScreen(this, p != null ? p.getFolderName() : null));
         }).bounds(cx - 60, y, 120, 20).build());
 
         // Back button already added above (before empty presets check)
