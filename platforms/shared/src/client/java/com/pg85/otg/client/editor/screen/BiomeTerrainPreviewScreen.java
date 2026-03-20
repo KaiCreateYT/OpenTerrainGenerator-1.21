@@ -54,7 +54,9 @@ public class BiomeTerrainPreviewScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        // 3D viewport (full screen minus bottom bar)
+        // Background + buttons FIRST (so blur doesn't cover 3D viewport)
+        super.render(graphics, mouseX, mouseY, partialTick);
+
         int vpH = height - 35;
 
         if (renderer != null && !renderer.isEmpty()) {
@@ -97,8 +99,7 @@ public class BiomeTerrainPreviewScreen extends Screen {
             }
         }
 
-        // Bottom bar with title + buttons
-        super.render(graphics, mouseX, mouseY, partialTick);
+        // Title on top of everything
         graphics.drawCenteredString(font, title, width / 2, height - 34, 0xFFFFFF);
     }
 
