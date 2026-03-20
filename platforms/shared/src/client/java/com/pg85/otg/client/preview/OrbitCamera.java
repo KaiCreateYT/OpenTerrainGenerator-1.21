@@ -55,4 +55,8 @@ public class OrbitCamera {
     public Matrix4f getViewProjectionMatrix(float aspectRatio) {
         return getProjectionMatrix(aspectRatio).mul(getViewMatrix());
     }
+
+    public void setTheta(float theta) { this.theta = theta; }
+
+    public void setPhi(float phi) { this.phi = Math.max(PHI_MIN, Math.min(PHI_MAX, phi)); }
 }

@@ -20,7 +20,7 @@ public class BOPreviewHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(BOPreviewHelper.class);
 
-    public record BOBounds(Vector3f center, float radius) {}
+    public record BOBounds(Vector3f center, float radius, int blockCount, int sizeX, int sizeY, int sizeZ) {}
 
     /**
      * Load a named custom object from the given preset into PreviewWorld.
@@ -104,6 +104,6 @@ public class BOPreviewHelper {
         );
         float radius = Math.max(Math.max(maxX - minX, maxY - minY), maxZ - minZ) / 2f + 2f;
 
-        return new BOBounds(center, radius);
+        return new BOBounds(center, radius, placed, maxX - minX + 1, maxY - minY + 1, maxZ - minZ + 1);
     }
 }

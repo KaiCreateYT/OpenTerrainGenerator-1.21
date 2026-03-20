@@ -1,13 +1,21 @@
 package com.pg85.otg.client.editor.screen;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.pg85.otg.client.editor.widget.TreeListWidget;
+import com.pg85.otg.client.preview.BOPreviewHelper;
+import com.pg85.otg.client.preview.OrbitCamera;
+import com.pg85.otg.client.preview.PreviewRenderer;
+import com.pg85.otg.client.preview.world.PreviewWorld;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.presets.DimensionPreset;
-import com.pg85.otg.client.editor.widget.TreeListWidget;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
+import org.joml.Matrix4f;
+import org.lwjgl.opengl.GL11;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,16 +29,29 @@ public class BOBrowserScreen extends Screen {
     private static final Logger LOG = LoggerFactory.getLogger(BOBrowserScreen.class);
 
     private final DimensionPreset preset;
-    private final int hubPresetIndex;
+    private final Screen parent;
     private List<String> allObjectPaths = List.of();
     private TreeListWidget treeList;
     private EditBox searchBox;
     private String selectedPath;
 
-    public BOBrowserScreen(DimensionPreset preset, int hubPresetIndex) {
+    // 3D preview
+    private PreviewWorld boPreviewWorld;
+    private PreviewRenderer boRenderer;
+    private OrbitCamera boCamera;
+    private BOPreviewHelper.BOBounds lastBounds;
+    private String loadedObjectName;
+    private String statusMessage;
+
+    // Viewport bounds (right 2/3)
+    private int viewportX, viewportY, viewportW, viewportH;
+    // Left panel width (left 1/3)
+    private int leftPanelW;
+
+    public BOBrowserScreen(DimensionPreset preset, Screen parent) {
         super(Component.literal("OTG Editor — Browse BO3/BO4"));
         this.preset = preset;
-        this.hubPresetIndex = hubPresetIndex;
+        this.parent = parent;
     }
 
     @Override
@@ -40,8 +61,15 @@ public class BOBrowserScreen extends Screen {
             allObjectPaths = scanObjects();
         }
 
+        // Layout: left 1/3 for tree list, right 2/3 for viewport
+        leftPanelW = Math.max(180, width / 3);
+        viewportX = leftPanelW;
+        viewportY = 0;
+        viewportW = width - leftPanelW;
+        viewportH = height;
+
         // Search box
-        searchBox = new EditBox(font, 10, 30, 200, 16, Component.literal("Search"));
+        searchBox = new EditBox(font, 10, 30, leftPanelW - 20, 16, Component.literal("Search"));
         searchBox.setHint(Component.literal("Search objects..."));
         searchBox.setResponder(filter -> {
             if (treeList != null) {
@@ -50,14 +78,24 @@ public class BOBrowserScreen extends Screen {
         });
         addRenderableWidget(searchBox);
 
-        // Tree list
-        treeList = new TreeListWidget(10, 52, width - 20, height - 100, 14);
+        // Tree list (left panel, below search)
+        treeList = new TreeListWidget(10, 52, leftPanelW - 20, height - 100, 14);
         treeList.buildFromPaths(allObjectPaths);
-        treeList.setOnSelect(node -> selectedPath = node.fullPath());
+        treeList.setOnSelect(node -> {
+            selectedPath = node.fullPath();
+            loadSelectedObject(selectedPath);
+        });
 
         // Back button
         addRenderableWidget(Button.builder(Component.literal("Back"), btn -> onClose())
-            .bounds(width / 2 - 40, height - 30, 80, 20).build());
+            .bounds(leftPanelW / 2 - 40, height - 30, 80, 20).build());
+
+        // Initialize camera if not yet
+        if (boCamera == null) {
+            boCamera = new OrbitCamera();
+            boCamera.setTheta((float) (Math.PI / 4));
+            boCamera.setPhi((float) (Math.PI / 3));
+        }
     }
 
     private List<String> scanObjects() {
@@ -83,11 +121,71 @@ public class BOBrowserScreen extends Screen {
         }
     }
 
+    /**
+     * Load the selected BO into the 3D preview world.
+     */
+    private void loadSelectedObject(String path) {
+        if (path == null || path.isBlank()) return;
+
+        // Strip path to just object name (without extension)
+        String objectName = path;
+        int lastSlash = objectName.lastIndexOf('/');
+        if (lastSlash < 0) lastSlash = objectName.lastIndexOf('\\');
+        if (lastSlash >= 0) objectName = objectName.substring(lastSlash + 1);
+        // Remove extension
+        int dot = objectName.lastIndexOf('.');
+        if (dot >= 0) objectName = objectName.substring(0, dot);
+
+        // Skip if already loaded
+        if (objectName.equals(loadedObjectName)) return;
+
+        statusMessage = "Loading " + objectName + "...";
+
+        // Create or clear preview world
+        if (boPreviewWorld == null) {
+            boPreviewWorld = new PreviewWorld();
+        } else {
+            boPreviewWorld.clear();
+        }
+
+        // Release old renderer buffers
+        if (boRenderer != null) {
+            boRenderer.releaseBuffers();
+        }
+
+        String presetName = preset.getFolderName();
+        BOPreviewHelper.BOBounds bounds = BOPreviewHelper.loadObject(objectName, presetName, boPreviewWorld);
+
+        if (bounds == null) {
+            statusMessage = "Failed to load: " + objectName;
+            loadedObjectName = null;
+            lastBounds = null;
+            return;
+        }
+
+        lastBounds = bounds;
+        loadedObjectName = objectName;
+
+        // Create renderer and compile
+        boRenderer = new PreviewRenderer(boPreviewWorld);
+        boRenderer.compileAll();
+
+        // Fit camera to object
+        boCamera.fitTo(bounds.center(), bounds.radius());
+
+        statusMessage = objectName + " — " + bounds.blockCount() + " blocks ("
+            + bounds.sizeX() + "x" + bounds.sizeY() + "x" + bounds.sizeZ() + ")";
+    }
+
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
 
-        graphics.drawCenteredString(font, title, width / 2, 5, 0xFFFFFF);
+        // Left panel background
+        graphics.fill(0, 0, leftPanelW, height, 0xCC000000);
+
+        // Title
+        graphics.drawCenteredString(font, title, leftPanelW / 2, 5, 0xFFFFFF);
 
         int fileCount = treeList != null ? treeList.getTotalFileCount() : 0;
         graphics.drawString(font, fileCount + " objects found", 10, 20, 0xFF888888);
@@ -96,26 +194,113 @@ public class BOBrowserScreen extends Screen {
             treeList.render(graphics);
         }
 
-        if (selectedPath != null) {
-            graphics.drawString(font, "Selected: " + selectedPath, 10, height - 50, 0xFF66CC66);
+        // Divider line
+        graphics.fill(leftPanelW - 1, 0, leftPanelW, height, 0xFF333333);
+
+        // 3D viewport
+        if (boRenderer != null && !boRenderer.isEmpty()) {
+            renderBOViewport(graphics, partialTick);
+        } else {
+            // Empty viewport placeholder
+            graphics.fill(viewportX, viewportY, viewportX + viewportW, viewportY + viewportH, 0xFF1A1A1A);
+            graphics.drawCenteredString(font, "Select a BO3/BO4 to preview",
+                viewportX + viewportW / 2, viewportY + viewportH / 2, 0xFF666666);
         }
+
+        // Status / info text in viewport area
+        if (statusMessage != null) {
+            graphics.drawString(font, statusMessage,
+                viewportX + 6, viewportH - 14, 0xFFAAAA44);
+        }
+
+        // Selected path below the tree
+        if (selectedPath != null) {
+            graphics.drawString(font, selectedPath, 10, height - 50, 0xFF66CC66);
+        }
+    }
+
+    private void renderBOViewport(GuiGraphics graphics, float partialTick) {
+        graphics.enableScissor(viewportX, viewportY, viewportX + viewportW, viewportY + viewportH);
+
+        // Save GUI viewport and set 3D viewport to match our panel
+        var window = minecraft.getWindow();
+        double scale = window.getGuiScale();
+        int fbX = (int) (viewportX * scale);
+        int fbY = (int) ((window.getGuiScaledHeight() - viewportY - viewportH) * scale);
+        int fbW = (int) (viewportW * scale);
+        int fbH = (int) (viewportH * scale);
+        RenderSystem.viewport(fbX, fbY, fbW, fbH);
+
+        // Clear depth buffer so 3D content doesn't z-fight with GUI
+        GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+
+        float aspect = (float) viewportW / viewportH;
+        Matrix4f viewMatrix = boCamera.getViewMatrix();
+        Matrix4f projMatrix = boCamera.getProjectionMatrix(aspect);
+
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthMask(true);
+
+        // Opaque passes
+        boRenderer.draw(RenderType.solid(), viewMatrix, projMatrix);
+        boRenderer.draw(RenderType.cutoutMipped(), viewMatrix, projMatrix);
+        boRenderer.draw(RenderType.cutout(), viewMatrix, projMatrix);
+
+        // Translucent pass
+        RenderSystem.enableBlend();
+        RenderSystem.depthMask(false);
+        boRenderer.draw(RenderType.translucent(), viewMatrix, projMatrix);
+        RenderSystem.depthMask(true);
+        RenderSystem.disableBlend();
+
+        // Restore depth test and viewport for GUI rendering
+        RenderSystem.disableDepthTest();
+        RenderSystem.viewport(0, 0, window.getWidth(), window.getHeight());
+
+        graphics.disableScissor();
+    }
+
+    // --- Input handling ---
+
+    private boolean isInViewport(double mouseX, double mouseY) {
+        return mouseX >= viewportX && mouseX < viewportX + viewportW
+            && mouseY >= viewportY && mouseY < viewportY + viewportH;
+    }
+
+    private boolean isInLeftPanel(double mouseX, double mouseY) {
+        return mouseX >= 0 && mouseX < leftPanelW
+            && mouseY >= 0 && mouseY < height;
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (treeList != null && treeList.mouseClicked(mouseX, mouseY)) return true;
+        if (isInLeftPanel(mouseX, mouseY)) {
+            if (treeList != null && treeList.mouseClicked(mouseX, mouseY)) return true;
+        }
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double deltaH, double deltaV) {
-        if (treeList != null && treeList.mouseScrolled(mouseX, mouseY, deltaV)) return true;
+        if (isInViewport(mouseX, mouseY) && boCamera != null) {
+            boCamera.zoom((float) (deltaV * 120));
+            return true;
+        }
+        if (isInLeftPanel(mouseX, mouseY)) {
+            if (treeList != null && treeList.mouseScrolled(mouseX, mouseY, deltaV)) return true;
+        }
         return super.mouseScrolled(mouseX, mouseY, deltaH, deltaV);
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        if (treeList != null && treeList.mouseDragged(mouseX, mouseY)) return true;
+        if (isInViewport(mouseX, mouseY) && boCamera != null) {
+            boCamera.rotate((float) (-dragX * 0.01), (float) (dragY * 0.01));
+            return true;
+        }
+        if (isInLeftPanel(mouseX, mouseY)) {
+            if (treeList != null && treeList.mouseDragged(mouseX, mouseY)) return true;
+        }
         return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
@@ -127,7 +312,20 @@ public class BOBrowserScreen extends Screen {
 
     @Override
     public void onClose() {
-        minecraft.setScreen(new BiomeEditorScreen(preset, hubPresetIndex));
+        // Release VBO buffers
+        if (boRenderer != null) {
+            boRenderer.releaseBuffers();
+            boRenderer = null;
+        }
+        // Clear preview world
+        if (boPreviewWorld != null) {
+            boPreviewWorld.clear();
+            boPreviewWorld = null;
+        }
+        loadedObjectName = null;
+        lastBounds = null;
+
+        minecraft.setScreen(parent);
     }
 
     @Override
