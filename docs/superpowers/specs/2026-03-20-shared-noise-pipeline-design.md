@@ -6,7 +6,7 @@ OTGChunkGenerator (main world gen) and BiomeHeightmapGenerator (in-game editor t
 
 1. **Sampler creation order mismatch** — OTG creates `interp → lower → upper → depth`, preview creates `lower → upper → interp → depth`. Different Random consumption order → different Perlin offsets → different terrain shape.
 2. **Formula drift risk** — any change in OTGChunkGenerator's noise math must be manually replicated in BiomeHeightmapGenerator.
-3. **Volatility weight edge case** — OTG uses `MathHelper.lerp(delta, ...)` which doesn't guard `volW1 == volW2`. Preview guards with fallback `t = 0.5`. Both should behave the same.
+3. **Volatility weight blending divergence** — OTG uses `MathHelper.lerp(delta, lower, upper)` with raw delta as blend factor. Preview normalizes delta into `[volW1, volW2]` range before blending (`t = (delta - volW1) / (volW2 - volW1)`). These produce different results and OTG's form is canonical.
 
 ## Solution
 
@@ -30,7 +30,7 @@ Placed alongside existing `OctavePerlinNoiseSampler.java` and `PerlinNoiseSample
 - `WORLD_GEN_CONSTANT = 684.412`
 - `REFERENCE_Y_SECTIONS = 33.5f`
 - `INTERPOLATION_OCTAVES = 8`
-- `TERRAIN_OCTAVES = 16`
+- `TERRAIN_OCTAVES = 16` (replaces coincidental use of `Constants.CHUNK_SIZE` in OTG's loop bound)
 
 **Record**:
 ```java
@@ -48,11 +48,13 @@ public static NoiseSamplers createNoiseSamplers(Random rng)
 ```
 Creates all 4 samplers in OTG's canonical order: `interp → lower → upper → depth`. Single source of truth for creation order.
 
+**Important**: In `OTGChunkGenerator.setSeed()`, a 5th sampler (`biomeBlocksNoiseGen`) follows the 4 noise samplers and consumes the same `Random`. The factory must be called at the same position in `setSeed()` — before `biomeBlocksNoiseGen` — to preserve Random state.
+
 **4 pure static methods** (all parameters, no instance state):
 
 1. `sampleNoise(int x, y, z, double hScale, vScale, hStretch, vStretch, vol1, vol2, volW1, volW2, OctavePerlinNoiseSampler interp, lower, upper)` → `double`
    - Computes interpolation delta, branches on volatility weights, blends lower/upper noise.
-   - Guards `volW1 == volW2` edge case (fallback `t = 0.5`).
+   - Uses `MathHelper.lerp(delta, lower, upper)` — raw delta as blend factor, exactly like OTG. No `volW1 == volW2` guard needed (when equal, the else branch is unreachable because `delta < volW1` or `delta > volW2` always holds).
 
 2. `getInterpolationNoise(OctavePerlinNoiseSampler sampler, int x, y, z, double hStretch, vStretch)` → `double`
    - 8-octave FBM, normalized to [0, 1] via `(interp / 10.0 + 1.0) / 2.0`.
