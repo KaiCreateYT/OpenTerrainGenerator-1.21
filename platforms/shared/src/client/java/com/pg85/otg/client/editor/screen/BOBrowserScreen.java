@@ -1,6 +1,7 @@
 package com.pg85.otg.client.editor.screen;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.pg85.otg.client.editor.data.BiomeFileScanner;
 import com.pg85.otg.client.editor.widget.TreeListWidget;
 import com.pg85.otg.client.preview.BOPreviewHelper;
 import com.pg85.otg.client.preview.OrbitCamera;
@@ -89,6 +90,14 @@ public class BOBrowserScreen extends Screen {
         // Back button
         addRenderableWidget(Button.builder(Component.literal("Back"), btn -> onClose())
             .bounds(leftPanelW / 2 - 40, height - 30, 80, 20).build());
+
+        // Assign to Biome button (viewport bottom area)
+        addRenderableWidget(Button.builder(Component.literal("Assign to Biome"), btn -> {
+            if (loadedObjectName == null) return;
+            minecraft.setScreen(new BiomeSelectDialog(preset, this, biomeName -> {
+                assignObjectToBiome(loadedObjectName, biomeName);
+            }));
+        }).bounds(viewportX, height - 30, 110, 20).build());
 
         // Initialize camera if not yet
         if (boCamera == null) {
@@ -198,6 +207,24 @@ public class BOBrowserScreen extends Screen {
 
         statusMessage = objectName + " — " + bounds.blockCount() + " blocks ("
             + bounds.sizeX() + "x" + bounds.sizeY() + "x" + bounds.sizeZ() + ")";
+    }
+
+    private void assignObjectToBiome(String objectName, String biomeName) {
+        BiomeFileScanner.BiomeEntry entry = BiomeFileScanner.scan(preset.getFolder()).stream()
+            .filter(e -> e.name().equals(biomeName))
+            .findFirst().orElse(null);
+        if (entry == null) {
+            statusMessage = "Biome not found: " + biomeName;
+            return;
+        }
+        try {
+            List<String> lines = Files.readAllLines(entry.path());
+            lines.add("CustomObject(100, " + objectName + ")");
+            Files.write(entry.path(), lines);
+            statusMessage = "Assigned " + objectName + " to " + biomeName;
+        } catch (IOException e) {
+            statusMessage = "Failed: " + e.getMessage();
+        }
     }
 
     @Override
