@@ -196,9 +196,17 @@ public class BiomeEditorScreen extends Screen {
         boolean success = ConfigWriter.save(currentBiomePath, rawLines, properties);
         if (success) {
             properties.forEach(PropertyValue::clearDirty);
+            reloadPresets();
             statusMessage = "Saved!";
         } else {
             statusMessage = "Save failed!";
+        }
+    }
+
+    private static void reloadPresets() {
+        var engine = com.pg85.otg.OTG.getEngine();
+        if (engine != null) {
+            engine.getDimensionPresetLoader().loadDimensionPresetsFromDisk();
         }
     }
 
