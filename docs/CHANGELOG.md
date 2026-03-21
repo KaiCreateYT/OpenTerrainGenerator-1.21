@@ -1,6 +1,6 @@
 ## Minecraft 1.21.1 — Fabric + NeoForge
 
-### Release: 0.4.0-dev2
+### Release: 0.5.0-dev1
 
 **2026-03-21 — In-game editor Phase 3: Group Settings**
 
@@ -54,6 +54,10 @@
 - **Data layer**: `PropertyType`/`PropertyCategory` enums, `PropertyDefinition` record, `PropertyValue` with dirty tracking, `PropertyExtractor` (reflects OTG Setting classes), `ConfigLoader`/`ConfigWriter` (round-trip .ini parsing)
 - **Widget layer**: `ScrollableListWidget`, `CategoryTabsWidget`, `SearchBoxWidget`, `PropertyRowWidget`, `PropertyGridWidget` — reusable components for future editor phases
 - **TitleScreenMixin**: "OTG Editor" button now opens EditorHubScreen instead of PreviewScreen
+
+---
+
+### Release: 0.4.0-dev2
 
 **2026-03-05 — In-game editor & preview system (WIP)**
 
