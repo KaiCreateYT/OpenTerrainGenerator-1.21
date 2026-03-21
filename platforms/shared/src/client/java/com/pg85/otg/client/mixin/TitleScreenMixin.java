@@ -19,19 +19,10 @@ public abstract class TitleScreenMixin extends Screen {
 
     @Inject(method = "init", at = @At("TAIL"))
     private void otg$addEditorButton(CallbackInfo ci) {
-        // Find the lowest button Y to place OTG Editor below all existing buttons
-        int maxY = 0;
-        for (var child : this.children()) {
-            if (child instanceof Button btn) {
-                int btnBottom = btn.getY() + btn.getHeight();
-                if (btnBottom > maxY) maxY = btnBottom;
-            }
-        }
-        // Place below the lowest button with 4px gap
-        int y = maxY > 0 ? maxY + 4 : height / 4 + 120;
+        // Right side of title screen, aligned with Options/Quit row
         addRenderableWidget(Button.builder(
-            Component.literal("OTG Editor"),
+            Component.literal("OTG"),
             btn -> minecraft.setScreen(new EditorHubScreen())
-        ).bounds(width / 2 - 50, y, 100, 20).build());
+        ).bounds(width / 2 + 104, height / 4 + 132, 40, 20).build());
     }
 }
