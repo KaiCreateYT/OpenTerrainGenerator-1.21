@@ -9,6 +9,7 @@
 - **Property overrides**: Per-group biome property overrides stored in `.otg-editor.json` via GroupOverrideStore, loaded into PropertyGrid with Override/Merge/OPV toggles
 - **Save**: Writes group lines to .ini via `ConfigWriter.saveBiomeGroups()` + overrides to JSON via `GroupOverrideStore.save()`
 - **EditorHubScreen**: Group Settings button now active
+- **BiomeEditorScreen override integration**: Save resolves group overrides via `OverrideResolver` before writing .bc — Override/Merge/OPV flags from GroupSettings flow through to biome files
 
 **2026-03-20 — In-game editor Phase 4: BO Store with 3D Preview**
 
