@@ -97,8 +97,8 @@ public class EditorHubScreen extends Screen {
         y += cardH + gap;
 
         addRenderableWidget(Button.builder(Component.literal("Group Settings"), btn -> {
-            // Phase 3
-        }).bounds(cx - cardW - gap / 2, y, cardW, cardH).build()).active = false;
+            minecraft.setScreen(new GroupSettingsScreen(getSelectedPreset(), presetIndex));
+        }).bounds(cx - cardW - gap / 2, y, cardW, cardH).build());
 
         addRenderableWidget(Button.builder(Component.literal("BO Store"), btn -> {
             minecraft.setScreen(new BOBrowserScreen(getSelectedPreset(), this));
