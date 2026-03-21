@@ -193,7 +193,25 @@ public class BiomeEditorScreen extends Screen {
     private void save() {
         confirmingDelete = false;
         if (currentBiomePath == null || properties.isEmpty()) return;
-        boolean success = ConfigWriter.save(currentBiomePath, rawLines, properties);
+
+        // Resolve group overrides before writing
+        var overrides = GroupOverrideStore.load(preset.getFolder());
+        Path iniPath = WorldSettingsScreen.resolveConfigPath(preset.getFolder());
+        List<String> iniLines;
+        try { iniLines = java.nio.file.Files.readAllLines(iniPath); } catch (java.io.IOException e) { iniLines = List.of(); }
+        var groups = BiomeGroupParser.parse(iniLines);
+
+        String biomeName = (selectedBiomeIndex >= 0 && selectedBiomeIndex < filteredBiomeEntries.size())
+            ? filteredBiomeEntries.get(selectedBiomeIndex).name() : null;
+
+        List<PropertyValue> toWrite;
+        if (biomeName != null && !groups.isEmpty() && !overrides.isEmpty()) {
+            toWrite = OverrideResolver.resolve(properties, biomeName, groups, overrides, biomeDefinitions);
+        } else {
+            toWrite = properties;
+        }
+
+        boolean success = ConfigWriter.save(currentBiomePath, rawLines, toWrite);
         if (success) {
             properties.forEach(PropertyValue::clearDirty);
             reloadPresets();
