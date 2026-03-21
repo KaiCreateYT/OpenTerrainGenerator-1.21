@@ -220,7 +220,9 @@ public class PreviewScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        // Background + widgets FIRST (so blur doesn't cover custom content)
+        // Opaque background to hide spectator world rendering behind the screen
+        graphics.fill(0, 0, width, height, 0xFF000000);
+        // Widgets on top of black background
         super.render(graphics, mouseX, mouseY, partialTick);
 
         // Title
