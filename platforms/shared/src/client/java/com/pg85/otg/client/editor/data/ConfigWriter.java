@@ -91,4 +91,67 @@ public class ConfigWriter {
             return false;
         }
     }
+
+    /**
+     * Save modified BiomeGroup() lines back to the .ini file.
+     * Replaces existing group lines, removes deleted groups, appends new groups.
+     * Returns updated rawLines for session reuse.
+     */
+    public static List<String> saveBiomeGroups(Path iniPath, List<String> rawLines, List<BiomeGroupData> groups) {
+        Set<String> processedNames = new HashSet<>();
+        List<String> output = new ArrayList<>(rawLines.size());
+        int lastGroupLineIndex = -1;
+
+        for (int i = 0; i < rawLines.size(); i++) {
+            String line = rawLines.get(i);
+            String trimmed = line.trim();
+
+            if (trimmed.startsWith("BiomeGroup(") && trimmed.endsWith(")")) {
+                String args = trimmed.substring("BiomeGroup(".length(), trimmed.length() - 1);
+                String name = args.split(",")[0].trim();
+
+                BiomeGroupData match = null;
+                for (BiomeGroupData g : groups) {
+                    if (g.getName().equals(name)) {
+                        match = g;
+                        break;
+                    }
+                }
+
+                if (match != null) {
+                    processedNames.add(name);
+                    if (!match.isDeleted()) {
+                        output.add(match.toConfigLine());
+                        lastGroupLineIndex = output.size() - 1;
+                    }
+                } else {
+                    output.add(line);
+                    lastGroupLineIndex = output.size() - 1;
+                }
+            } else {
+                output.add(line);
+            }
+        }
+
+        List<String> newGroupLines = new ArrayList<>();
+        for (BiomeGroupData g : groups) {
+            if (!processedNames.contains(g.getName()) && !g.isDeleted()) {
+                newGroupLines.add(g.toConfigLine());
+            }
+        }
+
+        if (!newGroupLines.isEmpty()) {
+            int insertAt = lastGroupLineIndex >= 0 ? lastGroupLineIndex + 1 : output.size();
+            output.addAll(insertAt, newGroupLines);
+        }
+
+        try {
+            Files.write(iniPath, output);
+            LOG.info("Saved {} biome groups to {}", groups.stream().filter(g -> !g.isDeleted()).count(), iniPath.getFileName());
+        } catch (IOException e) {
+            LOG.error("Failed to write biome groups to {}", iniPath, e);
+        }
+
+        return output;
+    }
 }
