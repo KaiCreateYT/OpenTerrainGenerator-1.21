@@ -22,6 +22,6 @@ public abstract class TitleScreenMixin extends Screen {
         addRenderableWidget(Button.builder(
             Component.literal("OTG Editor"),
             btn -> minecraft.setScreen(new EditorHubScreen())
-        ).bounds(4, height - 24, 70, 20).build());
+        ).bounds(width / 2 - 50, height / 4 + 96, 100, 20).build());
     }
 }
