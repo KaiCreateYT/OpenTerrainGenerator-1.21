@@ -2,6 +2,14 @@
 
 ### Release: 0.4.0-dev2
 
+**2026-03-21 — In-game editor Phase 3: Group Settings**
+
+- **GroupSettingsScreen**: Three-column BiomeGroup editor — group list (left), group params + biome assignment (center), PropertyGridWidget with Override/Merge/OPV flags (right)
+- **Group CRUD**: New/Delete groups, edit depth/rarity/temperature range, assign/remove biomes via dual-list with arrow buttons
+- **Property overrides**: Per-group biome property overrides stored in `.otg-editor.json` via GroupOverrideStore, loaded into PropertyGrid with Override/Merge/OPV toggles
+- **Save**: Writes group lines to .ini via `ConfigWriter.saveBiomeGroups()` + overrides to JSON via `GroupOverrideStore.save()`
+- **EditorHubScreen**: Group Settings button now active
+
 **2026-03-20 — In-game editor Phase 4: BO Store with 3D Preview**
 
 - **BOBrowserScreen 3D viewport**: Embedded 3D BO2/BO3/BO4 preview — select object in tree, renders in right panel via PreviewRenderer/PreviewWorld/OrbitCamera. Drag to orbit, scroll to zoom.
