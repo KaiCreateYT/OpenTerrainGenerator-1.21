@@ -11,21 +11,16 @@ import java.util.function.Consumer;
  * Collapsible tree list widget. Folders can be expanded/collapsed.
  * Files are leaf nodes. Indentation shows hierarchy depth.
  */
-public class TreeListWidget {
+public class TreeListWidget extends ScrollablePanel {
 
     private static final int INDENT = 10;
-    private static final String EXPANDED = "\u25BC "; // ▼
-    private static final String COLLAPSED = "\u25B6 "; // ▶
-
-    private final int x, y, width, height;
-    private final int itemHeight;
+    private static final String EXPANDED = "\u25BC "; // down triangle
+    private static final String COLLAPSED = "\u25B6 "; // right triangle
 
     private final List<TreeNode> allNodes = new ArrayList<>();
     private List<TreeNode> visibleNodes = new ArrayList<>();
-    private int scrollOffset = 0;
     private int selectedIndex = -1;
     private Consumer<TreeNode> onSelect;
-    private boolean draggingScrollbar = false;
 
     public record TreeNode(String name, String fullPath, int depth, boolean isFolder, List<TreeNode> children) {
         private static final List<TreeNode> NO_CHILDREN = List.of();
@@ -43,11 +38,7 @@ public class TreeListWidget {
     private final Set<String> expandedPaths = new HashSet<>();
 
     public TreeListWidget(int x, int y, int width, int height, int itemHeight) {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-        this.itemHeight = itemHeight;
+        super(x, y, width, height, itemHeight);
     }
 
     public void setOnSelect(Consumer<TreeNode> onSelect) { this.onSelect = onSelect; }
@@ -56,6 +47,11 @@ public class TreeListWidget {
     public TreeNode getSelectedNode() {
         return (selectedIndex >= 0 && selectedIndex < visibleNodes.size())
             ? visibleNodes.get(selectedIndex) : null;
+    }
+
+    @Override
+    protected int getTotalItemCount() {
+        return visibleNodes.size();
     }
 
     /**
@@ -135,7 +131,6 @@ public class TreeListWidget {
             List<TreeNode> matchingChildren = new ArrayList<>();
             boolean hasMatch = false;
             for (TreeNode child : node.children()) {
-                int before = matchingChildren.size();
                 if (collectMatching(child, filter, matchingChildren)) {
                     hasMatch = true;
                 }
@@ -159,10 +154,7 @@ public class TreeListWidget {
         for (TreeNode node : allNodes) {
             addVisible(node);
         }
-        // Clamp scroll but don't reset — preserves position when expanding/collapsing
-        int maxVisible = height / itemHeight;
-        int maxScroll = Math.max(0, visibleNodes.size() - maxVisible);
-        scrollOffset = Math.min(scrollOffset, maxScroll);
+        clampScroll();
     }
 
     private void addVisible(TreeNode node) {
@@ -195,9 +187,8 @@ public class TreeListWidget {
 
         graphics.fill(x, y, x + width, y + height, 0xFF1E1E1E);
 
-        int maxVisible = height / itemHeight;
-        int maxScroll = Math.max(0, visibleNodes.size() - maxVisible);
-        scrollOffset = Math.min(scrollOffset, maxScroll);
+        int maxVisible = getMaxVisible();
+        clampScroll();
 
         graphics.enableScissor(x, y, x + width, y + height);
         for (int i = 0; i < maxVisible && (i + scrollOffset) < visibleNodes.size(); i++) {
@@ -225,28 +216,12 @@ public class TreeListWidget {
         }
         graphics.disableScissor();
 
-        // Scrollbar
-        if (visibleNodes.size() > maxVisible) {
-            int sbX = x + width - 4;
-            int sbW = 3;
-            graphics.fill(sbX, y, sbX + sbW, y + height, 0xFF111111);
-            float ratio = (float) maxVisible / visibleNodes.size();
-            int thumbH = Math.max(8, (int) (height * ratio));
-            float scrollRatio = maxScroll > 0 ? (float) scrollOffset / maxScroll : 0;
-            int thumbY = y + (int) ((height - thumbH) * scrollRatio);
-            graphics.fill(sbX, thumbY, sbX + sbW, thumbY + thumbH, 0xFF555555);
-        }
+        renderScrollbar(graphics);
     }
 
     public boolean mouseClicked(double mouseX, double mouseY) {
-        if (mouseX < x || mouseX > x + width || mouseY < y || mouseY > y + height) return false;
-
-        // Scrollbar click — start drag
-        if (mouseX >= x + width - 6 && visibleNodes.size() > height / itemHeight) {
-            draggingScrollbar = true;
-            scrollToY(mouseY);
-            return true;
-        }
+        if (!isInBounds(mouseX, mouseY)) return false;
+        if (handleScrollbarClick(mouseX, mouseY)) return true;
 
         int clicked = (int) ((mouseY - y) / itemHeight) + scrollOffset;
         if (clicked < 0 || clicked >= visibleNodes.size()) return false;
@@ -269,33 +244,14 @@ public class TreeListWidget {
     }
 
     public boolean mouseDragged(double mouseX, double mouseY) {
-        if (draggingScrollbar) {
-            scrollToY(mouseY);
-            return true;
-        }
-        return false;
+        return handleScrollbarDrag(mouseX, mouseY);
     }
 
     public boolean mouseReleased() {
-        if (draggingScrollbar) {
-            draggingScrollbar = false;
-            return true;
-        }
-        return false;
-    }
-
-    private void scrollToY(double mouseY) {
-        int maxVisible = height / itemHeight;
-        int maxScroll = Math.max(0, visibleNodes.size() - maxVisible);
-        float ratio = (float) Math.clamp((mouseY - y) / height, 0, 1);
-        scrollOffset = Math.round(ratio * maxScroll);
+        return handleScrollbarRelease();
     }
 
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        if (mouseX < x || mouseX > x + width || mouseY < y || mouseY > y + height) return false;
-        int maxVisible = height / itemHeight;
-        int maxScroll = Math.max(0, visibleNodes.size() - maxVisible);
-        scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int) delta));
-        return true;
+        return handleMouseScrolled(mouseX, mouseY, delta);
     }
 }
