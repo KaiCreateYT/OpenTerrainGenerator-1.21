@@ -80,19 +80,22 @@ public class BiomeEditorScreen extends Screen {
             updateFilteredBiomes("");
         }
 
-        // Biome search box
+        initBiomeList();
+        initPropertyGrid();
+        initBottomBar();
+    }
+
+    private void initBiomeList() {
         biomeSearchBox = new EditBox(font, 6, 26, LEFT_PANEL_WIDTH - 12, 16, Component.literal("Search"));
         biomeSearchBox.setHint(Component.literal("Search biomes..."));
         biomeSearchBox.setResponder(this::updateFilteredBiomes);
         addRenderableWidget(biomeSearchBox);
 
-        // Biome list
         biomeList = new ScrollableListWidget(4, 46, LEFT_PANEL_WIDTH - 8, height - 120, 16);
         biomeList.setItems(filteredBiomeNames);
         biomeList.setSelectedIndex(selectedBiomeIndex);
         biomeList.setOnSelect(this::onBiomeSelected);
 
-        // CRUD buttons
         int btnY = height - 68;
         addRenderableWidget(Button.builder(Component.literal("New"), btn -> newBiome())
             .bounds(4, btnY, 48, 16).build());
@@ -100,14 +103,14 @@ public class BiomeEditorScreen extends Screen {
             .bounds(56, btnY, 48, 16).build());
         addRenderableWidget(Button.builder(Component.literal("Delete"), btn -> deleteBiome())
             .bounds(108, btnY, 48, 16).build());
+    }
 
-        // Property grid (right of biome list)
+    private void initPropertyGrid() {
         int gridX = LEFT_PANEL_WIDTH + 4;
         int gridW = width - gridX - 4;
         int gridH = height - 120;
         propertyGrid = new PropertyGridWidget(gridX, 14, gridW, gridH, true, true, false);
 
-        // Load selected biome if any
         if (selectedBiomeIndex >= 0 && selectedBiomeIndex < filteredBiomeEntries.size()) {
             loadBiome(selectedBiomeIndex);
         }
@@ -117,8 +120,9 @@ public class BiomeEditorScreen extends Screen {
             addRenderableWidget(propertyGrid.getSearchEditBox());
             refreshPropertyEditBoxes();
         }
+    }
 
-        // Bottom buttons
+    private void initBottomBar() {
         int btnBarY = height - 30;
         addRenderableWidget(Button.builder(Component.literal("Save"), btn -> save())
             .bounds(LEFT_PANEL_WIDTH + 4, btnBarY, 50, 20).build());

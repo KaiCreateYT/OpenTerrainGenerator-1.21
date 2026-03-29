@@ -69,12 +69,17 @@ public class GroupSettingsScreen extends Screen {
             return;
         }
 
-        // Load data on first init only (rebuildWidgets calls init again)
         if (groups == null) {
             loadData();
         }
 
-        // --- Left panel: Group list ---
+        initGroupList();
+        initBiomeAssignment();
+        initPropertyOverrides();
+        initBottomBar();
+    }
+
+    private void initGroupList() {
         int leftX = 4;
         int listY = 26;
         int listH = height - 80;
@@ -87,24 +92,24 @@ public class GroupSettingsScreen extends Screen {
         groupList.setSelectedIndex(selectedGroupIndex);
         groupList.setOnSelect(this::onGroupSelected);
 
-        // New / Delete buttons
         int btnY = height - 50;
         addRenderableWidget(Button.builder(Component.literal("New"), btn -> newGroup())
             .bounds(leftX, btnY, 65, 16).build());
         addRenderableWidget(Button.builder(Component.literal("Delete"), btn -> deleteGroup())
             .bounds(leftX + 70, btnY, 65, 16).build());
+    }
 
-        // --- Center panel: Group params + biome assignment ---
+    private void initBiomeAssignment() {
         int centerX = LEFT_PANEL_WIDTH + 4;
-
         if (selectedGroupIndex >= 0) {
             BiomeGroupData group = getSelectedGroup();
             if (group != null) {
                 initCenterPanel(centerX, group);
             }
         }
+    }
 
-        // --- Right panel: PropertyGrid ---
+    private void initPropertyOverrides() {
         int gridX = LEFT_PANEL_WIDTH + CENTER_PANEL_WIDTH + 8;
         int gridW = width - gridX - 4;
         int gridH = height - 70;
@@ -115,8 +120,9 @@ public class GroupSettingsScreen extends Screen {
             addRenderableWidget(propertyGrid.getSearchEditBox());
             refreshPropertyEditBoxes();
         }
+    }
 
-        // --- Bottom buttons ---
+    private void initBottomBar() {
         int barY = height - 30;
         addRenderableWidget(Button.builder(Component.literal("Save"), btn -> save())
             .bounds(LEFT_PANEL_WIDTH + 4, barY, 60, 20).build());

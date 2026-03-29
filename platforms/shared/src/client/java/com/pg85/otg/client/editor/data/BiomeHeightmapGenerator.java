@@ -30,6 +30,17 @@ public class BiomeHeightmapGenerator {
 
     public record GenerationResult(Vector3f center, float radius, int[] heightmap, int size) {}
 
+    /** Terrain parameters extracted from biome + preset properties. */
+    private record TerrainParams(
+        double volatility1, double volatility2,
+        double volatilityWeight1, double volatilityWeight2,
+        double maxAverageDepth, double maxAverageHeight,
+        int waterLevel,
+        float vol, float h,
+        double horizontalScale, double verticalScale,
+        double horizontalStretch, double verticalStretch
+    ) {}
+
     /**
      * Generates heightmap and places blocks into world.
      * Can be called from any thread (block placement is thread-safe in PreviewWorld).
@@ -41,7 +52,15 @@ public class BiomeHeightmapGenerator {
                                              long seed, int size) {
         world.clear();
 
-        // Biome settings
+        TerrainParams params = readTerrainParams(biomeProperties, presetProperties);
+        var samplers = TerrainNoiseComputer.createNoiseSamplers(new Random(seed));
+
+        double[][] noiseColumns = computeNoiseColumns(size, params, samplers);
+        return interpolateAndPlaceBlocks(world, noiseColumns, size, params);
+    }
+
+    private static TerrainParams readTerrainParams(List<PropertyValue> biomeProperties,
+                                                     List<PropertyValue> presetProperties) {
         float biomeHeight = getFloat(biomeProperties, "BiomeHeight", 0.1f);
         float biomeVolatility = getFloat(biomeProperties, "BiomeVolatility", 0.3f);
         double volatility1 = getFloat(biomeProperties, "Volatility1", 0.0f);
@@ -66,13 +85,17 @@ public class BiomeHeightmapGenerator {
 
         double horizontalScale = TerrainNoiseComputer.WORLD_GEN_CONSTANT * fractureH;
         double verticalScale = TerrainNoiseComputer.WORLD_GEN_CONSTANT * fractureV;
-        double horizontalStretch = horizontalScale / 80.0;
-        double verticalStretch = verticalScale / 160.0;
 
-        // Noise samplers — canonical order via TerrainNoiseComputer factory
-        var samplers = TerrainNoiseComputer.createNoiseSamplers(new Random(seed));
+        return new TerrainParams(
+            volatility1, volatility2, volatilityWeight1, volatilityWeight2,
+            maxAverageDepth, maxAverageHeight, waterLevel,
+            vol, h, horizontalScale, verticalScale,
+            horizontalScale / 80.0, verticalScale / 160.0
+        );
+    }
 
-        // === Phase 1: Compute noise columns at grid points (every 4 blocks) ===
+    private static double[][] computeNoiseColumns(int size, TerrainParams p,
+                                                    TerrainNoiseComputer.NoiseSamplers samplers) {
         int noiseCountX = size / NOISE_GRID_SPACING + 1;
         int noiseCountZ = size / NOISE_GRID_SPACING + 1;
         double[][] noiseColumns = new double[noiseCountX * noiseCountZ][];
@@ -80,20 +103,20 @@ public class BiomeHeightmapGenerator {
         for (int nx = 0; nx < noiseCountX; nx++) {
             for (int nz = 0; nz < noiseCountZ; nz++) {
                 float extraHeight = (float)(TerrainNoiseComputer.getExtraHeightAt(
-                    samplers.depth(), nx, nz, maxAverageDepth, maxAverageHeight) * 0.2);
-                float columnRefY = TerrainNoiseComputer.REFERENCE_Y_SECTIONS * (2.0f + h + extraHeight) / 4.0f;
+                    samplers.depth(), nx, nz, p.maxAverageDepth, p.maxAverageHeight) * 0.2);
+                float columnRefY = TerrainNoiseComputer.REFERENCE_Y_SECTIONS * (2.0f + p.h + extraHeight) / 4.0f;
 
                 double[] column = new double[NOISE_SIZE_Y + 1];
                 for (int y = 0; y <= NOISE_SIZE_Y; y++) {
-                    double falloff = (columnRefY - y) * 6.0 / vol;
+                    double falloff = (columnRefY - y) * 6.0 / p.vol;
                     if (falloff > 0) falloff *= 4.0;
 
                     double noise = TerrainNoiseComputer.sampleNoise(
                         nx, y, nz,
-                        horizontalScale, verticalScale,
-                        horizontalStretch, verticalStretch,
-                        volatility1, volatility2,
-                        volatilityWeight1, volatilityWeight2,
+                        p.horizontalScale, p.verticalScale,
+                        p.horizontalStretch, p.verticalStretch,
+                        p.volatility1, p.volatility2,
+                        p.volatilityWeight1, p.volatilityWeight2,
                         samplers.interpolation(), samplers.lower(), samplers.upper());
 
                     noise += falloff;
@@ -112,8 +135,15 @@ public class BiomeHeightmapGenerator {
                 noiseColumns[nx * noiseCountZ + nz] = column;
             }
         }
+        return noiseColumns;
+    }
 
-        // === Phase 2: Interpolate and find surface per block ===
+    private static GenerationResult interpolateAndPlaceBlocks(PreviewWorld world,
+                                                                double[][] noiseColumns,
+                                                                int size, TerrainParams p) {
+        int noiseCountX = size / NOISE_GRID_SPACING + 1;
+        int noiseCountZ = size / NOISE_GRID_SPACING + 1;
+
         int[] heightmap = new int[size * size];
         int minSurfaceY = 999, maxSurfaceY = 0;
 
@@ -132,55 +162,14 @@ public class BiomeHeightmapGenerator {
                 double[] col01 = noiseColumns[nx * noiseCountZ + nz1];
                 double[] col11 = noiseColumns[nx1 * noiseCountZ + nz1];
 
-                int surfaceY = 0;
-                outer:
-                for (int y = NOISE_SIZE_Y - 1; y >= 0; y--) {
-                    for (int subY = NOISE_SECTION_HEIGHT - 1; subY >= 0; subY--) {
-                        double fracY = (double) subY / NOISE_SECTION_HEIGHT;
-                        int y1 = Math.min(y + 1, NOISE_SIZE_Y);
-
-                        // Trilinear interpolation (same as OTG/ReEdited)
-                        double d00 = col00[y] + (col00[y1] - col00[y]) * fracY;
-                        double d10 = col10[y] + (col10[y1] - col10[y]) * fracY;
-                        double d01 = col01[y] + (col01[y1] - col01[y]) * fracY;
-                        double d11 = col11[y] + (col11[y1] - col11[y]) * fracY;
-
-                        double dx0 = d00 + (d10 - d00) * fracX;
-                        double dx1 = d01 + (d11 - d01) * fracX;
-                        double rawDensity = dx0 + (dx1 - dx0) * fracZ;
-
-                        // Density normalization
-                        double density = Math.max(-1, Math.min(1, rawDensity / 200.0));
-                        density = density / 2.0 - density * density * density / 24.0;
-
-                        if (density > 0) {
-                            surfaceY = y * NOISE_SECTION_HEIGHT + subY;
-                            break outer;
-                        }
-                    }
-                }
+                int surfaceY = findSurfaceY(col00, col10, col01, col11, fracX, fracZ);
 
                 surfaceY = Math.max(1, Math.min(319, surfaceY));
                 heightmap[bx * size + bz] = surfaceY;
                 if (surfaceY < minSurfaceY) minSurfaceY = surfaceY;
                 if (surfaceY > maxSurfaceY) maxSurfaceY = surfaceY;
 
-                // Place blocks
-                world.setBlockState(new BlockPos(bx, 0, bz), BEDROCK);
-                for (int y = 1; y < surfaceY - 3; y++) {
-                    world.setBlockState(new BlockPos(bx, y, bz), STONE);
-                }
-                for (int y = Math.max(1, surfaceY - 3); y < surfaceY; y++) {
-                    world.setBlockState(new BlockPos(bx, y, bz), DIRT);
-                }
-                if (surfaceY <= waterLevel + 2) {
-                    world.setBlockState(new BlockPos(bx, surfaceY, bz), SAND);
-                } else {
-                    world.setBlockState(new BlockPos(bx, surfaceY, bz), GRASS);
-                }
-                for (int y = surfaceY + 1; y <= waterLevel; y++) {
-                    world.setBlockState(new BlockPos(bx, y, bz), WATER);
-                }
+                placeColumnBlocks(world, bx, bz, surfaceY, p.waterLevel);
             }
         }
 
@@ -189,6 +178,53 @@ public class BiomeHeightmapGenerator {
         float radius = Math.max(size, maxSurfaceY - minSurfaceY + 20);
 
         return new GenerationResult(center, radius, heightmap, size);
+    }
+
+    private static int findSurfaceY(double[] col00, double[] col10,
+                                      double[] col01, double[] col11,
+                                      double fracX, double fracZ) {
+        for (int y = NOISE_SIZE_Y - 1; y >= 0; y--) {
+            for (int subY = NOISE_SECTION_HEIGHT - 1; subY >= 0; subY--) {
+                double fracY = (double) subY / NOISE_SECTION_HEIGHT;
+                int y1 = Math.min(y + 1, NOISE_SIZE_Y);
+
+                double d00 = col00[y] + (col00[y1] - col00[y]) * fracY;
+                double d10 = col10[y] + (col10[y1] - col10[y]) * fracY;
+                double d01 = col01[y] + (col01[y1] - col01[y]) * fracY;
+                double d11 = col11[y] + (col11[y1] - col11[y]) * fracY;
+
+                double dx0 = d00 + (d10 - d00) * fracX;
+                double dx1 = d01 + (d11 - d01) * fracX;
+                double rawDensity = dx0 + (dx1 - dx0) * fracZ;
+
+                double density = Math.max(-1, Math.min(1, rawDensity / 200.0));
+                density = density / 2.0 - density * density * density / 24.0;
+
+                if (density > 0) {
+                    return y * NOISE_SECTION_HEIGHT + subY;
+                }
+            }
+        }
+        return 0;
+    }
+
+    private static void placeColumnBlocks(PreviewWorld world, int bx, int bz,
+                                            int surfaceY, int waterLevel) {
+        world.setBlockState(new BlockPos(bx, 0, bz), BEDROCK);
+        for (int y = 1; y < surfaceY - 3; y++) {
+            world.setBlockState(new BlockPos(bx, y, bz), STONE);
+        }
+        for (int y = Math.max(1, surfaceY - 3); y < surfaceY; y++) {
+            world.setBlockState(new BlockPos(bx, y, bz), DIRT);
+        }
+        if (surfaceY <= waterLevel + 2) {
+            world.setBlockState(new BlockPos(bx, surfaceY, bz), SAND);
+        } else {
+            world.setBlockState(new BlockPos(bx, surfaceY, bz), GRASS);
+        }
+        for (int y = surfaceY + 1; y <= waterLevel; y++) {
+            world.setBlockState(new BlockPos(bx, y, bz), WATER);
+        }
     }
 
     // --- Property helpers ---
