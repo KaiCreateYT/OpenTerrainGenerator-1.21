@@ -14,6 +14,8 @@ import com.pg85.otg.util.biome.ReplaceBlockMatrix;
 import com.pg85.otg.util.gen.LocalWorldGenRegion;
 import com.pg85.otg.util.gen.OTGWorldInfo;
 import com.pg85.otg.util.logging.LogCategory;
+import com.pg85.otg.shared.materials.SharedMaterialData;
+import com.pg85.otg.shared.util.SharedNBTHelper;
 import com.pg85.otg.util.materials.LocalMaterialData;
 import com.pg85.otg.util.materials.LocalMaterials;
 import com.pg85.otg.util.minecraft.TreeType;
@@ -82,11 +84,17 @@ public abstract class SharedWorldGenRegion extends LocalWorldGenRegion {
 
     // --- Abstract methods: platform-specific ---
 
-    protected abstract LocalMaterialData fromBlockState(BlockState blockState);
+    protected LocalMaterialData fromBlockState(BlockState blockState) {
+        return SharedMaterialData.ofBlockState(blockState);
+    }
 
-    protected abstract BlockState toBlockState(LocalMaterialData material);
+    protected BlockState toBlockState(LocalMaterialData material) {
+        return ((SharedMaterialData) material).getState();
+    }
 
-    protected abstract CompoundTag convertNBT(NamedBinaryTag tag);
+    protected CompoundTag convertNBT(NamedBinaryTag tag) {
+        return SharedNBTHelper.getNMSFromNBTTagCompound(tag);
+    }
 
     protected abstract OTGChunkGenerator getInternalGenerator();
 

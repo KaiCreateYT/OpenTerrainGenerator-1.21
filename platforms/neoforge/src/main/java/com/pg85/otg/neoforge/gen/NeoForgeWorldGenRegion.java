@@ -1,17 +1,12 @@
 package com.pg85.otg.neoforge.gen;
 
 import com.pg85.otg.config.preset.DimensionPresetConfig;
-import com.pg85.otg.shared.materials.SharedMaterialData;
-import com.pg85.otg.shared.util.SharedNBTHelper;
 import com.pg85.otg.gen.OTGChunkGenerator;
 import com.pg85.otg.interfaces.IPluginConfig;
 import com.pg85.otg.shared.gen.SharedWorldGenRegion;
 import com.pg85.otg.util.gen.OTGWorldInfo;
 import com.pg85.otg.util.materials.LocalMaterialData;
-import com.pg85.otg.util.nbt.NamedBinaryTag;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.WorldGenLevel;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 
 public class NeoForgeWorldGenRegion extends SharedWorldGenRegion {
@@ -37,21 +32,6 @@ public class NeoForgeWorldGenRegion extends SharedWorldGenRegion {
             chunkGenerator.getInternalGenerator()
         );
         this.neoForgeChunkGenerator = chunkGenerator;
-    }
-
-    @Override
-    protected LocalMaterialData fromBlockState(BlockState blockState) {
-        return SharedMaterialData.ofBlockState(blockState);
-    }
-
-    @Override
-    protected BlockState toBlockState(LocalMaterialData material) {
-        return ((SharedMaterialData) material).getState();
-    }
-
-    @Override
-    protected CompoundTag convertNBT(NamedBinaryTag tag) {
-        return SharedNBTHelper.getNMSFromNBTTagCompound(tag);
     }
 
     @Override

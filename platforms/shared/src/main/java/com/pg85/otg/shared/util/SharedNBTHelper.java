@@ -1,10 +1,14 @@
 package com.pg85.otg.shared.util;
 
+import com.pg85.otg.shared.gen.SharedWorldGenRegion;
 import com.pg85.otg.util.OTGLog;
+import com.pg85.otg.util.gen.LocalWorldGenRegion;
 import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.nbt.LocalNBTHelper;
 import com.pg85.otg.util.nbt.NamedBinaryTag;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.*;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 import java.util.Set;
 
@@ -13,7 +17,23 @@ import java.util.Set;
  * conversion logic (~270 lines) so platform subclasses only need to
  * implement {@link #getNBTFromLocation}.
  */
-public abstract class SharedNBTHelper extends LocalNBTHelper {
+public class SharedNBTHelper extends LocalNBTHelper {
+
+    @Override
+    public NamedBinaryTag getNBTFromLocation(LocalWorldGenRegion world, int x, int y, int z) {
+        BlockEntity blockEntity = ((SharedWorldGenRegion) world).getBlockEntity(new BlockPos(x, y, z));
+
+        if (blockEntity == null) {
+            return null;
+        }
+
+        CompoundTag nbt = blockEntity.saveCustomOnly(blockEntity.getLevel().registryAccess());
+        nbt.remove("x");
+        nbt.remove("y");
+        nbt.remove("z");
+
+        return getNBTFromNMSTagCompound(null, nbt);
+    }
 
     /**
      * Converts a net.minecraft.server list NBT tag to a
