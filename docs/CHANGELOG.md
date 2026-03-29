@@ -2,6 +2,19 @@
 
 ### Release: 0.5.0-dev1
 
+**2026-03-30 — Editor codebase refactoring**
+
+- **Viewport3DRenderer**: Extract shared 3D viewport GL code (scissor, viewport calc, depth clear, 4 RenderType draws, state restore) from PreviewScreen, BOBrowserScreen, and BiomeTerrainPreviewScreen into single static utility
+- **ScrollablePanel**: Abstract base class for ScrollableListWidget and TreeListWidget — shared scrollbar rendering, scroll clamping, drag handling, mouse wheel
+- **PresetReloader**: Static `reload()` utility replaces 3 identical `reloadPresets()` methods across editor screens
+- **PropertyGridMode**: Enum (PRESET_EDITOR, BIOME_EDITOR, GROUP_EDITOR) replaces 3-boolean constructor args on PropertyGridWidget
+- **BiomeHeightmapGenerator**: Split 155-line `generate()` into `readTerrainParams()` + `computeNoiseColumns()` + `interpolateAndPlaceBlocks()` + `findSurfaceY()` + `placeColumnBlocks()`, added TerrainParams record; generic `getProperty()` replaces 3 near-identical typed helpers
+- **BiomeEditorScreen/GroupSettingsScreen**: Split long `init()` methods into focused helpers (initBiomeList, initPropertyGrid, initBottomBar, etc.)
+- **SharedWorldGenRegion**: Move identical `fromBlockState`/`toBlockState`/`convertNBT` from Fabric/NeoForge into concrete shared implementations
+- **SharedNBTHelper**: Move identical `getNBTFromLocation` into shared base — both platform NBTHelper subclasses now empty
+- **Error logging**: Add LOG.warn/error for previously silent failures in BiomeEditorScreen (ini read), WorldSettingsScreen (config fallback), BiomeTerrainPreviewScreen (buffer release), PreviewScreen (preset loading)
+- **DRY EditBox registration**: Unify init-time PropertyGrid EditBox registration via `refreshPropertyEditBoxes()` across all 3 editor screens
+
 **2026-03-21 — In-game editor Phase 3: Group Settings**
 
 - **GroupSettingsScreen**: Three-column BiomeGroup editor — group list (left), group params + biome assignment (center), PropertyGridWidget with Override/Merge/OPV flags (right)
