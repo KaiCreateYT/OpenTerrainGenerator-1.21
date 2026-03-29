@@ -19,10 +19,10 @@ public abstract class TitleScreenMixin extends Screen {
 
     @Inject(method = "init", at = @At("TAIL"))
     private void otg$addEditorButton(CallbackInfo ci) {
-        // Right side of title screen, aligned with Options/Quit row
+        // Centered below Options/Quit row
         addRenderableWidget(Button.builder(
-            Component.literal("OTG"),
+            Component.literal("OTG Editor"),
             btn -> minecraft.setScreen(new EditorHubScreen())
-        ).bounds(width / 2 + 104, height / 4 + 132, 40, 20).build());
+        ).bounds(width / 2 - 50, height / 4 + 156, 100, 20).build());
     }
 }
