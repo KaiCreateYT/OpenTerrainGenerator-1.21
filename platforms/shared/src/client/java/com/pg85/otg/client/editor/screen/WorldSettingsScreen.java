@@ -117,17 +117,10 @@ public class WorldSettingsScreen extends Screen {
         boolean success = ConfigWriter.save(configPath, rawLines, properties);
         if (success) {
             properties.forEach(PropertyValue::clearDirty);
-            reloadPresets();
+            PresetReloader.reload();
             LOG.info("Saved world settings to {}", configPath.getFileName());
         } else {
             errorMessage = "Failed to save!";
-        }
-    }
-
-    private static void reloadPresets() {
-        var engine = com.pg85.otg.OTG.getEngine();
-        if (engine != null) {
-            engine.getDimensionPresetLoader().loadDimensionPresetsFromDisk();
         }
     }
 

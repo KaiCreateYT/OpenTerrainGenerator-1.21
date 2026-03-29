@@ -343,7 +343,7 @@ public class GroupSettingsScreen extends Screen {
         for (BiomeGroupData g : groups) g.clearDirty();
         overrideProperties.forEach(PropertyValue::clearDirty);
 
-        reloadPresets();
+        PresetReloader.reload();
         statusMessage = "Saved!";
         LOG.info("Saved groups and overrides for {}", preset.getFolderName());
     }
@@ -361,13 +361,6 @@ public class GroupSettingsScreen extends Screen {
             allOverrides.remove(groupName);
         } else {
             allOverrides.put(groupName, map);
-        }
-    }
-
-    private static void reloadPresets() {
-        var engine = com.pg85.otg.OTG.getEngine();
-        if (engine != null) {
-            engine.getDimensionPresetLoader().loadDimensionPresetsFromDisk();
         }
     }
 
