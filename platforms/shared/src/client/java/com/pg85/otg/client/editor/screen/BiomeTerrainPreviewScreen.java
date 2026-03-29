@@ -11,11 +11,15 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class BiomeTerrainPreviewScreen extends Screen {
+
+    private static final Logger LOG = LoggerFactory.getLogger(BiomeTerrainPreviewScreen.class);
 
     private final Screen parent;
     private final List<PropertyValue> biomeProperties;
@@ -161,7 +165,11 @@ public class BiomeTerrainPreviewScreen extends Screen {
     @Override
     public void onClose() {
         if (renderer != null) {
-            renderer.releaseBuffers();
+            try {
+                renderer.releaseBuffers();
+            } catch (Exception e) {
+                LOG.error("Failed to release renderer buffers", e);
+            }
             renderer = null;
         }
         if (world != null) {

@@ -10,6 +10,8 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +19,7 @@ import java.util.Locale;
 
 public class PreviewScreen extends Screen {
 
+    private static final Logger LOG = LoggerFactory.getLogger(PreviewScreen.class);
     private static final int PANEL_WIDTH = 150;
 
     // Persisted across screen recreations via static
@@ -66,7 +69,9 @@ public class PreviewScreen extends Screen {
                     presetEntries.add(new PresetEntry(displayName, resourceId, preset.getFolderName()));
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            LOG.warn("Failed to load DimensionPresets for preview", e);
+        }
 
         if (presetEntries.isEmpty()) {
             presetEntries.add(new PresetEntry("Vanilla", "", ""));

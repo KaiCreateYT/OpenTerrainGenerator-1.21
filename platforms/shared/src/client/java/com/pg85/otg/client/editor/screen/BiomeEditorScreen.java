@@ -199,7 +199,12 @@ public class BiomeEditorScreen extends Screen {
         var overrides = GroupOverrideStore.load(preset.getFolder());
         Path iniPath = WorldSettingsScreen.resolveConfigPath(preset.getFolder());
         List<String> iniLines;
-        try { iniLines = java.nio.file.Files.readAllLines(iniPath); } catch (java.io.IOException e) { iniLines = List.of(); }
+        try {
+            iniLines = java.nio.file.Files.readAllLines(iniPath);
+        } catch (java.io.IOException e) {
+            LOG.warn("Failed to read config for group overrides: {}", iniPath, e);
+            iniLines = List.of();
+        }
         var groups = BiomeGroupParser.parse(iniLines);
 
         String biomeName = (selectedBiomeIndex >= 0 && selectedBiomeIndex < filteredBiomeEntries.size())

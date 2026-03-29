@@ -104,7 +104,8 @@ public class WorldSettingsScreen extends Screen {
         if (java.nio.file.Files.exists(newPath)) return newPath;
         Path legacyPath = presetFolder.resolve(Constants.LEGACY_WORLD_CONFIG_FILE);
         if (java.nio.file.Files.exists(legacyPath)) return legacyPath;
-        return newPath; // fallback — ConfigLoader will report the error
+        LOG.warn("Config file not found in {}, falling back to {}", presetFolder, newPath.getFileName());
+        return newPath;
     }
 
     private void save() {
