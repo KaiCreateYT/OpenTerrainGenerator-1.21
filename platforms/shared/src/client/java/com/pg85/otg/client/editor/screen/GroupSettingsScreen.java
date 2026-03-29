@@ -113,11 +113,7 @@ public class GroupSettingsScreen extends Screen {
         if (selectedGroupIndex >= 0 && !overrideProperties.isEmpty()) {
             propertyGrid.init(font, overrideProperties);
             addRenderableWidget(propertyGrid.getSearchEditBox());
-            registeredPropertyEditBoxes.clear();
-            for (EditBox eb : propertyGrid.getActiveEditBoxes()) {
-                addRenderableWidget(eb);
-                registeredPropertyEditBoxes.add(eb);
-            }
+            refreshPropertyEditBoxes();
         }
 
         // --- Bottom buttons ---

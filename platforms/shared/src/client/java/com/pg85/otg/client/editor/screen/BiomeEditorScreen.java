@@ -112,14 +112,10 @@ public class BiomeEditorScreen extends Screen {
             loadBiome(selectedBiomeIndex);
         }
 
-        registeredPropertyEditBoxes.clear();
         if (!properties.isEmpty()) {
             propertyGrid.init(font, properties);
             addRenderableWidget(propertyGrid.getSearchEditBox());
-            for (EditBox eb : propertyGrid.getActiveEditBoxes()) {
-                addRenderableWidget(eb);
-                registeredPropertyEditBoxes.add(eb);
-            }
+            refreshPropertyEditBoxes();
         }
 
         // Bottom buttons

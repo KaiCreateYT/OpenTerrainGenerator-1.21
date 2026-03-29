@@ -82,13 +82,7 @@ public class WorldSettingsScreen extends Screen {
 
         // Register search EditBox
         addRenderableWidget(propertyGrid.getSearchEditBox());
-
-        // Register property EditBoxes
-        registeredPropertyEditBoxes.clear();
-        for (EditBox eb : propertyGrid.getActiveEditBoxes()) {
-            addRenderableWidget(eb);
-            registeredPropertyEditBoxes.add(eb);
-        }
+        refreshPropertyEditBoxes();
 
         // Bottom buttons
         int btnY = height - 30;
