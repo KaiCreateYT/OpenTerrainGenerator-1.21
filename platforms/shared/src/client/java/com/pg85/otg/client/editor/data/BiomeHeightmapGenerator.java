@@ -193,21 +193,27 @@ public class BiomeHeightmapGenerator {
 
     // --- Property helpers ---
 
+    private static <T> T getProperty(List<PropertyValue> props, String name, T defaultValue,
+                                      java.util.function.Function<String, T> parser) {
+        if (props == null) return defaultValue;
+        for (PropertyValue v : props) {
+            if (v.getDefinition().name().equals(name)) {
+                try { return parser.apply(v.getValue()); }
+                catch (Exception e) { return defaultValue; }
+            }
+        }
+        return defaultValue;
+    }
+
     private static boolean getBool(List<PropertyValue> p, String n, boolean d) {
-        if (p == null) return d;
-        for (PropertyValue v : p) { if (v.getDefinition().name().equals(n)) return "true".equalsIgnoreCase(v.getValue()); }
-        return d;
+        return getProperty(p, n, d, v -> "true".equalsIgnoreCase(v));
     }
 
     private static float getFloat(List<PropertyValue> p, String n, float d) {
-        if (p == null) return d;
-        for (PropertyValue v : p) { if (v.getDefinition().name().equals(n)) try { return Float.parseFloat(v.getValue()); } catch (NumberFormatException e) { return d; } }
-        return d;
+        return getProperty(p, n, d, Float::parseFloat);
     }
 
     private static int getInt(List<PropertyValue> p, String n, int d) {
-        if (p == null) return d;
-        for (PropertyValue v : p) { if (v.getDefinition().name().equals(n)) try { return Integer.parseInt(v.getValue()); } catch (NumberFormatException e) { return d; } }
-        return d;
+        return getProperty(p, n, d, Integer::parseInt);
     }
 }
