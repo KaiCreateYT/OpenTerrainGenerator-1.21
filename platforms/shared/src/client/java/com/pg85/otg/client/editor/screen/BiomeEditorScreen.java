@@ -1,6 +1,7 @@
 package com.pg85.otg.client.editor.screen;
 
 import com.pg85.otg.client.editor.data.*;
+import com.pg85.otg.client.editor.widget.PropertyGridMode;
 import com.pg85.otg.client.editor.widget.PropertyGridWidget;
 import com.pg85.otg.client.editor.widget.ScrollableListWidget;
 import com.pg85.otg.client.preview.PreviewScreen;
@@ -109,7 +110,7 @@ public class BiomeEditorScreen extends Screen {
         int gridX = LEFT_PANEL_WIDTH + 4;
         int gridW = width - gridX - 4;
         int gridH = height - 120;
-        propertyGrid = new PropertyGridWidget(gridX, 14, gridW, gridH, true, true, false);
+        propertyGrid = new PropertyGridWidget(gridX, 14, gridW, gridH, PropertyGridMode.BIOME_EDITOR);
 
         if (selectedBiomeIndex >= 0 && selectedBiomeIndex < filteredBiomeEntries.size()) {
             loadBiome(selectedBiomeIndex);

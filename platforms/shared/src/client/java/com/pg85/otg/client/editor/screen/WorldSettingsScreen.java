@@ -1,6 +1,7 @@
 package com.pg85.otg.client.editor.screen;
 
 import com.pg85.otg.client.editor.data.*;
+import com.pg85.otg.client.editor.widget.PropertyGridMode;
 import com.pg85.otg.client.editor.widget.PropertyGridWidget;
 import com.pg85.otg.client.preview.PreviewScreen;
 import com.pg85.otg.constants.Constants;
@@ -77,7 +78,7 @@ public class WorldSettingsScreen extends Screen {
         int gridY = 25;
         int gridW = width - 20;
         int gridH = height - 70;
-        propertyGrid = new PropertyGridWidget(gridX, gridY, gridW, gridH, false, false, false);
+        propertyGrid = new PropertyGridWidget(gridX, gridY, gridW, gridH, PropertyGridMode.PRESET_EDITOR);
         propertyGrid.init(font, properties);
 
         // Register search EditBox

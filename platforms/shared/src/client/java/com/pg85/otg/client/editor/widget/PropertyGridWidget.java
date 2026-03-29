@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 public class PropertyGridWidget {
 
     private final int x, y, width, height;
-    private final boolean showOverride, showMerge, showOpv;
+    private final PropertyGridMode mode;
 
     private List<PropertyValue> allProperties = List.of();
     private CategoryTabsWidget tabs;
@@ -32,15 +32,12 @@ public class PropertyGridWidget {
     private DropdownWidget activeDropdown;
     private PropertyRowWidget dropdownOwner;
 
-    public PropertyGridWidget(int x, int y, int width, int height,
-                               boolean showOverride, boolean showMerge, boolean showOpv) {
+    public PropertyGridWidget(int x, int y, int width, int height, PropertyGridMode mode) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
-        this.showOverride = showOverride;
-        this.showMerge = showMerge;
-        this.showOpv = showOpv;
+        this.mode = mode;
     }
 
     public void setOnValueChanged(Consumer<PropertyValue> callback) { this.onValueChanged = callback; }
@@ -98,7 +95,7 @@ public class PropertyGridWidget {
         visibleRows = new ArrayList<>();
         for (int i = scrollOffset; i < filtered.size() && visibleRows.size() < maxRows; i++) {
             PropertyValue pv = filtered.get(i);
-            PropertyRowWidget row = new PropertyRowWidget(pv, showOverride, showMerge, showOpv);
+            PropertyRowWidget row = new PropertyRowWidget(pv, mode.showOverride(), mode.showMerge(), mode.showOpv());
             int ry = rowY + visibleRows.size() * PropertyRowWidget.ROW_HEIGHT;
             row.init(font, x, ry, width);
             row.setOnValueChanged(val -> {

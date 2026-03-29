@@ -1,6 +1,7 @@
 package com.pg85.otg.client.editor.screen;
 
 import com.pg85.otg.client.editor.data.*;
+import com.pg85.otg.client.editor.widget.PropertyGridMode;
 import com.pg85.otg.client.editor.widget.PropertyGridWidget;
 import com.pg85.otg.client.editor.widget.ScrollableListWidget;
 import com.pg85.otg.presets.DimensionPreset;
@@ -113,7 +114,7 @@ public class GroupSettingsScreen extends Screen {
         int gridX = LEFT_PANEL_WIDTH + CENTER_PANEL_WIDTH + 8;
         int gridW = width - gridX - 4;
         int gridH = height - 70;
-        propertyGrid = new PropertyGridWidget(gridX, 14, gridW, gridH, true, true, true);
+        propertyGrid = new PropertyGridWidget(gridX, 14, gridW, gridH, PropertyGridMode.GROUP_EDITOR);
 
         if (selectedGroupIndex >= 0 && !overrideProperties.isEmpty()) {
             propertyGrid.init(font, overrideProperties);
