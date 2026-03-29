@@ -1,18 +1,15 @@
 package com.pg85.otg.client.preview;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.pg85.otg.OTG;
+import com.pg85.otg.client.editor.widget.Viewport3DRenderer;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.presets.DimensionPreset;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
-import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -263,47 +260,8 @@ public class PreviewScreen extends Screen {
     }
 
     private void renderViewport(GuiGraphics graphics, float partialTick) {
-        graphics.enableScissor(viewportX, viewportY, viewportX + viewportW, viewportY + viewportH);
-
-        // Save GUI viewport and set 3D viewport to match our panel
-        var window = minecraft.getWindow();
-        double scale = window.getGuiScale();
-        int fbX = (int) (viewportX * scale);
-        int fbY = (int) ((window.getGuiScaledHeight() - viewportY - viewportH) * scale);
-        int fbW = (int) (viewportW * scale);
-        int fbH = (int) (viewportH * scale);
-        RenderSystem.viewport(fbX, fbY, fbW, fbH);
-
-        // Clear depth buffer so 3D content doesn't z-fight with GUI
-        GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
-
-        OrbitCamera camera = PreviewState.getCamera();
-        float aspect = (float) viewportW / viewportH;
-        Matrix4f viewMatrix = camera.getViewMatrix();
-        Matrix4f projMatrix = camera.getProjectionMatrix(aspect);
-
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthMask(true);
-
-        PreviewRenderer renderer = PreviewState.getRenderer();
-
-        // Opaque passes
-        renderer.draw(RenderType.solid(), viewMatrix, projMatrix);
-        renderer.draw(RenderType.cutoutMipped(), viewMatrix, projMatrix);
-        renderer.draw(RenderType.cutout(), viewMatrix, projMatrix);
-
-        // Translucent pass
-        RenderSystem.enableBlend();
-        RenderSystem.depthMask(false);
-        renderer.draw(RenderType.translucent(), viewMatrix, projMatrix);
-        RenderSystem.depthMask(true);
-        RenderSystem.disableBlend();
-
-        // Restore depth test and viewport for GUI rendering
-        RenderSystem.disableDepthTest();
-        RenderSystem.viewport(0, 0, window.getWidth(), window.getHeight());
-
-        graphics.disableScissor();
+        Viewport3DRenderer.render(graphics, viewportX, viewportY, viewportW, viewportH,
+            PreviewState.getCamera(), PreviewState.getRenderer());
     }
 
     // --- Input handling ---

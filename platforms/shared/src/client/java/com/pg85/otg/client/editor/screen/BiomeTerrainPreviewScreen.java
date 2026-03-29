@@ -1,8 +1,8 @@
 package com.pg85.otg.client.editor.screen;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.pg85.otg.client.editor.data.BiomeHeightmapGenerator;
 import com.pg85.otg.client.editor.data.PropertyValue;
+import com.pg85.otg.client.editor.widget.Viewport3DRenderer;
 import com.pg85.otg.client.preview.OrbitCamera;
 import com.pg85.otg.client.preview.PreviewRenderer;
 import com.pg85.otg.client.preview.world.PreviewWorld;
@@ -10,10 +10,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
-import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL11;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -131,38 +128,7 @@ public class BiomeTerrainPreviewScreen extends Screen {
         int vpH = height - 30;
 
         if (renderer != null && !renderer.isEmpty()) {
-            graphics.enableScissor(0, 0, width, vpH);
-
-            var window = minecraft.getWindow();
-            double scale = window.getGuiScale();
-            int fbY = (int) ((window.getGuiScaledHeight() - vpH) * scale);
-            int fbW = (int) (width * scale);
-            int fbH = (int) (vpH * scale);
-            RenderSystem.viewport(0, fbY, fbW, fbH);
-
-            GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
-
-            float aspect = (float) width / vpH;
-            Matrix4f viewMatrix = camera.getViewMatrix();
-            Matrix4f projMatrix = camera.getProjectionMatrix(aspect);
-
-            RenderSystem.enableDepthTest();
-            RenderSystem.depthMask(true);
-
-            renderer.draw(RenderType.solid(), viewMatrix, projMatrix);
-            renderer.draw(RenderType.cutoutMipped(), viewMatrix, projMatrix);
-            renderer.draw(RenderType.cutout(), viewMatrix, projMatrix);
-
-            RenderSystem.enableBlend();
-            RenderSystem.depthMask(false);
-            renderer.draw(RenderType.translucent(), viewMatrix, projMatrix);
-            RenderSystem.depthMask(true);
-            RenderSystem.disableBlend();
-
-            RenderSystem.disableDepthTest();
-            RenderSystem.viewport(0, 0, window.getWidth(), window.getHeight());
-
-            graphics.disableScissor();
+            Viewport3DRenderer.render(graphics, 0, 0, width, vpH, camera, renderer);
         } else {
             graphics.fill(0, 0, width, vpH, 0xFF111111);
             if (statusText != null) {
