@@ -2,6 +2,10 @@
 
 OpenTerrainGenerator (OTG) is a Minecraft terrain generation mod for **Fabric** and **NeoForge** (1.21.1). It gives you full control over world generation — biomes, terrain shape, caves, structures, and more.
 
+## In-Game Editor
+
+OTG includes a **built-in configuration editor** — edit world settings, biomes, groups, and browse custom objects without leaving Minecraft. [Read more](editor/index.md)
+
 ## For Preset Creators
 
 - [DimensionPresetConfig.ini Reference](config/dimension-preset-config.md) — all world-level generation settings

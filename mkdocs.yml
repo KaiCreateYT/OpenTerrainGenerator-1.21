@@ -63,6 +63,7 @@ nav:
     - BO2: custom-objects/bo2.md
     - BO3: custom-objects/bo3.md
     - BO4: custom-objects/bo4.md
+  - In-Game Editor: editor/index.md
   - Commands: commands/index.md
   - Dimensions: dimensions/index.md
   - Changelog: CHANGELOG.md
