@@ -38,8 +38,7 @@ public class BiomeEditorScreen extends Screen {
     private PropertyGridWidget propertyGrid;
     private List<PropertyValue> properties = List.of();
     private List<String> rawLines = List.of();
-    private List<String> resourceQueueLines = List.of();
-    private int resourceQueueScroll = 0;
+    private List<ResourceEntry> resourceEntries = List.of();
     private Path currentBiomePath;
     private Map<String, PropertyDefinition> biomeDefinitions;
     private List<PropertyValue> presetProperties; // loaded once for terrain preview
@@ -109,7 +108,7 @@ public class BiomeEditorScreen extends Screen {
     private void initPropertyGrid() {
         int gridX = LEFT_PANEL_WIDTH + 4;
         int gridW = width - gridX - 4;
-        int gridH = height - 120;
+        int gridH = height - 70;
         propertyGrid = new PropertyGridWidget(gridX, 14, gridW, gridH, PropertyGridMode.BIOME_EDITOR);
 
         if (selectedBiomeIndex >= 0 && selectedBiomeIndex < filteredBiomeEntries.size()) {
@@ -139,6 +138,16 @@ public class BiomeEditorScreen extends Screen {
         addRenderableWidget(Button.builder(Component.literal("Browse BO3"), btn ->
             minecraft.setScreen(new BOBrowserScreen(preset, this))
         ).bounds(LEFT_PANEL_WIDTH + 200, btnBarY, 70, 20).build());
+        addRenderableWidget(Button.builder(
+            Component.literal("Resources (" + resourceEntries.stream().filter(e -> !e.isDeleted()).count() + ")"),
+            btn -> {
+                if (selectedBiomeIndex >= 0) {
+                    minecraft.setScreen(new ResourceQueueScreen(this, resourceEntries, updated -> {
+                        resourceEntries = updated;
+                    }));
+                }
+            }
+        ).bounds(LEFT_PANEL_WIDTH + 276, btnBarY, 90, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Back"), btn -> onClose())
             .bounds(width - 54, btnBarY, 50, 20).build());
     }
@@ -186,7 +195,9 @@ public class BiomeEditorScreen extends Screen {
 
         properties = result.properties();
         rawLines = result.rawLines();
-        resourceQueueLines = result.resourceQueueLines();
+        resourceEntries = result.resourceQueueLines().stream()
+            .map(ResourceEntry::new)
+            .collect(Collectors.toList());
         errorMessage = null;
         statusMessage = null;
     }
@@ -217,7 +228,7 @@ public class BiomeEditorScreen extends Screen {
             toWrite = properties;
         }
 
-        boolean success = ConfigWriter.save(currentBiomePath, rawLines, toWrite);
+        boolean success = ConfigWriter.saveWithResources(currentBiomePath, rawLines, toWrite, resourceEntries);
         if (success) {
             properties.forEach(PropertyValue::clearDirty);
             PresetReloader.reload();
@@ -328,23 +339,9 @@ public class BiomeEditorScreen extends Screen {
                 LEFT_PANEL_WIDTH + (width - LEFT_PANEL_WIDTH) / 2, height / 2, 0xFF666666);
         }
 
-        // Resource queue read-only display
-        if (!resourceQueueLines.isEmpty() && selectedBiomeIndex >= 0) {
-            int rqX = LEFT_PANEL_WIDTH + 4;
-            int rqY = height - 88;
-            String header = "Resources (" + resourceQueueLines.size() + ")";
-            graphics.drawString(font, header, rqX, rqY, 0xFF888888);
-            rqY += 10;
-            int maxLines = 4;
-            int maxScroll = Math.max(0, resourceQueueLines.size() - maxLines);
-            resourceQueueScroll = Math.min(resourceQueueScroll, maxScroll);
-            graphics.enableScissor(rqX, rqY, width - 8, rqY + maxLines * 10);
-            for (int i = 0; i < maxLines && (i + resourceQueueScroll) < resourceQueueLines.size(); i++) {
-                String line = resourceQueueLines.get(i + resourceQueueScroll);
-                if (line.length() > 80) line = line.substring(0, 77) + "...";
-                graphics.drawString(font, line, rqX + 2, rqY + i * 10, 0xFF666666, false);
-            }
-            graphics.disableScissor();
+        if (!resourceEntries.isEmpty() && selectedBiomeIndex >= 0) {
+            long count = resourceEntries.stream().filter(e -> !e.isDeleted()).count();
+            graphics.drawString(font, "Resources: " + count, LEFT_PANEL_WIDTH + 4, height - 48, 0xFF888888);
         }
 
         if (errorMessage != null) {
@@ -374,12 +371,6 @@ public class BiomeEditorScreen extends Screen {
         if (biomeList != null && biomeList.mouseScrolled(mouseX, mouseY, deltaV)) return true;
         if (propertyGrid != null && propertyGrid.mouseScrolled(mouseX, mouseY, deltaV)) {
             refreshPropertyEditBoxes();
-            return true;
-        }
-        // Resource queue scroll
-        if (!resourceQueueLines.isEmpty() && mouseX > LEFT_PANEL_WIDTH && mouseY > height - 88 && mouseY < height - 48) {
-            int maxScroll = Math.max(0, resourceQueueLines.size() - 4);
-            resourceQueueScroll = Math.max(0, Math.min(maxScroll, resourceQueueScroll - (int) deltaV));
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, deltaH, deltaV);
