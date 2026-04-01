@@ -2,6 +2,10 @@
 
 ### Release: 0.5.0-dev1
 
+**2026-04-02**
+
+- feat: NonOTGWorldType now supports all vanilla world types (`flat`, `amplified`, `large_biomes`) and modded types (`modid:name`). Looks up WorldPreset in MC's registry instead of always creating standard vanilla overworld. Falls back to normal if preset not found.
+
 **2026-03-30 — Editor codebase refactoring**
 
 - **Viewport3DRenderer**: Extract shared 3D viewport GL code (scissor, viewport calc, depth clear, 4 RenderType draws, state restore) from PreviewScreen, BOBrowserScreen, and BiomeTerrainPreviewScreen into single static utility

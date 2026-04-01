@@ -1,6 +1,8 @@
 package com.pg85.otg.shared.registry;
 
 import com.pg85.otg.config.dimensions.WorldPresetConfig;
+
+import java.util.Locale;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.presets.DimensionPreset;
 import com.pg85.otg.util.OTGLog;
@@ -18,6 +20,7 @@ import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 import net.minecraft.world.level.levelgen.presets.WorldPreset;
+import net.minecraft.world.level.levelgen.presets.WorldPresets;
 
 import com.pg85.otg.shared.i18n.OTGTranslations;
 
@@ -106,7 +109,8 @@ public class WorldPresetRegistrar {
         if (config.Overworld != null) {
             if (config.Overworld.NonOTGWorldType != null && !config.Overworld.NonOTGWorldType.isBlank()) {
                 LevelStem vanillaOverworld = createVanillaLevelStem(
-                    LevelStem.OVERWORLD, loaders, dimensionTypes, noiseSettings, biomeRegistry);
+                    LevelStem.OVERWORLD, config.Overworld.NonOTGWorldType,
+                    loaders, dimensionTypes, noiseSettings, biomeRegistry);
                 if (vanillaOverworld != null) {
                     stems.put(LevelStem.OVERWORLD, vanillaOverworld);
                 }
@@ -130,7 +134,7 @@ public class WorldPresetRegistrar {
             }
         } else {
             LevelStem vanillaNether = createVanillaLevelStem(
-                LevelStem.NETHER, loaders, dimensionTypes, noiseSettings, biomeRegistry);
+                LevelStem.NETHER, null, loaders, dimensionTypes, noiseSettings, biomeRegistry);
             if (vanillaNether != null) {
                 stems.put(LevelStem.NETHER, vanillaNether);
             }
@@ -146,7 +150,7 @@ public class WorldPresetRegistrar {
             }
         } else {
             LevelStem vanillaEnd = createVanillaLevelStem(
-                LevelStem.END, loaders, dimensionTypes, noiseSettings, biomeRegistry);
+                LevelStem.END, null, loaders, dimensionTypes, noiseSettings, biomeRegistry);
             if (vanillaEnd != null) {
                 stems.put(LevelStem.END, vanillaEnd);
             }
@@ -224,9 +228,76 @@ public class WorldPresetRegistrar {
 
     /**
      * Creates a vanilla LevelStem for overworld/nether/end.
-     * Mirrors the vanilla dimension creation logic in OTGRegistryHelper.createLevelStems().
+     *
+     * For overworld with NonOTGWorldType set: looks up the WorldPreset by name
+     * in MC's registry (supports "flat", "amplified", "large_biomes", modded types
+     * like "biomesoplenty", etc.) and extracts the overworld LevelStem from it.
+     *
+     * For nether/end (or overworld fallback): creates standard vanilla generation.
      */
     private static LevelStem createVanillaLevelStem(
+            ResourceKey<LevelStem> stemKey,
+            String worldType,
+            List<RegistryDataLoader.Loader<?>> loaders,
+            HolderGetter<DimensionType> dimensionTypes,
+            HolderGetter<NoiseGeneratorSettings> noiseSettings,
+            Registry<Biome> biomeRegistry
+    ) {
+        // For overworld with a specific world type: lookup the MC WorldPreset by name
+        // and extract the overworld LevelStem from it. This delegates 100% to vanilla/mods.
+        if (stemKey.equals(LevelStem.OVERWORLD) && worldType != null && !worldType.isBlank()) {
+            LevelStem fromPreset = lookupWorldPresetOverworld(worldType, loaders);
+            if (fromPreset != null) {
+                return fromPreset;
+            }
+            OTGLog.warn("WorldPreset '{}' not found in registry, falling back to vanilla normal", worldType);
+        }
+
+        // Standard vanilla fallback (normal overworld, nether, end)
+        return createStandardVanillaLevelStem(stemKey, loaders, dimensionTypes, noiseSettings, biomeRegistry);
+    }
+
+    /**
+     * Looks up a WorldPreset by name in MC's registry and extracts its overworld LevelStem.
+     * Supports vanilla types ("flat", "amplified", "large_biomes") and modded types
+     * (any mod that registers a WorldPreset, e.g. "biomesoplenty").
+     */
+    private static LevelStem lookupWorldPresetOverworld(String worldType, List<RegistryDataLoader.Loader<?>> loaders) {
+        // Resolve the ResourceLocation — support both "flat" (→ minecraft:flat) and "modid:name"
+        String type = worldType.trim().toLowerCase(Locale.ROOT);
+        ResourceLocation loc = type.contains(":") ? ResourceLocation.tryParse(type) : ResourceLocation.withDefaultNamespace(type);
+        if (loc == null) {
+            OTGLog.warn("Invalid NonOTGWorldType: '{}'", worldType);
+            return null;
+        }
+
+        ResourceKey<WorldPreset> presetKey = ResourceKey.create(Registries.WORLD_PRESET, loc);
+
+        WritableRegistry<WorldPreset> presetRegistry = OTGRegistryHelper.getRegistry(loaders, Registries.WORLD_PRESET);
+        if (presetRegistry == null) {
+            OTGLog.error("WorldPreset registry not available");
+            return null;
+        }
+
+        Optional<Holder.Reference<WorldPreset>> holder = presetRegistry.getHolder(presetKey);
+        if (holder.isEmpty()) {
+            return null;
+        }
+
+        Optional<LevelStem> overworld = holder.get().value().overworld();
+        if (overworld.isEmpty()) {
+            OTGLog.warn("WorldPreset '{}' has no overworld dimension", loc);
+            return null;
+        }
+
+        OTGLog.info("Using overworld from WorldPreset '{}' for NonOTGWorldType", loc);
+        return overworld.get();
+    }
+
+    /**
+     * Creates a standard vanilla LevelStem (normal overworld, nether, or end).
+     */
+    private static LevelStem createStandardVanillaLevelStem(
             ResourceKey<LevelStem> stemKey,
             List<RegistryDataLoader.Loader<?>> loaders,
             HolderGetter<DimensionType> dimensionTypes,
@@ -258,13 +329,13 @@ public class WorldPresetRegistrar {
             chunkGenerator = new NoiseBasedChunkGenerator(
                 TheEndBiomeSource.create(biomeRegistry.asLookup()), noise);
         } else {
-            OTGLog.error("Cannot create vanilla LevelStem for non-vanilla dimension {}", stemKey.location());
+            OTGLog.error("Cannot create vanilla LevelStem for unknown dimension {}", stemKey.location());
             return null;
         }
 
         Optional<Holder.Reference<DimensionType>> dimType = dimensionTypes.get(dimTypeKey);
         if (dimType.isEmpty()) {
-            OTGLog.error("DimensionType {} not found for vanilla dimension", dimTypeKey.location());
+            OTGLog.error("DimensionType {} not found", dimTypeKey.location());
             return null;
         }
 

@@ -107,7 +107,7 @@ The `Overworld` object also supports:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `NonOTGWorldType` | `string` | Set to any non-empty value to use vanilla overworld generation instead of OTG. The actual string value is currently ignored — it always creates a standard vanilla overworld. |
+| `NonOTGWorldType` | `string` | Use a non-OTG overworld generator. Looks up the value as a WorldPreset in MC's registry. Vanilla types: `flat`, `amplified`, `large_biomes`, `normal`. Modded types: use `modid:name` (e.g. `biomesoplenty:biomesoplenty`). If the preset is not found, falls back to vanilla normal. |
 | `NonOTGGeneratorSettings` | `string` | Reserved for future use. Currently not implemented. |
 
 ### Settings Object
@@ -189,7 +189,7 @@ Overworld:
 # Nether and End sections omitted = vanilla
 ```
 
-You can also set `NonOTGWorldType` to any non-empty value to force vanilla overworld generation, but note that it always creates a standard vanilla overworld — custom world types (flat, amplified) are not currently supported.
+You can also set `NonOTGWorldType` to use a non-OTG overworld. Vanilla types: `flat`, `amplified`, `large_biomes`. Modded types use `modid:name` format (e.g. `biomesoplenty:biomesoplenty`). The value is looked up as a WorldPreset in MC's registry — any mod that registers a WorldPreset is supported.
 
 ---
 
