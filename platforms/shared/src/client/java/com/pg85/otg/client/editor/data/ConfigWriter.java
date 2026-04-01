@@ -93,6 +93,86 @@ public class ConfigWriter {
     }
 
     /**
+     * Save properties AND resource queue entries to a .bc file.
+     * Resource queue lines in rawLines are replaced with the entries list.
+     */
+    public static boolean saveWithResources(Path iniPath, List<String> rawLines,
+                                             List<PropertyValue> properties,
+                                             List<ResourceEntry> resources) {
+        Map<String, String> changes = new HashMap<>();
+        for (PropertyValue pv : properties) {
+            if (pv.isDirty()) {
+                changes.put(pv.getDefinition().name(), pv.getValue());
+            }
+        }
+
+        List<String> output = new ArrayList<>(rawLines.size());
+        boolean resourcesInserted = false;
+
+        for (String line : rawLines) {
+            String trimmed = line.trim();
+
+            // Resource queue line — replace with our entries
+            if (!trimmed.isEmpty() && !trimmed.startsWith("#") && trimmed.matches("^[A-Za-z].*\\(.*\\)$")) {
+                if (!resourcesInserted) {
+                    for (ResourceEntry re : resources) {
+                        if (!re.isDeleted()) {
+                            output.add(re.getLine());
+                        }
+                    }
+                    resourcesInserted = true;
+                }
+                continue; // skip original resource line
+            }
+
+            // Property line — apply changes
+            if (!trimmed.isEmpty() && !trimmed.startsWith("#") && !trimmed.startsWith("<")
+                    && !trimmed.contains("(") && trimmed.contains(":")) {
+                int colonIdx = trimmed.indexOf(':');
+                String key = trimmed.substring(0, colonIdx).trim();
+
+                if (changes.containsKey(key)) {
+                    String indent = line.substring(0, line.indexOf(trimmed));
+                    output.add(indent + key + ": " + changes.get(key));
+                    changes.remove(key);
+                    continue;
+                }
+            }
+
+            output.add(line);
+        }
+
+        // If no resource lines existed, append at end
+        if (!resourcesInserted && resources != null && !resources.isEmpty()) {
+            output.add("");
+            for (ResourceEntry re : resources) {
+                if (!re.isDeleted()) {
+                    output.add(re.getLine());
+                }
+            }
+        }
+
+        // Append new properties
+        if (!changes.isEmpty()) {
+            output.add("");
+            output.add("# Added by OTG Editor");
+            for (var entry : changes.entrySet()) {
+                output.add(entry.getKey() + ": " + entry.getValue());
+            }
+        }
+
+        try {
+            Files.write(iniPath, output);
+            LOG.info("Saved properties + {} resources to {}",
+                resources.stream().filter(r -> !r.isDeleted()).count(), iniPath.getFileName());
+            return true;
+        } catch (IOException e) {
+            LOG.error("Failed to write config file: {}", iniPath, e);
+            return false;
+        }
+    }
+
+    /**
      * Save modified BiomeGroup() lines back to the .ini file.
      * Replaces existing group lines, removes deleted groups, appends new groups.
      * Returns updated rawLines for session reuse.
