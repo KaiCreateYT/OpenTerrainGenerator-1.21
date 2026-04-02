@@ -1,5 +1,12 @@
 ## Minecraft 1.21.1 — Fabric + NeoForge
 
+**2026-04-02 — Resource queue editing**
+
+- **ResourceQueueScreen**: Full-screen editor for resource queue entries (Ore, Tree, CustomObject, etc.) — inline text editing per entry, add/delete/reorder with ▲/▼ buttons, colored function type indicators
+- **ResourceEntry**: Mutable wrapper for ConfigFunction lines with dirty/deleted tracking
+- **ConfigWriter.saveWithResources()**: Saves properties + resource queue entries to .bc files, replacing original resource lines in-place
+- **BiomeEditorScreen**: "Resources (N)" button opens ResourceQueueScreen, save writes modified resources back to .bc
+
 ### Release: 0.5.0-dev2
 
 ---
