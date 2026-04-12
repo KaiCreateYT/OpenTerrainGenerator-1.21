@@ -23,10 +23,14 @@ import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Stream;
 
 public class DimensionManager {
 
@@ -35,6 +39,7 @@ public class DimensionManager {
     private DimensionDatapack datapack;
     private MinecraftServer server;
     private @Nullable WorldPresetConfig activeWorldPresetConfig;
+    private @Nullable Path activeWorldPresetConfigPath;
 
     public DimensionManager(PlatformDimensionHelper helper) {
         this.helper = helper;
@@ -85,6 +90,10 @@ public class DimensionManager {
             this.activeWorldPresetConfig = worldPresetConfigs.stream()
                 .filter(c -> activePresetName.equals(c.DisplayName))
                 .findFirst().orElse(null);
+
+            if (this.activeWorldPresetConfig != null) {
+                this.activeWorldPresetConfigPath = findYamlPathByDisplayName(activePresetName);
+            }
         }
 
         // Apply WorldPreset GameRules (first-time only, per-dimension)
@@ -215,6 +224,31 @@ public class DimensionManager {
 
     public @Nullable WorldPresetConfig getActiveWorldPresetConfig() {
         return activeWorldPresetConfig;
+    }
+
+    public @Nullable Path getActiveWorldPresetConfigPath() {
+        return activeWorldPresetConfigPath;
+    }
+
+    private @Nullable Path findYamlPathByDisplayName(String displayName) {
+        Path worldPresetsDir = OTG.getEngine().getOTGRootFolder()
+            .resolve(com.pg85.otg.constants.Constants.WORLD_PRESETS_FOLDER);
+        if (!Files.isDirectory(worldPresetsDir)) return null;
+        try (Stream<Path> files = Files.list(worldPresetsDir)) {
+            return files
+                .filter(p -> {
+                    String name = p.getFileName().toString();
+                    return name.endsWith(".yaml") || name.endsWith(".yml");
+                })
+                .filter(p -> {
+                    WorldPresetConfig c = WorldPresetConfigLoader.fromFile(p.toFile());
+                    return c != null && displayName.equals(c.DisplayName);
+                })
+                .findFirst().orElse(null);
+        } catch (IOException e) {
+            OTGLog.warn("Failed to list WorldPresets folder: {}", e.getMessage());
+            return null;
+        }
     }
 
     /**
