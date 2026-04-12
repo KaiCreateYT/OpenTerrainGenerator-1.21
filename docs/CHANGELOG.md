@@ -1,5 +1,17 @@
 ## Minecraft 1.21.1 — Fabric + NeoForge
 
+**2026-04-13 — In-game editor Phase 5: WorldPreset YAML editor**
+
+- **ManageWorldPresetsScreen**: lists all `WorldPresets/*.yaml` with summary panel; CRUD buttons (New/Clone/Edit/Delete)
+- **WorldPresetEditorScreen**: tabs-based editor for single WorldPreset YAML — Metadata, Overworld, Nether, End, Dimensions, Settings, GameRules (50 rules with tri-state editing)
+- **WorldPresetWizardScreen**: 4-step creation wizard — template picker (Blank + shipped resource YAMLs), metadata, dimensions placeholder, confirm
+- **GameRulesEditorScreen**: standalone screen for per-dimension GameRules overrides
+- **New widgets**: `DimensionSlotWidget` (OTG/Non-OTG toggle + preset cycle + portal config), `DimensionAccordionCard` (expandable card per custom dimension), `GameRuleTriStateWidget` (null/true/false radios, null/int), `GameRulesListWidget` (scrollable list with search, reflection-based)
+- **Data layer**: `WorldPresetYamlIO`, `WorldPresetFileScanner`, `WorldPresetOperations`, `WorldPresetTemplates`
+- **DimensionManager**: now tracks `activeWorldPresetConfigPath` for file-path-based matching
+- **WorldPresetRegistrar.normalizeId()**: widened to public for editor reuse
+- **EditorHubScreen**: new "Manage WorldPresets" button near preset selector
+
 **2026-04-02 — Resource queue editing**
 
 - **ResourceQueueScreen**: Full-screen editor for resource queue entries (Ore, Tree, CustomObject, etc.) — inline text editing per entry, add/delete/reorder with ▲/▼ buttons, colored function type indicators
