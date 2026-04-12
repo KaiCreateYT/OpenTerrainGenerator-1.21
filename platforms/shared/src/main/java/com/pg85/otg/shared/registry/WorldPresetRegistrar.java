@@ -342,7 +342,7 @@ public class WorldPresetRegistrar {
         return new LevelStem(dimType.get(), chunkGenerator);
     }
 
-    static String normalizeId(String displayName) {
+    public static String normalizeId(String displayName) {
         return displayName.toLowerCase(Locale.ROOT)
             .replaceAll("[^a-z0-9_.-]", "_")
             .replaceAll("_+", "_")
