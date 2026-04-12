@@ -79,6 +79,11 @@ public class EditorHubScreen extends Screen {
             rebuildWidgets();
         }).bounds(cx + 100, y, 20, 20).build());
 
+        addRenderableWidget(Button.builder(
+            Component.literal("Manage WorldPresets"),
+            btn -> minecraft.setScreen(new ManageWorldPresetsScreen(this))
+        ).bounds(cx + 125, y, 130, 20).build());
+
         y += 30;
 
         // Navigation cards
