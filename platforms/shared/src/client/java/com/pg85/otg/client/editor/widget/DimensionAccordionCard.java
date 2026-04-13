@@ -25,10 +25,12 @@ public class DimensionAccordionCard {
     private final Runnable onToggleExpand;
     private final List<String> otgPresets;
     private final Runnable onChanged;
+    private final Runnable onStructureChanged;
 
     private final boolean expanded;
 
-    private int x, y, width;
+    private int x, y;
+    private int renderedWidth;
     private DimensionSlotWidget slotWidget;
 
     public DimensionAccordionCard(WorldPresetConfig.OTGDimension dim,
@@ -37,7 +39,8 @@ public class DimensionAccordionCard {
                                     Runnable onOpenGameRules,
                                     Runnable onToggleExpand,
                                     List<String> otgPresets,
-                                    Runnable onChanged) {
+                                    Runnable onChanged,
+                                    Runnable onStructureChanged) {
         this.dim = dim;
         this.expanded = expanded;
         this.onRemove = onRemove;
@@ -45,6 +48,7 @@ public class DimensionAccordionCard {
         this.onToggleExpand = onToggleExpand;
         this.otgPresets = otgPresets;
         this.onChanged = onChanged;
+        this.onStructureChanged = onStructureChanged;
     }
 
     public int getHeight() {
@@ -54,7 +58,7 @@ public class DimensionAccordionCard {
     public void init(int x, int y, int width, Consumer<Button> addButton, Consumer<EditBox> addEditBox) {
         this.x = x;
         this.y = y;
-        this.width = width;
+        this.renderedWidth = width;
 
         String label = (expanded ? "▼ " : "▶ ") +
             (dim.PresetFolderName == null ? "(unset)" : dim.PresetFolderName);
@@ -72,7 +76,7 @@ public class DimensionAccordionCard {
 
         if (expanded) {
             slotWidget = new DimensionSlotWidget(
-                dim, false, false, otgPresets, onChanged
+                dim, false, false, otgPresets, onChanged, onStructureChanged
             );
             slotWidget.init(x + 4, y + 22, width - 8, addButton, addEditBox);
 
@@ -85,7 +89,7 @@ public class DimensionAccordionCard {
     }
 
     public void render(GuiGraphics g, int mouseX, int mouseY) {
-        g.fill(x, y + 20, x + width, y + getHeight(), 0xFF1E1E1E);
+        g.fill(x, y + 20, x + renderedWidth, y + getHeight(), 0xFF1E1E1E);
         if (expanded && slotWidget != null) {
             slotWidget.render(g, mouseX, mouseY);
         }

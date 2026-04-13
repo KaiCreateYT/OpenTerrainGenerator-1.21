@@ -7,8 +7,12 @@ import com.pg85.otg.client.editor.widget.ScrollableListWidget;
 import com.pg85.otg.config.dimensions.WorldPresetConfig;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -115,13 +119,43 @@ public class ManageWorldPresetsScreen extends Screen {
     private void doDelete() {
         if (selectedIdx < 0 || selectedIdx >= entries.size()) return;
         var entry = entries.get(selectedIdx);
-        if (WorldPresetOperations.delete(entry.path())) {
-            statusMessage = "Deleted " + entry.path().getFileName();
-            selectedIdx = -1;
-            reloadEntries();
-            rebuildWidgets();
-        } else {
-            statusMessage = "Delete failed";
+
+        boolean matchesActive = isActiveWorldYaml(entry.path());
+        Component message = matchesActive
+            ? Component.literal("This WorldPreset is active in your current world. "
+                + "Deleting won't affect the active world, but you won't be able to recreate it. "
+                + "Delete " + entry.path().getFileName() + "?")
+            : Component.literal("Delete " + entry.path().getFileName() + "?");
+
+        minecraft.setScreen(new ConfirmScreen(
+            confirmed -> {
+                if (confirmed) {
+                    if (WorldPresetOperations.delete(entry.path())) {
+                        statusMessage = "Deleted " + entry.path().getFileName();
+                        selectedIdx = -1;
+                        reloadEntries();
+                    } else {
+                        statusMessage = "Delete failed";
+                    }
+                }
+                minecraft.setScreen(this);
+            },
+            Component.literal("Delete WorldPreset"),
+            message,
+            Component.literal("Delete"),
+            Component.literal("Cancel")
+        ));
+    }
+
+    private boolean isActiveWorldYaml(Path yamlPath) {
+        try {
+            var dimMgr = com.pg85.otg.shared.commands.OTGCommandRegistrar.getDimensionManager();
+            if (dimMgr == null) return false;
+            Path activePath = dimMgr.getActiveWorldPresetConfigPath();
+            if (activePath == null) return false;
+            return Files.isSameFile(yamlPath, activePath);
+        } catch (Exception ignored) {
+            return false;
         }
     }
 

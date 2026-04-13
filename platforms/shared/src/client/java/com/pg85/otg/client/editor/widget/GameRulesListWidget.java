@@ -31,11 +31,15 @@ public class GameRulesListWidget extends ScrollablePanel {
     private List<Field> visibleFields;
     private final List<GameRuleTriStateWidget> rowWidgets = new ArrayList<>();
     private String filter = "";
+    private final Runnable onStructureChanged;
 
-    public GameRulesListWidget(int x, int y, int width, int height, WorldPresetConfig.GameRules rules) {
+    public GameRulesListWidget(int x, int y, int width, int height,
+                                WorldPresetConfig.GameRules rules,
+                                Runnable onStructureChanged) {
         super(x, y + SEARCH_HEIGHT + SEARCH_MARGIN, width, height - SEARCH_HEIGHT - SEARCH_MARGIN,
             GameRuleTriStateWidget.ROW_HEIGHT);
         this.rules = rules;
+        this.onStructureChanged = onStructureChanged;
         this.allFields = enumerateRuleFields();
         this.visibleFields = new ArrayList<>(allFields);
 
@@ -44,6 +48,7 @@ public class GameRulesListWidget extends ScrollablePanel {
         this.search.setOnTextChanged(text -> {
             filter = text == null ? "" : text.toLowerCase(Locale.ROOT);
             applyFilter();
+            onStructureChanged.run();
         });
 
         rebuildRowWidgets();
@@ -127,19 +132,29 @@ public class GameRulesListWidget extends ScrollablePanel {
         renderScrollbar(g);
     }
 
-    public boolean mouseClicked(double mx, double my) {
-        if (handleScrollbarClick(mx, my)) return true;
+    /** Returns: 0 = not handled, 1 = handled (data change), 2 = handled (scroll only, not dirty). */
+    public int mouseClickedResult(double mx, double my) {
+        int before = scrollOffset;
+        if (handleScrollbarClick(mx, my)) {
+            if (scrollOffset != before) onStructureChanged.run();
+            return 2;
+        }
         int visibleRows = getMaxVisible();
         int start = scrollOffset;
         int end = Math.min(start + visibleRows, rowWidgets.size());
         for (int i = start; i < end; i++) {
-            if (rowWidgets.get(i).mouseClicked(mx, my)) return true;
+            if (rowWidgets.get(i).mouseClicked(mx, my)) return 1;
         }
-        return false;
+        return 0;
     }
 
     public boolean mouseDragged(double mx, double my) {
-        return handleScrollbarDrag(mx, my);
+        int before = scrollOffset;
+        boolean consumed = handleScrollbarDrag(mx, my);
+        if (consumed && scrollOffset != before) {
+            onStructureChanged.run();
+        }
+        return consumed;
     }
 
     public boolean mouseReleased() {
@@ -147,7 +162,12 @@ public class GameRulesListWidget extends ScrollablePanel {
     }
 
     public boolean mouseScrolled(double mx, double my, double delta) {
-        return handleMouseScrolled(mx, my, delta);
+        int before = scrollOffset;
+        boolean consumed = handleMouseScrolled(mx, my, delta);
+        if (consumed && scrollOffset != before) {
+            onStructureChanged.run();
+        }
+        return consumed;
     }
 
     private static List<Field> enumerateRuleFields() {

@@ -48,6 +48,10 @@ public class WorldPresetWizardScreen extends Screen {
 
     private WorldPresetConfig staged;
 
+    // Cached duplicate-check result — invalidated when displayName changes.
+    private String lastCheckedName = null;
+    private boolean lastCheckedResult = false;
+
     public WorldPresetWizardScreen(Screen parent) {
         super(Component.literal("New WorldPreset"));
         this.parent = parent;
@@ -142,12 +146,21 @@ public class WorldPresetWizardScreen extends Screen {
     }
 
     private boolean isDuplicateDisplayName(String name) {
+        if (name == null) return false;
+        // Cache: re-scan only when the name changes (avoid per-frame file I/O).
+        if (name.equals(lastCheckedName)) return lastCheckedResult;
         Path root = OTG.getEngine().getOTGRootFolder();
         var entries = WorldPresetFileScanner.scan(root);
+        boolean result = false;
         for (var e : entries) {
-            if (e.config() != null && name.equalsIgnoreCase(e.config().DisplayName)) return true;
+            if (e.config() != null && name.equalsIgnoreCase(e.config().DisplayName)) {
+                result = true;
+                break;
+            }
         }
-        return false;
+        lastCheckedName = name;
+        lastCheckedResult = result;
+        return result;
     }
 
     private void finishWizard() {

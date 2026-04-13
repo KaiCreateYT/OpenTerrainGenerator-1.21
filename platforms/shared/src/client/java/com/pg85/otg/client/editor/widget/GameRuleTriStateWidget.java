@@ -41,30 +41,34 @@ public class GameRuleTriStateWidget {
         this.onChange = onChange;
     }
 
-    /** Positions the widget and, for INT type, creates the EditBox for numeric input. */
+    /** Positions the widget and, for INT type, lazily creates the EditBox on first call. */
     public void init(int x, int y, int width) {
         this.x = x;
         this.y = y;
         this.width = width;
 
         if (type == PropertyType.INT) {
-            var font = Minecraft.getInstance().font;
             int ebX = x + NAME_W + RADIO_DEFAULT_W + RADIO_BOOL_W + 10;
-            intEditBox = new EditBox(font, ebX, y, 60, 14, Component.empty());
-            intEditBox.setValue(currentValue instanceof Integer i ? i.toString() : "");
-            intEditBox.setEditable(currentValue instanceof Integer);
-            intEditBox.setResponder(val -> {
-                if (!(currentValue instanceof Integer)) return;
-                try {
-                    int parsed = Integer.parseInt(val);
-                    currentValue = parsed;
-                    onChange.accept(parsed);
-                } catch (NumberFormatException ignored) {
-                    // keep last valid value, don't push to callback
-                }
-            });
-        } else {
-            intEditBox = null;
+            if (intEditBox == null) {
+                var font = Minecraft.getInstance().font;
+                intEditBox = new EditBox(font, ebX, y, 60, 14, Component.empty());
+                intEditBox.setValue(currentValue instanceof Integer i ? i.toString() : "");
+                intEditBox.setEditable(currentValue instanceof Integer);
+                intEditBox.setResponder(val -> {
+                    if (!(currentValue instanceof Integer)) return;
+                    try {
+                        int parsed = Integer.parseInt(val);
+                        currentValue = parsed;
+                        onChange.accept(parsed);
+                    } catch (NumberFormatException ignored) {
+                        // keep last valid value, don't push to callback
+                    }
+                });
+            } else {
+                // Existing EditBox — reposition only.
+                intEditBox.setX(ebX);
+                intEditBox.setY(y);
+            }
         }
     }
 

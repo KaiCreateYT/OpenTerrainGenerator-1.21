@@ -12,6 +12,7 @@ import com.pg85.otg.presets.DimensionPreset;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
@@ -188,7 +189,7 @@ public class WorldPresetEditorScreen extends Screen {
             working.Overworld = new WorldPresetConfig.OTGOverWorld(null, 0, null, null);
         }
         slotWidget = new DimensionSlotWidget(
-            working.Overworld, true, false, otgPresetFolders, this::markDirty);
+            working.Overworld, true, false, otgPresetFolders, this::markDirty, this::rebuildWidgets);
         slotWidget.init(20, 56, width - 40, this::addRenderableWidget, this::addRenderableWidget);
     }
 
@@ -197,7 +198,7 @@ public class WorldPresetEditorScreen extends Screen {
             working.Nether = new WorldPresetConfig.OTGDimension(null, 0);
         }
         slotWidget = new DimensionSlotWidget(
-            working.Nether, false, true, otgPresetFolders, this::markDirty);
+            working.Nether, false, true, otgPresetFolders, this::markDirty, this::rebuildWidgets);
         slotWidget.init(20, 56, width - 40, this::addRenderableWidget, this::addRenderableWidget);
     }
 
@@ -206,7 +207,7 @@ public class WorldPresetEditorScreen extends Screen {
             working.End = new WorldPresetConfig.OTGDimension(null, 0);
         }
         slotWidget = new DimensionSlotWidget(
-            working.End, false, true, otgPresetFolders, this::markDirty);
+            working.End, false, true, otgPresetFolders, this::markDirty, this::rebuildWidgets);
         slotWidget.init(20, 56, width - 40, this::addRenderableWidget, this::addRenderableWidget);
     }
 
@@ -231,10 +232,17 @@ public class WorldPresetEditorScreen extends Screen {
                 rebuildWidgets();
             };
             Runnable onOpenGameRules = () -> {
-                if (dim.GameRules == null) dim.GameRules = new WorldPresetConfig.GameRules();
+                // Edit on a clone — only commit to dim on Save, so Cancel truly discards changes.
+                WorldPresetConfig.GameRules editTarget = dim.GameRules != null
+                    ? dim.GameRules.clone()
+                    : new WorldPresetConfig.GameRules();
                 minecraft.setScreen(new GameRulesEditorScreen(
-                    dim.GameRules, this,
-                    updated -> markDirty(),
+                    editTarget, this,
+                    updated -> {
+                        // Only attach to dim if user clicked Save AND something is actually set
+                        dim.GameRules = isAnyRuleSet(updated) ? updated : null;
+                        markDirty();
+                    },
                     "GameRules — " + (dim.PresetFolderName == null ? "(unset)" : dim.PresetFolderName)
                 ));
             };
@@ -244,7 +252,7 @@ public class WorldPresetEditorScreen extends Screen {
             };
 
             var card = new DimensionAccordionCard(
-                dim, expanded, onRemove, onOpenGameRules, onToggleExpand, otgPresetFolders, this::markDirty
+                dim, expanded, onRemove, onOpenGameRules, onToggleExpand, otgPresetFolders, this::markDirty, this::rebuildWidgets
             );
             card.init(x, y, width - 20, this::addRenderableWidget, this::addRenderableWidget);
             dimensionCards.add(card);
@@ -268,7 +276,7 @@ public class WorldPresetEditorScreen extends Screen {
 
     private void buildGameRulesTab() {
         if (working.GameRules == null) working.GameRules = new WorldPresetConfig.GameRules();
-        gameRulesList = new GameRulesListWidget(10, 56, width - 20, height - 96, working.GameRules);
+        gameRulesList = new GameRulesListWidget(10, 56, width - 20, height - 96, working.GameRules, this::rebuildWidgets);
         addRenderableWidget(gameRulesList.getSearchEditBox());
         for (var eb : gameRulesList.collectActiveEditBoxes()) {
             addRenderableWidget(eb);
@@ -299,6 +307,19 @@ public class WorldPresetEditorScreen extends Screen {
 
     void markDirty() {
         dirty = true;
+    }
+
+    /** Returns true if at least one GameRules field is non-null. */
+    private static boolean isAnyRuleSet(WorldPresetConfig.GameRules rules) {
+        if (rules == null) return false;
+        try {
+            for (var f : WorldPresetConfig.GameRules.class.getDeclaredFields()) {
+                if (java.lang.reflect.Modifier.isStatic(f.getModifiers())) continue;
+                f.setAccessible(true);
+                if (f.get(rules) != null) return true;
+            }
+        } catch (IllegalAccessException ignored) {}
+        return false;
     }
 
     // --- Rendering ---
@@ -348,10 +369,16 @@ public class WorldPresetEditorScreen extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (tabs != null && tabs.mouseClicked(mouseX, mouseY)) return true;
-        if (activeTab == TAB_GAMERULES && gameRulesList != null && gameRulesList.mouseClicked(mouseX, mouseY)) {
-            markDirty();
-            rebuildWidgets();
-            return true;
+        if (activeTab == TAB_GAMERULES && gameRulesList != null) {
+            int result = gameRulesList.mouseClickedResult(mouseX, mouseY);
+            if (result == 1) {
+                markDirty();
+                // No rebuild needed — data change in place via reflection
+                return true;
+            } else if (result == 2) {
+                // Scrollbar click — onStructureChanged already triggered rebuild, don't mark dirty
+                return true;
+            }
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }
@@ -372,7 +399,6 @@ public class WorldPresetEditorScreen extends Screen {
     public boolean mouseScrolled(double mouseX, double mouseY, double dx, double dy) {
         if (activeTab == TAB_GAMERULES && gameRulesList != null
             && gameRulesList.mouseScrolled(mouseX, mouseY, dy)) {
-            rebuildWidgets();
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, dx, dy);
@@ -380,7 +406,23 @@ public class WorldPresetEditorScreen extends Screen {
 
     @Override
     public void onClose() {
-        minecraft.setScreen(parent);
+        if (dirty) {
+            minecraft.setScreen(new ConfirmScreen(
+                confirmed -> {
+                    if (confirmed) {
+                        minecraft.setScreen(parent);
+                    } else {
+                        minecraft.setScreen(this);
+                    }
+                },
+                Component.literal("Discard unsaved changes?"),
+                Component.literal("You have unsaved changes in this WorldPreset. Discard them?"),
+                Component.literal("Discard"),
+                Component.literal("Keep editing")
+            ));
+        } else {
+            minecraft.setScreen(parent);
+        }
     }
 
     @Override

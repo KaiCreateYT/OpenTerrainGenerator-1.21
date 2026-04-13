@@ -39,7 +39,7 @@ public class GameRulesEditorScreen extends Screen {
         int listW = width - 20;
         int listH = height - 70;
 
-        listWidget = new GameRulesListWidget(listX, listY, listW, listH, rules);
+        listWidget = new GameRulesListWidget(listX, listY, listW, listH, rules, this::rebuildWidgets);
 
         addRenderableWidget(listWidget.getSearchEditBox());
         for (var eb : listWidget.collectActiveEditBoxes()) {
@@ -65,10 +65,8 @@ public class GameRulesEditorScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (listWidget.mouseClicked(mouseX, mouseY)) {
-            rebuildWidgets();
-            return true;
-        }
+        int result = listWidget.mouseClickedResult(mouseX, mouseY);
+        if (result != 0) return true;
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
@@ -86,10 +84,7 @@ public class GameRulesEditorScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double dx, double dy) {
-        if (listWidget.mouseScrolled(mouseX, mouseY, dy)) {
-            rebuildWidgets();
-            return true;
-        }
+        if (listWidget.mouseScrolled(mouseX, mouseY, dy)) return true;
         return super.mouseScrolled(mouseX, mouseY, dx, dy);
     }
 

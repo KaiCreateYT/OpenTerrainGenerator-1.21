@@ -7,7 +7,6 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -32,24 +31,24 @@ public class DimensionSlotWidget {
     private final boolean allowVanilla;
     private final List<String> otgPresets;
     private final Runnable onChanged;
+    private final Runnable onStructureChanged;
 
     // State
-    private int x, y, width;
+    private int x, y;
     private boolean usingNonOTG;
     private boolean usingVanilla;
 
-    // Registered widgets (so Screen can remove them on rebuild)
-    private final List<Button> buttons = new ArrayList<>();
-    private final List<EditBox> editBoxes = new ArrayList<>();
-
     public DimensionSlotWidget(WorldPresetConfig.OTGDimension dim,
                                boolean allowNonOTG, boolean allowVanilla,
-                               List<String> otgPresets, Runnable onChanged) {
+                               List<String> otgPresets,
+                               Runnable onChanged,
+                               Runnable onStructureChanged) {
         this.dim = dim;
         this.allowNonOTG = allowNonOTG;
         this.allowVanilla = allowVanilla;
         this.otgPresets = otgPresets;
         this.onChanged = onChanged;
+        this.onStructureChanged = onStructureChanged;
 
         if (dim instanceof WorldPresetConfig.OTGOverWorld ow) {
             this.usingNonOTG = ow.NonOTGWorldType != null && !ow.NonOTGWorldType.isBlank();
@@ -61,9 +60,6 @@ public class DimensionSlotWidget {
     public void init(int x, int y, int width, Consumer<Button> addButton, Consumer<EditBox> addEditBox) {
         this.x = x;
         this.y = y;
-        this.width = width;
-        buttons.clear();
-        editBoxes.clear();
 
         var font = Minecraft.getInstance().font;
         int row = y;
@@ -78,15 +74,15 @@ public class DimensionSlotWidget {
                 Component.literal((usingNonOTG ? "(●) " : "( ) ") + "Non-OTG Type"),
                 b -> setUsingNonOTG(true)
             ).bounds(x + 135, row, 140, 18).build();
-            registerButton(otgBtn, addButton);
-            registerButton(nonOtgBtn, addButton);
+            addButton.accept(otgBtn);
+            addButton.accept(nonOtgBtn);
             row += 24;
         } else if (allowVanilla) {
             Button vanillaBtn = Button.builder(
                 Component.literal((usingVanilla ? "[✓] " : "[ ] ") + "Use vanilla"),
                 b -> setUsingVanilla(!usingVanilla)
             ).bounds(x, row, 160, 18).build();
-            registerButton(vanillaBtn, addButton);
+            addButton.accept(vanillaBtn);
             row += 24;
         }
 
@@ -97,7 +93,7 @@ public class DimensionSlotWidget {
                 Component.literal(label),
                 b -> cycleNonOTGType()
             ).bounds(x, row, 240, 18).build();
-            registerButton(typeBtn, addButton);
+            addButton.accept(typeBtn);
             row += 24;
 
             // NonOTGGeneratorSettings text field (optional JSON for flat)
@@ -106,7 +102,7 @@ public class DimensionSlotWidget {
             settingsBox.setMaxLength(4096);
             settingsBox.setValue(ow.NonOTGGeneratorSettings == null ? "" : ow.NonOTGGeneratorSettings);
             settingsBox.setResponder(v -> { ow.NonOTGGeneratorSettings = v.isEmpty() ? null : v; onChanged.run(); });
-            registerEditBox(settingsBox, addEditBox);
+            addEditBox.accept(settingsBox);
             row += 24;
         } else if (!usingVanilla) {
             if ((dim.PresetFolderName == null || dim.PresetFolderName.isBlank()) && !otgPresets.isEmpty()) {
@@ -118,7 +114,7 @@ public class DimensionSlotWidget {
                 Component.literal(label),
                 b -> cycleOtgPreset()
             ).bounds(x, row, 240, 18).build();
-            registerButton(presetBtn, addButton);
+            addButton.accept(presetBtn);
             row += 24;
         }
 
@@ -129,31 +125,31 @@ public class DimensionSlotWidget {
         seedBox.setResponder(val -> {
             try { dim.Seed = Long.parseLong(val); onChanged.run(); } catch (NumberFormatException ignored) {}
         });
-        registerEditBox(seedBox, addEditBox);
+        addEditBox.accept(seedBox);
         row += 24;
 
         // Portal config
-        row = portalField(font, x, row, "Blocks:",  dim.PortalBlocks,          v -> { dim.PortalBlocks = blankToNull(v); onChanged.run(); }, addEditBox);
-        row = portalField(font, x, row, "Color:",   dim.PortalColor,           v -> { dim.PortalColor = blankToNull(v); onChanged.run(); }, addEditBox);
-        row = portalField(font, x, row, "Mob:",     dim.PortalMob,             v -> { dim.PortalMob = blankToNull(v); onChanged.run(); }, addEditBox);
-        row = portalField(font, x, row, "Ignition:",dim.PortalIgnitionSource,  v -> { dim.PortalIgnitionSource = blankToNull(v); onChanged.run(); }, addEditBox);
+        row = portalField(font, x, row, dim.PortalBlocks,          v -> { dim.PortalBlocks = blankToNull(v); onChanged.run(); }, addEditBox);
+        row = portalField(font, x, row, dim.PortalColor,           v -> { dim.PortalColor = blankToNull(v); onChanged.run(); }, addEditBox);
+        row = portalField(font, x, row, dim.PortalMob,             v -> { dim.PortalMob = blankToNull(v); onChanged.run(); }, addEditBox);
+        row = portalField(font, x, row, dim.PortalIgnitionSource,  v -> { dim.PortalIgnitionSource = blankToNull(v); onChanged.run(); }, addEditBox);
 
         // Respawn checkbox
         boolean respawn = Boolean.TRUE.equals(dim.RespawnInDimension);
         Button respawnBtn = Button.builder(
             Component.literal((respawn ? "[✓] " : "[ ] ") + "RespawnInDimension"),
-            b -> { dim.RespawnInDimension = !Boolean.TRUE.equals(dim.RespawnInDimension); onChanged.run(); }
+            b -> { dim.RespawnInDimension = !Boolean.TRUE.equals(dim.RespawnInDimension); onChanged.run(); onStructureChanged.run(); }
         ).bounds(x, row, 200, 18).build();
-        registerButton(respawnBtn, addButton);
+        addButton.accept(respawnBtn);
     }
 
-    private int portalField(net.minecraft.client.gui.Font font, int x, int row, String label,
+    private int portalField(net.minecraft.client.gui.Font font, int x, int row,
                              String value, Consumer<String> setter, Consumer<EditBox> addEditBox) {
         EditBox box = new EditBox(font, x + 90, row, 220, 16, Component.empty());
         box.setMaxLength(128);
         box.setValue(value == null ? "" : value);
         box.setResponder(setter);
-        registerEditBox(box, addEditBox);
+        addEditBox.accept(box);
         return row + 20;
     }
 
@@ -170,6 +166,7 @@ public class DimensionSlotWidget {
         int next = (idx + 1) % BUILT_IN_NON_OTG_TYPES.size();
         ow.NonOTGWorldType = BUILT_IN_NON_OTG_TYPES.get(next);
         onChanged.run();
+        onStructureChanged.run();
     }
 
     private void cycleOtgPreset() {
@@ -178,6 +175,7 @@ public class DimensionSlotWidget {
         int next = (idx + 1) % otgPresets.size();
         dim.PresetFolderName = otgPresets.get(next);
         onChanged.run();
+        onStructureChanged.run();
     }
 
     private void setUsingNonOTG(boolean useNonOTG) {
@@ -186,6 +184,7 @@ public class DimensionSlotWidget {
         if (useNonOTG) {
             if (ow.NonOTGWorldType == null) ow.NonOTGWorldType = "normal";
             ow.PresetFolderName = null;
+            this.usingVanilla = false;
         } else {
             ow.NonOTGWorldType = null;
             ow.NonOTGGeneratorSettings = null;
@@ -194,6 +193,7 @@ public class DimensionSlotWidget {
             }
         }
         onChanged.run();
+        onStructureChanged.run();
     }
 
     private void setUsingVanilla(boolean vanilla) {
@@ -204,38 +204,37 @@ public class DimensionSlotWidget {
             dim.PresetFolderName = otgPresets.get(0);
         }
         onChanged.run();
+        onStructureChanged.run();
     }
 
     public void render(GuiGraphics g, int mouseX, int mouseY) {
         var font = Minecraft.getInstance().font;
-        int row = y + (allowNonOTG || allowVanilla ? 24 : 0);
-        // preset/type row
-        row += 24;
-        if (usingNonOTG) row += 24; // NonOTGGeneratorSettings row
+        int row = y;
+
+        // Mode selector row (OTG/Non-OTG or Use vanilla) — mirrors init()
+        if (allowNonOTG || allowVanilla) row += 24;
+
+        // Preset/type row — ONLY when not vanilla
+        if (!usingVanilla) {
+            row += 24;
+            if (usingNonOTG) {
+                g.drawString(font, "Generator Settings (JSON):", x, row + 4, 0xFF888888);
+                row += 24;
+            }
+        }
+
+        // Seed
         g.drawString(font, "Seed:", x, row + 4, 0xFFAAAAAA);
         row += 24;
+
+        // Portal config (always rendered — matches init())
         g.drawString(font, "Portal Blocks:",   x, row + 4, 0xFFAAAAAA); row += 20;
         g.drawString(font, "Portal Color:",    x, row + 4, 0xFFAAAAAA); row += 20;
         g.drawString(font, "Portal Mob:",      x, row + 4, 0xFFAAAAAA); row += 20;
         g.drawString(font, "Ignition Source:", x, row + 4, 0xFFAAAAAA);
-
-        if (usingNonOTG) {
-            int settingsRow = y + (allowNonOTG ? 24 : 0) + 24;
-            g.drawString(font, "Generator Settings (JSON):", x, settingsRow + 4, 0xFF888888);
-        }
     }
 
     private static String blankToNull(String s) {
         return (s == null || s.isBlank()) ? null : s;
-    }
-
-    private void registerButton(Button b, Consumer<Button> adder) {
-        buttons.add(b);
-        adder.accept(b);
-    }
-
-    private void registerEditBox(EditBox e, Consumer<EditBox> adder) {
-        editBoxes.add(e);
-        adder.accept(e);
     }
 }
