@@ -1,5 +1,16 @@
 ## Minecraft 1.21.1 — Fabric + NeoForge
 
+**2026-05-15 — DefaultPreset: 8 nowych waniliowych biomów (1.18-1.20)**
+
+- **Biomy 1.18 mountains**: Meadow, Grove, Snowy Slopes, Frozen Peaks, Jagged Peaks, Stony Peaks
+- **Biome 1.19**: Mangrove Swamp (mud ground, swamp grass modifier, foliage 0x8DB127, water 0x3A7A6A)
+- **Biome 1.20**: Cherry Grove (grass+foliage 0xB6DB61, water 0x5DB7EF, pink_petals)
+- **BiomeGroups**: dodane do NormalBiomes (Meadow, Cherry Grove, Mangrove Swamp), ColdBiomes (Grove), HotBiomes (Stony Peaks), IceBiomes (Snowy Slopes)
+- **IsleBiomes**: Frozen Peaks i Jagged Peaks jako wyspy w Snowy Slopes (rarity 80)
+- **Surface bloki specjalne**: Stony Peaks → stone, Frozen Peaks → packed_ice, Snowy Slopes/Jagged Peaks → snow_block over stone, Grove → snow_block, Mangrove Swamp → grass_block over mud
+- **Vegetation via vanilla feature Registry**: trees_meadow/flower_meadow, trees_grove, trees_mangrove/mangrove_vegetation/seagrass_swamp, trees_cherry_grove/flower_cherry
+- Music tracks i mob spawning dziedziczone przez InheritMobsBiomeName z odpowiednich vanilla ID
+
 **2026-05-15 — In-game editor: DimensionPreset creation**
 
 - **ManageDimensionPresetsScreen**: lists all DimensionPresets with summary (folder, display name, registry name, author, description, biome count); CRUD buttons (New/Clone/Edit/Delete). Edit opens existing `WorldSettingsScreen`. DefaultPreset is delete-disabled. Delete warns when WorldPreset YAMLs reference the preset by `PresetFolderName`.
