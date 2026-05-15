@@ -80,11 +80,16 @@ public class EditorHubScreen extends Screen {
         }).bounds(cx + 100, y, 20, 20).build());
 
         addRenderableWidget(Button.builder(
+            Component.literal("Manage DimensionPresets"),
+            btn -> minecraft.setScreen(new ManageDimensionPresetsScreen(this))
+        ).bounds(cx + 125, y, 150, 20).build());
+
+        addRenderableWidget(Button.builder(
             Component.literal("Manage WorldPresets"),
             btn -> minecraft.setScreen(new ManageWorldPresetsScreen(this))
-        ).bounds(cx + 125, y, 130, 20).build());
+        ).bounds(cx + 125, y + 22, 150, 20).build());
 
-        y += 30;
+        y += 52;
 
         // Navigation cards
         int cardW = 140;

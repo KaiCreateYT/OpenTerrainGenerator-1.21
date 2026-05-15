@@ -1,5 +1,12 @@
 ## Minecraft 1.21.1 — Fabric + NeoForge
 
+**2026-05-15 — In-game editor: DimensionPreset creation**
+
+- **ManageDimensionPresetsScreen**: lists all DimensionPresets with summary (folder, display name, registry name, author, description, biome count); CRUD buttons (New/Clone/Edit/Delete). Edit opens existing `WorldSettingsScreen`. DefaultPreset is delete-disabled. Delete warns when WorldPreset YAMLs reference the preset by `PresetFolderName`.
+- **DimensionPresetWizardScreen**: 4-step creation wizard — template picker ("Blank Minimal" = DefaultPreset baseline + every preset on disk), metadata (DisplayName/FolderName/RegistryName/Author/Description with auto-suggest), biome strategy info, confirm. Finish copies the template folder, patches identity fields, reloads presets, and opens `WorldSettingsScreen` on the new preset.
+- **Data layer**: `DimensionPresetOperations` (newFromTemplate / cloneFrom / delete / findWorldPresetsReferencing / suggestFolderName / patchIniSettings — preserves comments and structure when rewriting identity fields), `DimensionPresetTemplates` (lists DefaultPreset as Blank Minimal + every other preset on disk).
+- **EditorHubScreen**: "Manage DimensionPresets" button stacked above "Manage WorldPresets" near preset selector; main cards shifted down by 22px to make room.
+
 **2026-04-13 — In-game editor Phase 5: WorldPreset YAML editor**
 
 - **ManageWorldPresetsScreen**: lists all `WorldPresets/*.yaml` with summary panel; CRUD buttons (New/Clone/Edit/Delete)
