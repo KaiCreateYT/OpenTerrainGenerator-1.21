@@ -54,9 +54,9 @@ BiomeSizeWhenBorder: 8
 # +-----------------------------------------------------------------+ #
 #######################################################################
 
-BiomeHeight: 2.5
+BiomeHeight: 0.5
 
-BiomeVolatility: 0.2
+BiomeVolatility: 0.05
 
 SmoothRadius: 8
 
@@ -217,7 +217,7 @@ UnderWaterOre(minecraft:sand,7,3,100.0,minecraft:dirt,minecraft:grass_block)
 UnderWaterOre(minecraft:clay,4,1,100.0,minecraft:dirt,minecraft:clay)
 UnderWaterOre(minecraft:gravel,6,1,100.0,minecraft:dirt,minecraft:grass_block)
 Dungeon(8.0,10,100)
-Registry(minecraft:trees_meadow,VEGETAL_DECORATION)
+Tree(1,Tree,30,Birch,100)
 Registry(minecraft:flower_meadow,VEGETAL_DECORATION)
 Grass(Tallgrass,NotGrouped,40,100.0,minecraft:grass_block,minecraft:dirt)
 Grass(DoubleTallgrass,Grouped,5,15.0,minecraft:grass_block,minecraft:dirt)

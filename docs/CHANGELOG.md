@@ -1,5 +1,21 @@
 ## Minecraft 1.21.1 — Fabric + NeoForge
 
+**2026-05-15 — Fix drzew w nowych biomach**
+
+- `Registry(minecraft:trees_*)` zamienione na natywne `Tree()` syntax — pewniejsze mapowanie przez `TreeType` enum
+- Cherry Grove: `Tree(10,Cherry,100)` (TreeFeatures.CHERRY)
+- Mangrove Swamp: `Tree(8,TallMangrove,30,Mangrove,100)` (TreeFeatures.TALL_MANGROVE / MANGROVE)
+- Grove: `Tree(10,Taiga2,80,Taiga1,100)` (spruce + pine)
+- Meadow: `Tree(1,Tree,30,Birch,100)` (rzadki oak + birch)
+- Flower features (`flower_meadow`, `flower_cherry`) zostawione jako `Registry()` — brak natywnego OTG mappingu
+
+**2026-05-15 — Fix BiomeHeight nowych biomów**
+
+- Wartości BiomeHeight 7.0/7.5 dla Frozen/Jagged Peaks generowały biomy poza build limitem — odwzorowane były z konwencji Biome Bundle, nie DefaultPreset
+- Skala DefaultPreset: Plains 0.25 / Hills 0.45 / Mountain Edge 0.8 / Mountains 1.0 (cap)
+- Nowe wartości: Meadow 0.5, Grove 0.5, Cherry Grove 0.6, Snowy Slopes 1.3, Stony Peaks 1.5, Frozen Peaks 1.8, Jagged Peaks 2.0
+- BiomeVolatility też okrojone: Jagged Peaks z 0.7 na 0.6, reszta dopasowana do biomów hills/mountains z istniejącego presetu
+
 **2026-05-15 — DefaultPreset: 8 nowych waniliowych biomów (1.18-1.20)**
 
 - **Biomy 1.18 mountains**: Meadow, Grove, Snowy Slopes, Frozen Peaks, Jagged Peaks, Stony Peaks

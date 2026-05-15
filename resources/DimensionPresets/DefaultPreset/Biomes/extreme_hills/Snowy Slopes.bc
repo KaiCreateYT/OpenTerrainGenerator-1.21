@@ -54,9 +54,9 @@ BiomeSizeWhenBorder: 8
 # +-----------------------------------------------------------------+ #
 #######################################################################
 
-BiomeHeight: 5.0
+BiomeHeight: 1.3
 
-BiomeVolatility: 0.5
+BiomeVolatility: 0.4
 
 SmoothRadius: 8
 
