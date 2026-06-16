@@ -17,12 +17,15 @@ IsUndergroundBiome: true
 UndergroundMinY: -64
 UndergroundMaxY: 256
 UndergroundPriority: 10
-UndergroundBiomeRarity: 40.0
+UndergroundBiomeRarity: 7.0
+UndergroundRegionSize: 110
+UndergroundVerticalScale: 0.7
 
-# Spawns under warm and wet surface biomes
-MinSurfaceTemperature: 0.5
+# Independent of surface biome (placed by its own 3D noise).
+# To restrict to wet biomes, raise MinSurfaceWetness (e.g. 0.7).
+MinSurfaceTemperature: 0.0
 MaxSurfaceTemperature: 2.0
-MinSurfaceWetness: 0.7
+MinSurfaceWetness: 0.0
 MaxSurfaceWetness: 1.0
 
 #######################################################################

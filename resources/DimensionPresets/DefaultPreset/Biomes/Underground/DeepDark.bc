@@ -19,7 +19,9 @@ IsUndergroundBiome: true
 UndergroundMinY: -64
 UndergroundMaxY: -20
 UndergroundPriority: 5
-UndergroundBiomeRarity: 15.0
+UndergroundBiomeRarity: 12.0
+UndergroundRegionSize: 72
+UndergroundVerticalScale: 0.9
 
 # Deep Dark appears under all surface biomes
 MinSurfaceTemperature: 0.0
