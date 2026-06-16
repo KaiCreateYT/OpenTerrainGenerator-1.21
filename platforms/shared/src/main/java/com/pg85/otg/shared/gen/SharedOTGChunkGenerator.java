@@ -196,9 +196,6 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
             );
             this.breakthroughNoise = new SimplexNoise(new WorldgenRandom(new LegacyRandomSource(this.seed ^ 0xCA0EB1A5L)));
             OTGLog.info(LogCategory.MAIN, "Created cave-only RandomState (terrain-independent density, debug components resolved)");
-
-            double threshold = caveCfg.getUndergroundBiomeCheeseDensityThreshold();
-            otgBiomeProvider.setCheeseCaveDensity(this.caveComponents.cheese(), threshold);
         }
     }
 
