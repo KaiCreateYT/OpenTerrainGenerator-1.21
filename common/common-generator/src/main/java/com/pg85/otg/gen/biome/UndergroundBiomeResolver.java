@@ -21,6 +21,9 @@ public class UndergroundBiomeResolver {
     /** Blocks over which the underground zone fades in below the surface threshold. */
     private static final int DEPTH_TRANSITION = 16;
 
+    /** Number of probe samples used to build the empirical noise-value distribution. */
+    private static final int QUANTILE_SAMPLES = 4096;
+
     public record UndergroundCandidate(
             int otgBiomeId, int minY, int maxY, int priority,
             float coverage, int regionSize, float verticalScale) {}
@@ -28,6 +31,9 @@ public class UndergroundBiomeResolver {
     private final Int2ObjectOpenHashMap<List<UndergroundCandidate>> candidatesBySurfaceBiome;
     private final Int2ObjectOpenHashMap<Integer> startOffsetBySurfaceBiome;
     private final Int2ObjectOpenHashMap<UndergroundRegionNoise> noiseByBiomeId;
+
+    /** Sorted empirical samples of the noise value distribution; maps coverage -> threshold. */
+    private final float[] coverageQuantiles;
 
     public UndergroundBiomeResolver(IBiome[] biomesById, long worldSeed) {
         this.candidatesBySurfaceBiome = new Int2ObjectOpenHashMap<>();
@@ -50,6 +56,8 @@ public class UndergroundBiomeResolver {
                     ubs.getMinSurfaceWetness(), ubs.getMaxSurfaceWetness()));
             this.noiseByBiomeId.put(id, new UndergroundRegionNoise(worldSeed, id));
         }
+
+        this.coverageQuantiles = buildCoverageQuantiles(worldSeed);
 
         for (int surfaceId = 0; surfaceId < biomesById.length; surfaceId++) {
             if (biomesById[surfaceId] == null) continue;
@@ -92,6 +100,39 @@ public class UndergroundBiomeResolver {
     }
 
     /**
+     * Builds an empirical, sorted sample of the noise value distribution. Perlin output is
+     * not uniform, so we calibrate coverage% against the real distribution: see
+     * {@link #thresholdForCoverage}. The distribution shape is seed-independent in frequency,
+     * so one calibration noise represents all underground biomes.
+     */
+    private static float[] buildCoverageQuantiles(long worldSeed) {
+        UndergroundRegionNoise calibration = new UndergroundRegionNoise(worldSeed, 0x5EED);
+        java.util.Random probe = new java.util.Random(worldSeed ^ 0xA17C5EEDL);
+        float[] samples = new float[QUANTILE_SAMPLES];
+        for (int i = 0; i < QUANTILE_SAMPLES; i++) {
+            int x = probe.nextInt(1_000_000) - 500_000;
+            int y = probe.nextInt(1_000_000) - 500_000;
+            int z = probe.nextInt(1_000_000) - 500_000;
+            samples[i] = (float) calibration.sample(x, y, z, 1.0, 1.0);
+        }
+        java.util.Arrays.sort(samples);
+        return samples;
+    }
+
+    /**
+     * Maps a desired coverage fraction [0,1] to the noise threshold that yields approximately
+     * that fraction of volume, using the empirical distribution. coverageFraction=1 fills all,
+     * 0 fills none.
+     */
+    private float thresholdForCoverage(double coverageFraction) {
+        double q = 1.0 - coverageFraction; // we want P(n >= threshold) == coverageFraction
+        if (q <= 0.0) return Float.NEGATIVE_INFINITY; // fill everything
+        if (q >= 1.0) return Float.POSITIVE_INFINITY; // fill nothing
+        int idx = (int) (q * (this.coverageQuantiles.length - 1));
+        return this.coverageQuantiles[idx];
+    }
+
+    /**
      * @return OTG biome id of the underground biome at this position, or -1 for none.
      */
     public int resolve(int surfaceBiomeId, int worldX, int worldY, int worldZ, int estimatedSurfaceY) {
@@ -114,9 +155,9 @@ public class UndergroundBiomeResolver {
             if (c.coverage() <= 0.0f) continue;
             UndergroundRegionNoise noise = this.noiseByBiomeId.get(c.otgBiomeId());
             if (noise == null) continue;
+            double effectiveCoverage = (c.coverage() / 100.0) * depthWeight; // [0,1] target volume fraction
+            float threshold = thresholdForCoverage(effectiveCoverage);
             double n = noise.sample(worldX, worldY, worldZ, c.regionSize(), c.verticalScale());
-            // coverage% -> threshold: 100 => 0 (present everywhere qualifying), 0 => 1 (never).
-            double threshold = 1.0 - (c.coverage() / 100.0) * depthWeight;
             if (n >= threshold) return c.otgBiomeId();
         }
         return -1;
