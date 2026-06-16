@@ -12,45 +12,29 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Resolves underground biomes based on surface biome properties and Y coordinate.
- * Pre-computes lookup tables at initialization for minimal runtime cost.
- * Thread-safe: all state is immutable after construction.
+ * Resolves underground biomes from a 3D noise field, independent of the surface biome
+ * by default. Pre-computes per-surface-biome candidate lists at construction.
+ * Thread-safe: all state immutable after construction.
  */
 public class UndergroundBiomeResolver {
 
-    /**
-     * Immutable record for a candidate underground biome at runtime.
-     * Only minY, maxY, and otgBiomeId are needed — conditions are pre-filtered.
-     */
-    public record UndergroundCandidate(int otgBiomeId, int minY, int maxY, int priority, float rarity) {}
+    /** Blocks over which the underground zone fades in below the surface threshold. */
+    private static final int DEPTH_TRANSITION = 16;
 
-    private static final int REGION_SIZE = 64;
+    public record UndergroundCandidate(
+            int otgBiomeId, int minY, int maxY, int priority,
+            float coverage, int regionSize, float verticalScale) {}
 
-    /**
-     * Pre-computed map: surfaceBiomeOtgId -> sorted list of underground candidates.
-     * Candidates are already filtered by temperature/wetness conditions and allowed/disallowed lists.
-     * Sorted by priority ascending (lower = higher priority).
-     */
     private final Int2ObjectOpenHashMap<List<UndergroundCandidate>> candidatesBySurfaceBiome;
-
-    /**
-     * Map: otgBiomeId -> UndergroundBiomeStartOffset for surface biomes.
-     */
     private final Int2ObjectOpenHashMap<Integer> startOffsetBySurfaceBiome;
+    private final Int2ObjectOpenHashMap<UndergroundRegionNoise> noiseByBiomeId;
 
-    private final long worldSeed;
-
-    /**
-     * Builds the resolver from all loaded biomes.
-     *
-     * @param biomesById Array of all biomes indexed by OTG biome ID.
-     */
     public UndergroundBiomeResolver(IBiome[] biomesById, long worldSeed) {
         this.candidatesBySurfaceBiome = new Int2ObjectOpenHashMap<>();
         this.startOffsetBySurfaceBiome = new Int2ObjectOpenHashMap<>();
-        this.worldSeed = worldSeed;
+        this.noiseByBiomeId = new Int2ObjectOpenHashMap<>();
 
-        // Collect all underground biomes
+        // Collect underground biomes + build one noise field each.
         List<UndergroundBiomeInfo> undergroundBiomes = new ArrayList<>();
         for (int id = 0; id < biomesById.length; id++) {
             if (biomesById[id] == null) continue;
@@ -59,38 +43,27 @@ public class UndergroundBiomeResolver {
             UndergroundBiomeSettings ubs = settings.getUndergroundSettings();
             if (!ubs.isUndergroundBiome()) continue;
             undergroundBiomes.add(new UndergroundBiomeInfo(
-                    id,
-                    settings.getConfigName(),
-                    ubs.getUndergroundMinY(),
-                    ubs.getUndergroundMaxY(),
-                    ubs.getUndergroundPriority(),
-                    ubs.getUndergroundBiomeRarity(),
-                    ubs.getMinSurfaceTemperature(),
-                    ubs.getMaxSurfaceTemperature(),
-                    ubs.getMinSurfaceWetness(),
-                    ubs.getMaxSurfaceWetness()
-            ));
+                    id, settings.getConfigName(),
+                    ubs.getUndergroundMinY(), ubs.getUndergroundMaxY(), ubs.getUndergroundPriority(),
+                    ubs.getUndergroundBiomeRarity(), ubs.getUndergroundRegionSize(), ubs.getUndergroundVerticalScale(),
+                    ubs.getMinSurfaceTemperature(), ubs.getMaxSurfaceTemperature(),
+                    ubs.getMinSurfaceWetness(), ubs.getMaxSurfaceWetness()));
+            this.noiseByBiomeId.put(id, new UndergroundRegionNoise(worldSeed, id));
         }
 
-        // For each surface biome, pre-compute matching underground candidates
         for (int surfaceId = 0; surfaceId < biomesById.length; surfaceId++) {
             if (biomesById[surfaceId] == null) continue;
             BiomeSettings surfaceSettings = biomesById[surfaceId].getBiomeSettings();
             UndergroundBiomeSettings surfaceUbs = surfaceSettings.getUndergroundSettings();
 
-            // Store start offset
-            int startOffset = (surfaceUbs != null)
-                    ? surfaceUbs.getUndergroundBiomeStartOffset()
-                    : 8; // default
-            startOffsetBySurfaceBiome.put(surfaceId, Integer.valueOf(startOffset));
+            int startOffset = (surfaceUbs != null) ? surfaceUbs.getUndergroundBiomeStartOffset() : 8;
+            this.startOffsetBySurfaceBiome.put(surfaceId, Integer.valueOf(startOffset));
 
-            // Skip underground biomes as surface providers
-            if (surfaceUbs != null && surfaceUbs.isUndergroundBiome()) continue;
+            if (surfaceUbs != null && surfaceUbs.isUndergroundBiome()) continue; // ug biomes aren't surfaces
 
             float surfaceTemp = surfaceSettings.getVisualSettings().getBiomeTemperature();
             float surfaceWet = surfaceSettings.getVisualSettings().getBiomeWetness();
 
-            // Get allowed/disallowed lists
             List<String> allowed = (surfaceUbs != null) ? surfaceUbs.getAllowedUndergroundBiomes() : List.of();
             List<String> disallowed = (surfaceUbs != null) ? surfaceUbs.getDisallowedUndergroundBiomes() : List.of();
             boolean hasAllowedFilter = allowed != null && !allowed.isEmpty();
@@ -98,23 +71,18 @@ public class UndergroundBiomeResolver {
 
             List<UndergroundCandidate> candidates = new ArrayList<>();
             for (UndergroundBiomeInfo ub : undergroundBiomes) {
-                // Check temperature conditions
+                // Optional soft coupling to the surface biome (defaults = no coupling).
                 if (surfaceTemp < ub.minTemp || surfaceTemp > ub.maxTemp) continue;
-                // Check wetness conditions
                 if (surfaceWet < ub.minWet || surfaceWet > ub.maxWet) continue;
-                // Check allowed list
                 if (hasAllowedFilter && !allowed.contains(ub.biomeName)) continue;
-                // Check disallowed list
                 if (hasDisallowedFilter && disallowed.contains(ub.biomeName)) continue;
-
-                candidates.add(new UndergroundCandidate(ub.otgBiomeId, ub.minY, ub.maxY, ub.priority, ub.rarity));
+                candidates.add(new UndergroundCandidate(
+                        ub.otgBiomeId, ub.minY, ub.maxY, ub.priority,
+                        ub.coverage, ub.regionSize, ub.verticalScale));
             }
-
-            // Sort by priority (ascending)
             candidates.sort(Comparator.comparingInt(UndergroundCandidate::priority));
-
             if (!candidates.isEmpty()) {
-                candidatesBySurfaceBiome.put(surfaceId, List.copyOf(candidates));
+                this.candidatesBySurfaceBiome.put(surfaceId, List.copyOf(candidates));
             }
         }
 
@@ -124,71 +92,43 @@ public class UndergroundBiomeResolver {
     }
 
     /**
-     * Resolves the underground biome at the given position.
-     *
-     * @param surfaceBiomeId OTG biome ID of the surface biome at (x, z)
-     * @param worldX         World X coordinate
-     * @param worldY         World Y coordinate (NOT noise Y)
-     * @param worldZ         World Z coordinate
-     * @param estimatedSurfaceY Estimated surface height at (x, z)
-     * @return OTG biome ID of the underground biome, or -1 if no underground biome applies
+     * @return OTG biome id of the underground biome at this position, or -1 for none.
      */
     public int resolve(int surfaceBiomeId, int worldX, int worldY, int worldZ, int estimatedSurfaceY) {
-        Integer startOffset = startOffsetBySurfaceBiome.get(surfaceBiomeId);
+        Integer startOffset = this.startOffsetBySurfaceBiome.get(surfaceBiomeId);
         if (startOffset == null) return -1;
 
-        int undergroundStart = estimatedSurfaceY - startOffset;
-        if (worldY >= undergroundStart) return -1;
-
-        List<UndergroundCandidate> candidates = candidatesBySurfaceBiome.get(surfaceBiomeId);
+        // Cheap early exit before any arithmetic for surfaces with no candidates.
+        List<UndergroundCandidate> candidates = this.candidatesBySurfaceBiome.get(surfaceBiomeId);
         if (candidates == null) return -1;
 
-        for (UndergroundCandidate candidate : candidates) {
-            if (worldY >= candidate.minY && worldY <= candidate.maxY) {
-                if (passesRarityCheck(worldX, worldZ, candidate.otgBiomeId, candidate.rarity)) {
-                    return candidate.otgBiomeId;
-                }
-            }
-        }
+        int undergroundStart = estimatedSurfaceY - startOffset.intValue();
+        if (worldY >= undergroundStart) return -1;
 
+        // Smooth fade-in: 0 at the threshold, ramping to 1 over DEPTH_TRANSITION blocks below.
+        double depthWeight = (undergroundStart - worldY) / (double) DEPTH_TRANSITION;
+        if (depthWeight > 1.0) depthWeight = 1.0;
+
+        for (UndergroundCandidate c : candidates) {
+            if (worldY < c.minY() || worldY > c.maxY()) continue;
+            if (c.coverage() <= 0.0f) continue;
+            UndergroundRegionNoise noise = this.noiseByBiomeId.get(c.otgBiomeId());
+            if (noise == null) continue;
+            double n = noise.sample(worldX, worldY, worldZ, c.regionSize(), c.verticalScale());
+            // coverage% -> threshold: 100 => 0 (present everywhere qualifying), 0 => 1 (never).
+            double threshold = 1.0 - (c.coverage() / 100.0) * depthWeight;
+            if (n >= threshold) return c.otgBiomeId();
+        }
         return -1;
     }
 
-    /**
-     * Deterministic rarity check using region-based hashing.
-     * Divides the world into REGION_SIZE x REGION_SIZE blocks (XZ plane).
-     * Each region gets a deterministic roll based on position, world seed, and biome ID.
-     */
-    private boolean passesRarityCheck(int worldX, int worldZ, int biomeId, float rarity) {
-        if (rarity >= 100.0f) return true;
-        if (rarity <= 0.0f) return false;
-
-        int regionX = Math.floorDiv(worldX, REGION_SIZE);
-        int regionZ = Math.floorDiv(worldZ, REGION_SIZE);
-
-        long hash = regionX * 341873128712L + regionZ * 132897987541L
-                + worldSeed + biomeId * 6364136223846793005L;
-        hash ^= (hash >>> 33);
-        hash *= 0xff51afd7ed558ccdL;
-        hash ^= (hash >>> 33);
-
-        float roll = (float) ((hash & 0x7FFFFFFFL) % 10000) / 100.0f;
-        return roll < rarity;
-    }
-
-    /**
-     * Returns true if any underground biomes are configured.
-     */
     public boolean hasUndergroundBiomes() {
-        return !candidatesBySurfaceBiome.isEmpty();
+        return !this.candidatesBySurfaceBiome.isEmpty();
     }
 
     private record UndergroundBiomeInfo(
-            int otgBiomeId,
-            String biomeName,
+            int otgBiomeId, String biomeName,
             int minY, int maxY, int priority,
-            float rarity,
-            float minTemp, float maxTemp,
-            float minWet, float maxWet
-    ) {}
+            float coverage, int regionSize, float verticalScale,
+            float minTemp, float maxTemp, float minWet, float maxWet) {}
 }
