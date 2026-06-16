@@ -18,6 +18,8 @@ public class UndergroundBiomeSettings extends ConfigSection {
     private final int undergroundMaxY;
     private final int undergroundPriority;
     private final float undergroundBiomeRarity;
+    private final int undergroundRegionSize;
+    private final float undergroundVerticalScale;
     private final float minSurfaceTemperature;
     private final float maxSurfaceTemperature;
     private final float minSurfaceWetness;
@@ -76,9 +78,25 @@ public class UndergroundBiomeSettings extends ConfigSection {
     public static final Setting<Float> UNDERGROUND_BIOME_RARITY = Settings.floatSetting(
             "UndergroundBiomeRarity", 100.0f, 0.0f, 100.0f,
             t -> ((UndergroundBiomeSettings) t).getUndergroundBiomeRarity(),
-            "Percentage chance (0-100) that this underground biome spawns in a qualifying region.",
-            "The world is divided into ~64-block regions. Each region independently rolls against this value.",
-            "100 = always spawn (default), 10 = 10% of qualifying regions get this biome, 0 = never spawn."
+            "Percentage of the qualifying underground volume this biome fills (coverage).",
+            "Driven by a 3D noise field: 100 = fills all qualifying volume,",
+            "50 = roughly half (organic blobs with gaps of normal cave between them),",
+            "0 = never. Default 100."
+    );
+
+    public static final Setting<Integer> UNDERGROUND_REGION_SIZE = Settings.intSetting(
+            "UndergroundRegionSize", 96, 8, 1024,
+            t -> ((UndergroundBiomeSettings) t).getUndergroundRegionSize(),
+            "Approximate size in blocks of the organic regions this biome forms.",
+            "Larger = bigger continuous blobs, smaller = more scattered patches. Default 96."
+    );
+
+    public static final Setting<Float> UNDERGROUND_VERTICAL_SCALE = Settings.floatSetting(
+            "UndergroundVerticalScale", 0.7f, 0.05f, 4.0f,
+            t -> ((UndergroundBiomeSettings) t).getUndergroundVerticalScale(),
+            "Vertical stretch of the regions.",
+            "Below 1.0 stretches blobs vertically (taller columns); above 1.0 flattens them.",
+            "Default 0.7."
     );
 
     // === Conditions based on surface biome ===
@@ -141,6 +159,8 @@ public class UndergroundBiomeSettings extends ConfigSection {
         builder.undergroundMaxY(reader.getSetting(UNDERGROUND_MAX_Y));
         builder.undergroundPriority(reader.getSetting(UNDERGROUND_PRIORITY));
         builder.undergroundBiomeRarity(reader.getSetting(UNDERGROUND_BIOME_RARITY));
+        builder.undergroundRegionSize(reader.getSetting(UNDERGROUND_REGION_SIZE));
+        builder.undergroundVerticalScale(reader.getSetting(UNDERGROUND_VERTICAL_SCALE));
         builder.minSurfaceTemperature(reader.getSetting(MIN_SURFACE_TEMPERATURE));
         builder.maxSurfaceTemperature(reader.getSetting(MAX_SURFACE_TEMPERATURE));
         builder.minSurfaceWetness(reader.getSetting(MIN_SURFACE_WETNESS));
