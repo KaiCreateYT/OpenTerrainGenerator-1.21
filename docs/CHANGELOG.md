@@ -1,5 +1,17 @@
 ## Minecraft 1.21.1 — Fabric + NeoForge
 
+**2026-06-17 — Przeprojektowanie biomów podziemnych 3D (prawdziwe regiony 3D + pełna kontrola OTG)**
+
+- **Rozmieszczanie szumem 3D**: biomy podziemne tworzą organiczne, spójne regiony 3D zamiast siatki 64×64. Nowa klasa `UndergroundRegionNoise` (3D Perlin, seed per biom) + ustawienia `UndergroundRegionSize` (wielkość blobów) i `UndergroundVerticalScale` (rozciągnięcie w pionie).
+- **`UndergroundBiomeRarity` → pokrycie %**: reinterpretacja jako ułamek objętości. Mapowanie zlinearyzowane empiryczną kwantylą rozkładu szumu (`coverage 20` ≈ realnie 20% objętości), bo surowy Perlin kumuluje się koło 0.5.
+- **Niezależność od powierzchni**: placement steruje szum 3D + głębokość; `MinSurfaceTemperature/Wetness` zostają jako opcjonalny miękki filtr (domyślnie pełny zakres = brak sprzężenia). Płynne wyciszenie blisko powierzchni zamiast twardego cięcia.
+- **Usunięty cheese-air gate**: biom zajmuje całą komórkę 3D regionu (nie tylko powietrze), więc vanilla `applyBiomeDecoration` wypełnia regiony feature'ami (mech/dripstone/sculk) — naprawia "małe losowe płaty".
+- **Pełna kontrola OTG (Level 2)**:
+  - `OTGChunkGenerator.populateNoise` konwertuje `StoneBlock` per biom podziemny w całym regionie (kształt terenu bez zmian) — mapa `UndergroundBiomeMap` (quart res) liczona raz na chunk.
+  - Kolejki resource OTG (`Ore`/`Liquid`/`Dungeon`/…) biomów podziemnych wykonują się **zmaskowane do regionu** (`IWorldGenRegion.begin/endUndergroundBiomeMask` + guard na `setBlock`). Resource na granicy regionu mogą być przycięte (strategia C1).
+- **Spójność seeda**: resolver biome source przebudowywany w `setSeed`, żeby F3/vanilla feature'y zgadzały się z konwersją bloków i resource OTG.
+- **DefaultPreset**: lush/dripstone/deep_dark odsprzężone i dostrojone; `MinorVersion` 0.1→0.2 wymusza ponowne wypakowanie presetu u istniejących userów.
+
 **2026-05-15 — Fix drzew w nowych biomach**
 
 - `Registry(minecraft:trees_*)` zamienione na natywne `Tree()` syntax — pewniejsze mapowanie przez `TreeType` enum
