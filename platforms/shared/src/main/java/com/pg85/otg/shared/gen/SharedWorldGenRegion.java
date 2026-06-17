@@ -7,6 +7,7 @@ import com.pg85.otg.interfaces.IBiome;
 import com.pg85.otg.interfaces.ICachedBiomeProvider;
 import com.pg85.otg.interfaces.IEntityFunction;
 import com.pg85.otg.interfaces.IPluginConfig;
+import com.pg85.otg.interfaces.IUndergroundBiomeMap;
 import com.pg85.otg.util.ChunkCoordinate;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.Vec3;
@@ -56,6 +57,10 @@ public abstract class SharedWorldGenRegion extends LocalWorldGenRegion {
     protected final WorldGenLevel worldGenLevel;
     protected final ChunkGenerator chunkGenerator;
     private final int EMPTY;
+
+    // Underground biome region mask
+    private IUndergroundBiomeMap undergroundMask;
+    private int activeUndergroundBiomeId = -1;
 
     protected SharedWorldGenRegion(
         String presetFolderName,
@@ -412,10 +417,28 @@ public abstract class SharedWorldGenRegion extends LocalWorldGenRegion {
         return -1;
     }
 
+    @Override
+    public void beginUndergroundBiomeMask(IUndergroundBiomeMap map, int activeUndergroundBiomeId) {
+        this.undergroundMask = map;
+        this.activeUndergroundBiomeId = activeUndergroundBiomeId;
+    }
+
+    @Override
+    public void endUndergroundBiomeMask() {
+        this.undergroundMask = null;
+        this.activeUndergroundBiomeId = -1;
+    }
+
+    private boolean maskedOut(int x, int y, int z) {
+        IUndergroundBiomeMap m = this.undergroundMask;
+        return m != null && m.getUndergroundBiomeId(x, y, z) != this.activeUndergroundBiomeId;
+    }
+
     // TODO: Only used by resources using 3x3 decoration atm (so icebergs). Align all resources
     // to use 3x3, make them use the decoration cache and remove this method.
     @Override
     public void setBlockDirect(int x, int y, int z, LocalMaterialData material) {
+        if (maskedOut(x, y, z)) return;
         if (material == null || material.isEmpty()) {
             return;
         }
@@ -436,16 +459,19 @@ public abstract class SharedWorldGenRegion extends LocalWorldGenRegion {
 
     @Override
     public void setBlock(int x, int y, int z, LocalMaterialData material) {
+        if (maskedOut(x, y, z)) return;
         setBlock(x, y, z, material, null, null);
     }
 
     @Override
     public void setBlock(int x, int y, int z, LocalMaterialData material, NamedBinaryTag metaDataTag) {
+        if (maskedOut(x, y, z)) return;
         setBlock(x, y, z, material, metaDataTag, null);
     }
 
     @Override
     public void setBlock(int x, int y, int z, LocalMaterialData material, ReplaceBlockMatrix replaceBlocksMatrix) {
+        if (maskedOut(x, y, z)) return;
         setBlock(x, y, z, material, null, replaceBlocksMatrix);
     }
 
@@ -458,6 +484,7 @@ public abstract class SharedWorldGenRegion extends LocalWorldGenRegion {
         NamedBinaryTag nbt,
         ReplaceBlockMatrix replaceBlocksMatrix
     ) {
+        if (maskedOut(x, y, z)) return;
         if (isOutsideWorldHeight(y)) {
             return;
         }

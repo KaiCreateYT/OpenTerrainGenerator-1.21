@@ -52,6 +52,16 @@ public interface IWorldGenRegion extends ISurfaceGeneratorNoiseProvider
 	void setBlock(int x, int y, int z, LocalMaterialData material, NamedBinaryTag metaDataTag);
 	void setBlock(int x, int y, int z, LocalMaterialData material, ReplaceBlockMatrix replaceBlocksMatrix);
 	void setBlock(int x, int y, int z, LocalMaterialData material, NamedBinaryTag metaDataTag, ReplaceBlockMatrix replaceBlocksMatrix);
+
+	// Underground biome region mask: while active, block placement is committed only
+	// inside the active underground biome's 3D region. Default no-op for implementations
+	// that don't support masking; SharedWorldGenRegion overrides these.
+	// CONTRACT: endUndergroundBiomeMask() MUST be called in a finally block paired with
+	// begin(); the same region instance is reused after decoration (e.g. snow/ice), so a
+	// leaked mask would silently suppress later block placement.
+	default void beginUndergroundBiomeMask(IUndergroundBiomeMap map, int activeUndergroundBiomeId) {}
+	default void endUndergroundBiomeMask() {}
+
 	void spawnEntity(IEntityFunction newEntityData);
 	void placeDungeon(Random random, int x, int y, int z);
 	void placeFossil(Random random, int x, int y, int z);
