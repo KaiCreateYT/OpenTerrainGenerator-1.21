@@ -84,6 +84,10 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
     private final OTGWorldInfo otgWorldInfo;
     private long seed;
     private final CachedBiomeProvider cachedBiomeProvider;
+    private final com.pg85.otg.interfaces.ILayerSource undergroundLayerSource;
+    private final IBiome[] undergroundBiomesById;
+    private volatile java.util.function.ToIntBiFunction<Integer, Integer> surfaceHeightEstimator;
+    private volatile com.pg85.otg.gen.biome.UndergroundBiomeResolver undergroundResolver;
 
     private static final int NOISE_SIZE_X = 4;
     @Getter
@@ -131,6 +135,8 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
         this.preset = preset;
         this.otgWorldInfo = otgWorldInfo;
         this.cachedBiomeProvider = new CachedBiomeProvider(biomeProvider, biomesById);
+        this.undergroundLayerSource = biomeProvider;
+        this.undergroundBiomesById = biomesById;
 
         this.noiseSizeY = otgWorldInfo.getHeight() / Constants.PIECE_Y_SIZE;
         this.noiseCache = ThreadLocal.withInitial(() -> new NoiseCache(128, this.noiseSizeY + 1));
@@ -161,6 +167,32 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
         this.upperInterpolatedNoise = samplers.upper();
         this.depthNoise = samplers.depth();
         this.biomeBlocksNoiseGen = new NoiseGeneratorPerlinMesaBlocks(random, 4);
+    }
+
+    public void setSurfaceHeightEstimator(java.util.function.ToIntBiFunction<Integer, Integer> estimator) {
+        this.surfaceHeightEstimator = estimator;
+    }
+
+    private com.pg85.otg.gen.biome.UndergroundBiomeResolver undergroundResolver() {
+        com.pg85.otg.gen.biome.UndergroundBiomeResolver r = this.undergroundResolver;
+        if (r == null) {
+            synchronized (this) {
+                r = this.undergroundResolver;
+                if (r == null) {
+                    r = new com.pg85.otg.gen.biome.UndergroundBiomeResolver(this.undergroundBiomesById, this.seed);
+                    this.undergroundResolver = r;
+                }
+            }
+        }
+        return r;
+    }
+
+    public com.pg85.otg.gen.biome.UndergroundBiomeMap buildUndergroundBiomeMap(
+            com.pg85.otg.util.ChunkCoordinate chunkCoord,
+            com.pg85.otg.util.gen.OTGWorldInfo worldInfo) {
+        return com.pg85.otg.gen.biome.UndergroundBiomeMap.build(
+                undergroundResolver(), this.undergroundLayerSource.getSampler(),
+                this.surfaceHeightEstimator, chunkCoord, worldInfo, this.undergroundBiomesById);
     }
 
     public ICachedBiomeProvider getCachedBiomeProvider() {
@@ -451,6 +483,9 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
         int blockX = chunkCoord.getBlockX();
         int blockZ = chunkCoord.getBlockZ();
 
+        com.pg85.otg.gen.biome.UndergroundBiomeMap undergroundMap = buildUndergroundBiomeMap(chunkCoord, worldHeight);
+        SurfaceSettings[] ugSurfaceById = new SurfaceSettings[this.undergroundBiomesById.length];
+
         // --- Phase 1: Biome lookup ---
         long biomeStart = System.currentTimeMillis();
         IBiome[] biomes = this.cachedBiomeProvider.getBiomesForChunk(chunkCoord);
@@ -588,11 +623,21 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                                 }
                                 structureIterator.back(structures.size());
                                 if (density > 0.0) {
+                                    SurfaceSettings placeSurface = surfaceSettings;
+                                    int ugId = undergroundMap.getUndergroundBiomeId(realX, realY, realZ);
+                                    if (ugId >= 0) {
+                                        SurfaceSettings cached = ugSurfaceById[ugId];
+                                        if (cached == null) {
+                                            cached = undergroundMap.getBiome(ugId).getBiomeSettings().getSurfaceSettings();
+                                            ugSurfaceById[ugId] = cached;
+                                        }
+                                        placeSurface = cached;
+                                    }
                                     buffer.setBlock(
                                             localX,
                                             realY,
                                             localZ,
-                                            surfaceSettings.getStoneBlockReplaced(realY)
+                                            placeSurface.getStoneBlockReplaced(realY)
                                     );
                                     buffer.setHighestBlockForColumn(pieceX + noiseX * 4, noiseZ * 4 + pieceZ, realY);
                                 } else if (realY < waterLevel[localX * 16 + localZ]

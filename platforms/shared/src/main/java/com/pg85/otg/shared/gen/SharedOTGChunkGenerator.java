@@ -211,6 +211,8 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
                 otgBiomeProvider.setSurfaceHeightEstimator((worldX, worldZ) ->
                     this.getHighestBlockYInUnloadedChunk(worldX, worldZ, true, true, true, true)
                 );
+                this.internalGenerator.setSurfaceHeightEstimator((worldX, worldZ) ->
+                    this.getHighestBlockYInUnloadedChunk(worldX, worldZ, true, true, true, true));
             }
         }
     }
