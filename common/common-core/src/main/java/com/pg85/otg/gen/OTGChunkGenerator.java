@@ -157,6 +157,9 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
 
     public void setSeed(long seed) {
         this.seed = seed;
+        // Force the lazy underground resolver to rebuild with the new seed (keeps it
+        // consistent with the biome source's resolver, which also rebuilds on setSeed).
+        this.undergroundResolver = null;
         this.cachedBiomeProvider.setSeed(seed);
         // Setup noises
         Random random = new Random(seed);

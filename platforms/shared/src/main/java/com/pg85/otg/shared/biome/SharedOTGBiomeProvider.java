@@ -33,7 +33,7 @@ public abstract class SharedOTGBiomeProvider extends BiomeSource implements ILay
     private long seed;
     private ThreadLocal<CachingLayerSampler> layer;
     private final Int2ObjectOpenHashMap<Holder<Biome>> keyLookup = new Int2ObjectOpenHashMap<>();
-    private UndergroundBiomeResolver undergroundResolver;
+    private volatile UndergroundBiomeResolver undergroundResolver;
     private volatile ToIntBiFunction<Integer, Integer> surfaceHeightEstimator;
 
     protected SharedOTGBiomeProvider(String presetFolderName, long seed) {
@@ -126,6 +126,15 @@ public abstract class SharedOTGBiomeProvider extends BiomeSource implements ILay
                         this.seed, seed);
             }
             this.seed = seed;
+            // Rebuild the underground resolver with the final seed so the biome source's
+            // 3D regions match block placement: OTGChunkGenerator builds its own resolver
+            // from this same seed. Without this, collectPossibleBiomes() may have built it
+            // earlier with the constructor's placeholder seed (often 0), making F3/vanilla
+            // features disagree with OTG block conversion and resources.
+            var iBiomesForResolver = OTG.getEngine().getDimensionPresetLoader().getGlobalIdMapping(presetFolderName);
+            if (iBiomesForResolver != null) {
+                this.undergroundResolver = new UndergroundBiomeResolver(iBiomesForResolver, seed);
+            }
             layer = ThreadLocal.withInitial(() -> BiomeLayers.create(seed, OTG.getEngine().getDimensionPresetLoader().getPresetGenerationData().get(presetFolderName), OTG.getEngine().getLogger()));
             latch.countDown();
         }
