@@ -14,6 +14,7 @@ import com.pg85.otg.platform.noise.OTGNoiseRouterData;
 import com.pg85.otg.presets.DimensionPreset;
 import com.pg85.otg.shared.biome.IOTGBiomeProvider;
 import com.pg85.otg.util.ChunkCoordinate;
+import com.pg85.otg.gen.biome.UndergroundBiomeMap;
 import com.pg85.otg.util.gen.ChunkBuffer;
 import com.pg85.otg.util.gen.JigsawStructureData;
 import com.pg85.otg.util.gen.OTGWorldInfo;
@@ -233,7 +234,9 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
 
         Path worldSaveFolder = worldGenLevel.getLevel().getServer().getWorldPath(LevelResource.PLAYER_DATA_DIR).getParent();
 
-        this.chunkDecorator.decorate(chunkBeingDecorated, worldGenRegion, biome.getBiomeSettings(), getStructureCache(worldSaveFolder));
+        UndergroundBiomeMap undergroundMap =
+                this.internalGenerator.buildUndergroundBiomeMap(chunkBeingDecorated, this.otgWorldInfo);
+        this.chunkDecorator.decorate(chunkBeingDecorated, worldGenRegion, biome.getBiomeSettings(), getStructureCache(worldSaveFolder), undergroundMap);
         long tSuper = System.nanoTime();
         super.applyBiomeDecoration(worldGenLevel, chunkAccess, structureManager);
         long superElapsed = System.nanoTime() - tSuper;

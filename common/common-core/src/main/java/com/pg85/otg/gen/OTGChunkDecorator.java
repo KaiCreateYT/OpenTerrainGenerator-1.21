@@ -13,6 +13,7 @@ import com.pg85.otg.customobject.resource.ICustomObjectResource;
 import com.pg85.otg.customobject.resource.ICustomStructureResource;
 import com.pg85.otg.customobject.structures.CustomStructureCache;
 import com.pg85.otg.customobject.util.BO3Enums.SpawnHeightEnum;
+import com.pg85.otg.gen.biome.UndergroundBiomeMap;
 import com.pg85.otg.gen.resource.IBasicResource;
 import com.pg85.otg.gen.surface.FrozenSurfaceHelper;
 import com.pg85.otg.config.settings.biome.BiomeSettings;
@@ -26,6 +27,8 @@ import com.pg85.otg.util.OTGMaterialReader;
 import com.pg85.otg.util.bo3.Rotation;
 import com.pg85.otg.util.logging.LogCategory;
 import com.pg85.otg.util.logging.LogLevel;
+
+import it.unimi.dsi.fastutil.ints.IntList;
 
 import java.nio.file.Path;
 import java.util.Random;
@@ -127,7 +130,7 @@ public class OTGChunkDecorator implements IChunkDecorator
 		return this.lockingObject;
 	}
 
-	public void decorate(ChunkCoordinate chunkCoord, IWorldGenRegion worldGenRegion, BiomeSettings biomeConfig, CustomStructureCache structureCache)
+	public void decorate(ChunkCoordinate chunkCoord, IWorldGenRegion worldGenRegion, BiomeSettings biomeConfig, CustomStructureCache structureCache, UndergroundBiomeMap undergroundMap)
 	{
 		// Wait for save to complete (lock-free spin)
 		boolean loggedWait = false;
@@ -152,7 +155,7 @@ public class OTGChunkDecorator implements IChunkDecorator
 			// Create per-chunk Random - thread-safe, no shared state
 			Random rand = createChunkRandom(worldGenRegion.getSeed(), chunkCoord);
 
-			doDecorate(chunkCoord, worldGenRegion, biomeConfig, materialReader, otgRootFolder, structureCache, customObjectManager, customObjectResourcesManager, modLoadedChecker, rand);
+			doDecorate(chunkCoord, worldGenRegion, biomeConfig, materialReader, otgRootFolder, structureCache, customObjectManager, customObjectResourcesManager, modLoadedChecker, rand, undergroundMap);
 		} finally {
 			this.decorating.decrementAndGet();
 
@@ -195,7 +198,7 @@ public class OTGChunkDecorator implements IChunkDecorator
 	}
 
 	// TODO: Fire decoration events.
-	private void doDecorate(ChunkCoordinate chunkCoord, IWorldGenRegion worldGenRegion, BiomeSettings biomeConfig, IMaterialReader materialReader, Path otgRootFolder, CustomStructureCache structureCache, CustomObjectManager customObjectManager, CustomObjectResourcesManager customObjectResourcesManager, IModLoadedChecker modLoadedChecker, Random rand)
+	private void doDecorate(ChunkCoordinate chunkCoord, IWorldGenRegion worldGenRegion, BiomeSettings biomeConfig, IMaterialReader materialReader, Path otgRootFolder, CustomStructureCache structureCache, CustomObjectManager customObjectManager, CustomObjectResourcesManager customObjectResourcesManager, IModLoadedChecker modLoadedChecker, Random rand, UndergroundBiomeMap undergroundMap)
 	{
 		if (biomeConfig == null)
 		{
@@ -232,7 +235,45 @@ public class OTGChunkDecorator implements IChunkDecorator
 		}
 
 		long resourcesStart = System.currentTimeMillis();
-		// Resource sequence
+		// Resource sequence — surface biome
+		processResourceQueue(biomeConfig, worldGenRegion, structureCache, otgRootFolder, customObjectManager, materialReader, customObjectResourcesManager, modLoadedChecker, rand);
+
+		// Underground biome resource passes — each masked to its own 3D region
+		if (undergroundMap != null && !undergroundMap.isEmpty())
+		{
+			IntList present = undergroundMap.getPresentBiomeIds();
+			for (int i = 0; i < present.size(); i++)
+			{
+				int ugId = present.getInt(i);
+				BiomeSettings ugConfig = undergroundMap.getBiome(ugId).getBiomeSettings();
+				worldGenRegion.beginUndergroundBiomeMask(undergroundMap, ugId);
+				try
+				{
+					processResourceQueue(ugConfig, worldGenRegion, structureCache, otgRootFolder,
+							customObjectManager, materialReader, customObjectResourcesManager, modLoadedChecker, rand);
+				}
+				finally
+				{
+					worldGenRegion.endUndergroundBiomeMask();
+				}
+			}
+		}
+
+		// Time the whole resource pass (surface + underground) so the per-resource-type
+		// counters stay coherent with totalResourceTimeMs in the periodic perf breakdown.
+		long resourcesTime = System.currentTimeMillis() - resourcesStart;
+		totalResourceTimeMs.addAndGet(resourcesTime);
+		if (OTGLog.isEnabled(LogLevel.WARN, LogCategory.PERFORMANCE) && resourcesTime > 50)
+		{
+			OTGLog.warn(LogCategory.PERFORMANCE, "Processing resources in biome {} took {}ms", biomeConfig.getIdentitySettings().getBiomeName(), resourcesTime);
+		}
+	}
+
+	private void processResourceQueue(BiomeSettings biomeConfig, IWorldGenRegion worldGenRegion,
+			CustomStructureCache structureCache, Path otgRootFolder, CustomObjectManager customObjectManager,
+			IMaterialReader materialReader, CustomObjectResourcesManager customObjectResourcesManager,
+			IModLoadedChecker modLoadedChecker, Random rand)
+	{
 		var resourceQueue = ((BiomeConfig)biomeConfig).getResourceQueue();
 		for (ConfigFunction<BiomeSettings> res : resourceQueue)
 		{
@@ -283,13 +324,6 @@ public class OTGChunkDecorator implements IChunkDecorator
 					}
 				}
 			}
-		}
-		long resourcesTime = System.currentTimeMillis() - resourcesStart;
-		totalResourceTimeMs.addAndGet(resourcesTime);
-
-		if (OTGLog.isEnabled(LogLevel.WARN, LogCategory.PERFORMANCE) && resourcesTime > 50)
-		{
-			OTGLog.warn(LogCategory.PERFORMANCE, "Processing resources in biome {} took {}ms", biomeConfig.getIdentitySettings().getBiomeName(), resourcesTime);
 		}
 	}
 
