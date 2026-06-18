@@ -2,6 +2,7 @@ package com.pg85.otg.shared.gen;
 
 import java.util.*;
 
+import com.pg85.otg.gen.OTGChunkGenerator;
 import com.pg85.otg.shared.biome.SharedBiome;
 import com.pg85.otg.shared.materials.SharedMaterialData;
 import com.pg85.otg.interfaces.IBiome;
@@ -100,7 +101,15 @@ public class SharedShadowChunkGenerator {
 
         ObjectList<JigsawStructureData> structures = new ObjectArrayList<>(10);
         Random random = otgChunkGenerator.getRandomFromChunkCoord(chunkCoordinate);
-        otgChunkGenerator.getInternalGenerator().populateNoise(otgWorldInfo, buffer, buffer.getChunkCoordinate(), structures, random);
+        // Mark this as shadow generation so populateNoise skips the underground biome map —
+        // building it would call the height estimator, which generates another shadow chunk → infinite recursion.
+        boolean prevShadow = OTGChunkGenerator.GENERATING_SHADOW_CHUNK.get();
+        OTGChunkGenerator.GENERATING_SHADOW_CHUNK.set(Boolean.TRUE);
+        try {
+            otgChunkGenerator.getInternalGenerator().populateNoise(otgWorldInfo, buffer, buffer.getChunkCoordinate(), structures, random);
+        } finally {
+            OTGChunkGenerator.GENERATING_SHADOW_CHUNK.set(prevShadow);
+        }
         return buffer;
     }
 

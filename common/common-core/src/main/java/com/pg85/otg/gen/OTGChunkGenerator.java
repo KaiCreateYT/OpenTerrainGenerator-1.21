@@ -89,6 +89,14 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
     private volatile java.util.function.ToIntBiFunction<Integer, Integer> surfaceHeightEstimator;
     private volatile com.pg85.otg.gen.biome.UndergroundBiomeResolver undergroundResolver;
 
+    /**
+     * Set while generating a throwaway "shadow" chunk for surface-height estimation.
+     * Such chunks only need terrain shape, so populateNoise skips the underground biome
+     * map — otherwise building the map calls the height estimator, which generates another
+     * shadow chunk, which builds another map... recursing infinitely (StackOverflowError).
+     */
+    public static final ThreadLocal<Boolean> GENERATING_SHADOW_CHUNK = ThreadLocal.withInitial(() -> Boolean.FALSE);
+
     private static final int NOISE_SIZE_X = 4;
     @Getter
     private final int noiseSizeY;
@@ -486,7 +494,10 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
         int blockX = chunkCoord.getBlockX();
         int blockZ = chunkCoord.getBlockZ();
 
-        com.pg85.otg.gen.biome.UndergroundBiomeMap undergroundMap = buildUndergroundBiomeMap(chunkCoord, worldHeight);
+        // Shadow chunks (height probes) skip the map to avoid estimator→shadow recursion.
+        com.pg85.otg.gen.biome.UndergroundBiomeMap undergroundMap = GENERATING_SHADOW_CHUNK.get()
+                ? com.pg85.otg.gen.biome.UndergroundBiomeMap.empty()
+                : buildUndergroundBiomeMap(chunkCoord, worldHeight);
         SurfaceSettings[] ugSurfaceById = new SurfaceSettings[this.undergroundBiomesById.length];
 
         // --- Phase 1: Biome lookup ---

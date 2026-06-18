@@ -36,6 +36,14 @@ public final class UndergroundBiomeMap implements IUndergroundBiomeMap {
         this.empty = empty;
     }
 
+    private static final UndergroundBiomeMap EMPTY =
+            new UndergroundBiomeMap(new IBiome[0], 0, 0, 0, 0, new int[0], true);
+
+    /** Shared empty map (no underground biomes) — used for shadow/height-probe chunks. */
+    public static UndergroundBiomeMap empty() {
+        return EMPTY;
+    }
+
     public static UndergroundBiomeMap build(UndergroundBiomeResolver resolver, ILayerSampler sampler,
                                             ToIntBiFunction<Integer, Integer> heightEstimator,
                                             ChunkCoordinate chunkCoord, OTGWorldInfo worldInfo,
