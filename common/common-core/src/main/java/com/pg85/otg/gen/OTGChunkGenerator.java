@@ -11,8 +11,11 @@ import com.pg85.otg.gen.carver.Carver;
 import com.pg85.otg.gen.carver.CaveCarver;
 import com.pg85.otg.gen.carver.RavineCarver;
 import com.pg85.otg.gen.noise.OctavePerlinNoiseSampler;
+import com.pg85.otg.gen.noise.PerlinNoiseSampler;
 import com.pg85.otg.gen.noise.TerrainNoiseComputer;
 import com.pg85.otg.gen.noise.legacy.NoiseGeneratorPerlinMesaBlocks;
+import com.pg85.otg.util.materials.LocalMaterialData;
+import com.pg85.otg.util.materials.LocalMaterials;
 import com.pg85.otg.interfaces.*;
 import com.pg85.otg.presets.DimensionPreset;
 import com.pg85.otg.util.ChunkCoordinate;
@@ -79,6 +82,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
     private OctavePerlinNoiseSampler lowerInterpolatedNoise; // Volatility1 noise
     private OctavePerlinNoiseSampler upperInterpolatedNoise; // Volatility2 noise
     private OctavePerlinNoiseSampler depthNoise;
+    private PerlinNoiseSampler deepslateNoise; // noisy stone->deepslate boundary around Y=0
 
     private final DimensionPreset preset;
     private final OTGWorldInfo otgWorldInfo;
@@ -178,6 +182,33 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
         this.upperInterpolatedNoise = samplers.upper();
         this.depthNoise = samplers.depth();
         this.biomeBlocksNoiseGen = new NoiseGeneratorPerlinMesaBlocks(random, 4);
+        // Separate seed so it doesn't perturb the terrain sampler sequence above.
+        this.deepslateNoise = new PerlinNoiseSampler(new Random(seed ^ 0x6CB9D7E3A155EC53L));
+    }
+
+    private static final int DEEPSLATE_BAND = 8;
+    private static final double DEEPSLATE_NOISE_SCALE = 1.0 / 16.0;
+
+    /**
+     * Picks the terrain fill block for a column position, applying the biome's ReplaceBlocks.
+     * Custom StoneBlock biomes use their block everywhere. Default-stone biomes transition from
+     * stone to deepslate across a noisy band around Y=0 (instead of a flat cut at exactly Y=0).
+     */
+    private LocalMaterialData stoneOrDeepslate(SurfaceSettings ss, int x, int y, int z) {
+        LocalMaterialData base;
+        if (ss.hasCustomStoneBlock()) {
+            base = ss.getStoneBlock();
+        } else if (y > DEEPSLATE_BAND) {
+            base = ss.getStoneBlock();
+        } else if (y < -DEEPSLATE_BAND) {
+            base = LocalMaterials.DEEPSLATE;
+        } else {
+            double n = deepslateNoise.sample(
+                    x * DEEPSLATE_NOISE_SCALE, y * DEEPSLATE_NOISE_SCALE, z * DEEPSLATE_NOISE_SCALE, 0.0, 0.0);
+            double bias = -(double) y / DEEPSLATE_BAND; // +1 at y=-band (deepslate), -1 at y=+band (stone)
+            base = (n < bias) ? LocalMaterials.DEEPSLATE : ss.getStoneBlock();
+        }
+        return ss.applyStoneReplacement(base, y);
     }
 
     public void setSurfaceHeightEstimator(java.util.function.ToIntBiFunction<Integer, Integer> estimator) {
@@ -651,7 +682,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
                                             localX,
                                             realY,
                                             localZ,
-                                            placeSurface.getStoneBlockReplaced(realY)
+                                            stoneOrDeepslate(placeSurface, realX, realY, realZ)
                                     );
                                     buffer.setHighestBlockForColumn(pieceX + noiseX * 4, noiseZ * 4 + pieceZ, realY);
                                 } else if (realY < waterLevel[localX * 16 + localZ]

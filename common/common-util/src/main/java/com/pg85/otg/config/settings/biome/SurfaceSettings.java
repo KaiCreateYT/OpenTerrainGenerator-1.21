@@ -282,8 +282,29 @@ public class SurfaceSettings extends ConfigSection {
         return cooledLavaBlock;
     }
     public LocalMaterialData getStoneBlockReplaced(int y) {
-        // Use deepslate below Y=0 (1.18+ terrain generation)
-        LocalMaterialData baseBlock = (y < 0) ? LocalMaterials.DEEPSLATE : stoneBlock;
+        // Custom StoneBlock (anything but vanilla stone) is used everywhere, even below Y=0,
+        // overriding the deepslate substitution. Default stone falls back to deepslate below
+        // Y=0. (Terrain generation uses a noisy boundary instead of this flat cut; this flat
+        // version remains for non-terrain callers such as BO4 block replacement.)
+        LocalMaterialData baseBlock;
+        if (hasCustomStoneBlock()) {
+            baseBlock = stoneBlock;
+        } else {
+            baseBlock = (y < 0) ? LocalMaterials.DEEPSLATE : stoneBlock;
+        }
+        if (replacedBlocks.replacesStone) {
+            return replacedBlocks.replaceBlock(y, baseBlock);
+        }
+        return baseBlock;
+    }
+
+    /** True if this biome sets a StoneBlock other than vanilla stone (used everywhere, no deepslate). */
+    public boolean hasCustomStoneBlock() {
+        return !stoneBlock.isMaterial(LocalMaterials.STONE);
+    }
+
+    /** Applies the ReplaceBlocks matrix (when it replaces stone) to a caller-chosen base block. */
+    public LocalMaterialData applyStoneReplacement(LocalMaterialData baseBlock, int y) {
         if (replacedBlocks.replacesStone) {
             return replacedBlocks.replaceBlock(y, baseBlock);
         }
