@@ -23,21 +23,23 @@ public final class UndergroundBiomeMap implements IUndergroundBiomeMap {
     private final int minY;
     private final int quartsY;
     private final int[] ids; // index: (qx*4 + qz) * quartsY + qy ; value: ug id or -1
+    private final float[] caveScales; // flat: ((qx*4+qz)*quartsY + qy)*CAVE_SCALE_COUNT + caveType; null = all 1.0
     private final boolean empty;
 
     private UndergroundBiomeMap(IBiome[] biomesById, int originBlockX, int originBlockZ,
-                               int minY, int quartsY, int[] ids, boolean empty) {
+                               int minY, int quartsY, int[] ids, float[] caveScales, boolean empty) {
         this.biomesById = biomesById;
         this.originBlockX = originBlockX;
         this.originBlockZ = originBlockZ;
         this.minY = minY;
         this.quartsY = quartsY;
         this.ids = ids;
+        this.caveScales = caveScales;
         this.empty = empty;
     }
 
     private static final UndergroundBiomeMap EMPTY =
-            new UndergroundBiomeMap(new IBiome[0], 0, 0, 0, 0, new int[0], true);
+            new UndergroundBiomeMap(new IBiome[0], 0, 0, 0, 0, new int[0], null, true);
 
     /** Shared empty map (no underground biomes) — used for shadow/height-probe chunks. */
     public static UndergroundBiomeMap empty() {
@@ -53,6 +55,7 @@ public final class UndergroundBiomeMap implements IUndergroundBiomeMap {
         int minY = worldInfo.minY();
         int quartsY = (worldInfo.maxY() - minY + 1 + 3) / 4;
         int[] ids = new int[16 * quartsY];
+        float[] caveScales = null; // lazily allocated (filled with 1.0) on first non-default quart
         boolean empty = true;
 
         for (int qx = 0; qx < 4; qx++) {
@@ -69,10 +72,18 @@ public final class UndergroundBiomeMap implements IUndergroundBiomeMap {
                     int id = resolver.resolve(surfaceId, worldX, worldY, worldZ, estSurfaceY);
                     ids[base + qy] = id;
                     if (id >= 0) empty = false;
+                    float[] scales = resolver.resolveCaveScales(surfaceId, worldX, worldY, worldZ, estSurfaceY);
+                    if (notAllOnes(scales)) {
+                        if (caveScales == null) {
+                            caveScales = new float[16 * quartsY * CAVE_SCALE_COUNT];
+                            java.util.Arrays.fill(caveScales, 1.0f);
+                        }
+                        System.arraycopy(scales, 0, caveScales, (base + qy) * CAVE_SCALE_COUNT, CAVE_SCALE_COUNT);
+                    }
                 }
             }
         }
-        return new UndergroundBiomeMap(biomesById, originBlockX, originBlockZ, minY, quartsY, ids, empty);
+        return new UndergroundBiomeMap(biomesById, originBlockX, originBlockZ, minY, quartsY, ids, caveScales, empty);
     }
 
     @Override
@@ -84,6 +95,24 @@ public final class UndergroundBiomeMap implements IUndergroundBiomeMap {
         int qy = (worldY - this.minY) >> 2;
         if (qy < 0 || qy >= this.quartsY) return -1;
         return this.ids[(qx * 4 + qz) * this.quartsY + qy];
+    }
+
+    @Override
+    public float caveScaleAt(int worldX, int worldY, int worldZ, int caveType) {
+        if (this.caveScales == null) return 1.0f;
+        int qx = (worldX - this.originBlockX) >> 2;
+        int qz = (worldZ - this.originBlockZ) >> 2;
+        if (qx < 0 || qx > 3 || qz < 0 || qz > 3) return 1.0f;
+        int qy = (worldY - this.minY) >> 2;
+        if (qy < 0 || qy >= this.quartsY) return 1.0f;
+        return this.caveScales[((qx * 4 + qz) * this.quartsY + qy) * CAVE_SCALE_COUNT + caveType];
+    }
+
+    private static boolean notAllOnes(float[] s) {
+        for (float v : s) {
+            if (v != 1.0f) return true;
+        }
+        return false;
     }
 
     @Override
