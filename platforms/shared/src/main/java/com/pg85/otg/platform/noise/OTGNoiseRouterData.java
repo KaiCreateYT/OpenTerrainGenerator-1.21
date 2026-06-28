@@ -2,6 +2,7 @@ package com.pg85.otg.platform.noise;
 
 import com.pg85.otg.config.settings.preset.NoiseCaveSettings;
 import com.pg85.otg.constants.Constants;
+import com.pg85.otg.interfaces.IUndergroundBiomeMap;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.resources.ResourceLocation;
@@ -277,7 +278,8 @@ public class OTGNoiseRouterData {
             NoiseCaveSettings settings,
             String presetName,
             int minY,
-            int maxY
+            int maxY,
+            boolean regionScaling
     ) {
         DensityFunction one = DensityFunctions.constant(1.0);
         if (!settings.isCavesEnabled()) {
@@ -286,11 +288,11 @@ public class OTGNoiseRouterData {
 
         DensityFunction y = DensityFunctions.yClampedGradient(minY, maxY, (double) minY, (double) maxY);
 
-        DensityFunction spaghettiRough = scaleDF(spaghettiRoughnessFunction(noise, null), settings.getSpaghetti3dScale());
-        DensityFunction spaghetti2d = scaleDF(spaghetti2D(noise, null), settings.getSpaghetti2dScale());
-        DensityFunction entranceFunc = scaleDF(entrances(spaghettiRough, noise, null), settings.getSpaghetti3dScale());
-        DensityFunction noodleFunc = scaleDF(noodle(y, noise, null), settings.getNoodleScale());
-        DensityFunction pillarsFunc = scaleDF(pillars(noise, null), settings.getPillarScale());
+        DensityFunction spaghettiRough = caveScale(regionScaling, spaghettiRoughnessFunction(noise, null), IUndergroundBiomeMap.CAVE_SPAGHETTI3D, settings.getSpaghetti3dScale());
+        DensityFunction spaghetti2d = caveScale(regionScaling, spaghetti2D(noise, null), IUndergroundBiomeMap.CAVE_SPAGHETTI2D, settings.getSpaghetti2dScale());
+        DensityFunction entranceFunc = caveScale(regionScaling, entrances(spaghettiRough, noise, null), IUndergroundBiomeMap.CAVE_SPAGHETTI3D, settings.getSpaghetti3dScale());
+        DensityFunction noodleFunc = caveScale(regionScaling, noodle(y, noise, null), IUndergroundBiomeMap.CAVE_NOODLE, settings.getNoodleScale());
+        DensityFunction pillarsFunc = caveScale(regionScaling, pillars(noise, null), IUndergroundBiomeMap.CAVE_PILLAR, settings.getPillarScale());
 
         // Spaghetti (includes entrances)
         DensityFunction spaghettiCaves = DensityFunctions.min(
@@ -305,7 +307,10 @@ public class OTGNoiseRouterData {
                 noiseHolder(noise, null, "cave_cheese"),
                 0.6666666666666666 * settings.getSpaghetti3dScale()
         );
-        DensityFunction cheese = DensityFunctions.add(DensityFunctions.constant(0.35), caveCheeseNoise).clamp(-1.0, 1.0);
+        DensityFunction cheeseAmplitude = regionScaling
+                ? DensityFunctions.mul(caveCheeseNoise, new RegionScaleFunction(IUndergroundBiomeMap.CAVE_CHEESE, 1.0))
+                : caveCheeseNoise;
+        DensityFunction cheese = DensityFunctions.add(DensityFunctions.constant(0.35), cheeseAmplitude).clamp(-1.0, 1.0);
         DensityFunction cheeseCaves = DensityFunctions.add(layer, cheese);
 
         // Combined (same as caveDensityForCarving)
@@ -415,6 +420,12 @@ public class OTGNoiseRouterData {
 
     private static DensityFunction scaleDF(DensityFunction df, double scale) {
         return scale == 1.0 ? df : DensityFunctions.mul(df, DensityFunctions.constant(scale));
+    }
+
+    private static DensityFunction caveScale(boolean regionScaling, DensityFunction df, int caveType, double presetScale) {
+        return regionScaling
+                ? DensityFunctions.mul(df, new RegionScaleFunction(caveType, presetScale))
+                : scaleDF(df, presetScale);
     }
 
     private static DensityFunction get(HolderGetter<DensityFunction> df, ResourceLocation id) {

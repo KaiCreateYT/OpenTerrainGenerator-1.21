@@ -1,5 +1,16 @@
 ## Minecraft 1.21.1 — Fabric + NeoForge
 
+**2026-06-20**
+
+- **3D underground biomes — Phase 2 (per-region cave shaping):** underground biomes can
+  now scale the density of each cave type inside their region via `CaveCheeseScale`,
+  `CaveSpaghetti3dScale`, `CaveSpaghetti2dScale`, `CaveNoodleScale`, `CavePillarScale`
+  (`.bc`, default 1.0 = unchanged). Multipliers cross-fade between adjacent regions and
+  into normal stone (`resolveCaveScales` + cross-faded membership weights). Carving applies
+  them through `RegionScaleFunction` inside the cave-density graph, bound per-chunk via a
+  thread-local. With all scales at 1.0 the carve graph falls back to constant scaling
+  (`hasUndergroundCaveScaling` guard) — output is identical to before.
+
 **2026-06-17 — Przeprojektowanie biomów podziemnych 3D (prawdziwe regiony 3D + pełna kontrola OTG)**
 
 - **Rozmieszczanie szumem 3D**: biomy podziemne tworzą organiczne, spójne regiony 3D zamiast siatki 64×64. Nowa klasa `UndergroundRegionNoise` (3D Perlin, seed per biom) + ustawienia `UndergroundRegionSize` (wielkość blobów) i `UndergroundVerticalScale` (rozciągnięcie w pionie).

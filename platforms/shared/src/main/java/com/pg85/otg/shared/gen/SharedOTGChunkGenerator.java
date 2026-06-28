@@ -162,9 +162,10 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
             NoiseCaveSettings caveCfg = this.preset.getConfig().getNoiseCaveSettings();
             NoiseSettings ns = this.settings.value().noiseSettings();
 
+            boolean regionScaling = this.internalGenerator.hasUndergroundCaveScaling();
             OTGNoiseRouterData.CaveDensityComponents components = OTGNoiseRouterData.caveDensityComponentsForCarving(
                     randomState.noises, caveCfg,
-                    this.preset.getFolderName(), ns.minY(), ns.height() + ns.minY()
+                    this.preset.getFolderName(), ns.minY(), ns.height() + ns.minY(), regionScaling
             );
 
             DensityFunction zero = DensityFunctions.constant(0);
