@@ -3,6 +3,7 @@ package com.pg85.otg.gen.biome;
 import com.pg85.otg.config.settings.biome.BiomeSettings;
 import com.pg85.otg.config.settings.biome.UndergroundBiomeSettings;
 import com.pg85.otg.interfaces.IBiome;
+import com.pg85.otg.interfaces.IUndergroundBiomeMap;
 import com.pg85.otg.util.OTGLog;
 import com.pg85.otg.util.logging.LogCategory;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -24,9 +25,12 @@ public class UndergroundBiomeResolver {
     /** Number of probe samples used to build the empirical noise-value distribution. */
     private static final int QUANTILE_SAMPLES = 4096;
 
+    /** Width (in noise-value units) of the cross-fade band straddling each region's coverage threshold. */
+    private static final double BLEND_BAND = 0.12;
+
     public record UndergroundCandidate(
             int otgBiomeId, int minY, int maxY, int priority,
-            float coverage, int regionSize, float verticalScale) {}
+            float coverage, int regionSize, float verticalScale, float[] caveScale) {}
 
     private final Int2ObjectOpenHashMap<List<UndergroundCandidate>> candidatesBySurfaceBiome;
     private final Int2ObjectOpenHashMap<Integer> startOffsetBySurfaceBiome;
@@ -53,7 +57,8 @@ public class UndergroundBiomeResolver {
                     ubs.getUndergroundMinY(), ubs.getUndergroundMaxY(), ubs.getUndergroundPriority(),
                     ubs.getUndergroundBiomeRarity(), ubs.getUndergroundRegionSize(), ubs.getUndergroundVerticalScale(),
                     ubs.getMinSurfaceTemperature(), ubs.getMaxSurfaceTemperature(),
-                    ubs.getMinSurfaceWetness(), ubs.getMaxSurfaceWetness()));
+                    ubs.getMinSurfaceWetness(), ubs.getMaxSurfaceWetness(),
+                    ubs.getCaveScales()));
             this.noiseByBiomeId.put(id, new UndergroundRegionNoise(worldSeed, id));
         }
 
@@ -86,7 +91,7 @@ public class UndergroundBiomeResolver {
                 if (hasDisallowedFilter && disallowed.contains(ub.biomeName)) continue;
                 candidates.add(new UndergroundCandidate(
                         ub.otgBiomeId, ub.minY, ub.maxY, ub.priority,
-                        ub.coverage, ub.regionSize, ub.verticalScale));
+                        ub.coverage, ub.regionSize, ub.verticalScale, ub.caveScale()));
             }
             candidates.sort(Comparator.comparingInt(UndergroundCandidate::priority));
             if (!candidates.isEmpty()) {
@@ -163,6 +168,67 @@ public class UndergroundBiomeResolver {
         return -1;
     }
 
+    /**
+     * Cross-faded per-cave-type density multipliers at this position. Each candidate region
+     * contributes by its membership weight (a fade band straddling its coverage threshold);
+     * any remaining weight defaults to 1.0 (normal caves). When total region weight exceeds
+     * 1.0 (overlapping regions) the region weights are renormalised so they sum to 1.0.
+     *
+     * @return length-{@link IUndergroundBiomeMap#CAVE_SCALE_COUNT} array; all 1.0 when no region applies.
+     */
+    public float[] resolveCaveScales(int surfaceBiomeId, int worldX, int worldY, int worldZ, int estimatedSurfaceY) {
+        float[] out = new float[] { 1f, 1f, 1f, 1f, 1f };
+
+        Integer startOffset = this.startOffsetBySurfaceBiome.get(surfaceBiomeId);
+        if (startOffset == null) return out;
+        List<UndergroundCandidate> candidates = this.candidatesBySurfaceBiome.get(surfaceBiomeId);
+        if (candidates == null) return out;
+
+        int undergroundStart = estimatedSurfaceY - startOffset.intValue();
+        if (worldY >= undergroundStart) return out;
+
+        double depthWeight = (undergroundStart - worldY) / (double) DEPTH_TRANSITION;
+        if (depthWeight > 1.0) depthWeight = 1.0;
+
+        int n = candidates.size();
+        double[] weights = null;
+        double total = 0.0;
+        for (int i = 0; i < n; i++) {
+            UndergroundCandidate c = candidates.get(i);
+            if (worldY < c.minY() || worldY > c.maxY()) continue;
+            if (c.coverage() <= 0.0f) continue;
+            UndergroundRegionNoise noise = this.noiseByBiomeId.get(c.otgBiomeId());
+            if (noise == null) continue;
+            double effectiveCoverage = (c.coverage() / 100.0) * depthWeight;
+            float threshold = thresholdForCoverage(effectiveCoverage);
+            double sample = noise.sample(worldX, worldY, worldZ, c.regionSize(), c.verticalScale());
+            double margin = sample - threshold;             // >0 = core, ~0 = edge
+            double w = (margin + BLEND_BAND) / BLEND_BAND;  // 1 at/above threshold, ramps to 0 a BLEND_BAND below
+            if (w <= 0.0) continue;
+            if (w > 1.0) w = 1.0;
+            if (weights == null) weights = new double[n];
+            weights[i] = w;
+            total += w;
+        }
+        if (weights == null) return out; // no region present -> all normal (1.0)
+
+        double scaleFactor;
+        double normalWeight;
+        if (total > 1.0) { scaleFactor = 1.0 / total; normalWeight = 0.0; }
+        else { scaleFactor = 1.0; normalWeight = 1.0 - total; }
+
+        for (int t = 0; t < IUndergroundBiomeMap.CAVE_SCALE_COUNT; t++) {
+            double acc = normalWeight; // normal contributes a multiplier of 1.0
+            for (int i = 0; i < n; i++) {
+                double w = weights[i];
+                if (w == 0.0) continue;
+                acc += (w * scaleFactor) * candidates.get(i).caveScale()[t];
+            }
+            out[t] = (float) acc;
+        }
+        return out;
+    }
+
     public boolean hasUndergroundBiomes() {
         return !this.candidatesBySurfaceBiome.isEmpty();
     }
@@ -171,5 +237,6 @@ public class UndergroundBiomeResolver {
             int otgBiomeId, String biomeName,
             int minY, int maxY, int priority,
             float coverage, int regionSize, float verticalScale,
-            float minTemp, float maxTemp, float minWet, float maxWet) {}
+            float minTemp, float maxTemp, float minWet, float maxWet,
+            float[] caveScale) {}
 }
