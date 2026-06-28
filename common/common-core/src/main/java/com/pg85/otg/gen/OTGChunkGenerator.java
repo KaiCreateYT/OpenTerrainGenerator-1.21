@@ -101,6 +101,9 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
      */
     public static final ThreadLocal<Boolean> GENERATING_SHADOW_CHUNK = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
+    /** Current chunk's underground biome map, bound during fillFromNoise so the cave-density graph can read per-region cave scales. */
+    public static final ThreadLocal<com.pg85.otg.interfaces.IUndergroundBiomeMap> CURRENT_CAVE_MAP = new ThreadLocal<>();
+
     private static final int NOISE_SIZE_X = 4;
     @Getter
     private final int noiseSizeY;
@@ -235,6 +238,20 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
         return com.pg85.otg.gen.biome.UndergroundBiomeMap.build(
                 undergroundResolver(), this.undergroundLayerSource.getSampler(),
                 this.surfaceHeightEstimator, chunkCoord, worldInfo, this.undergroundBiomesById);
+    }
+
+    /** @return true if any underground biome defines a non-1.0 cave-type scale (else carving uses constant scaling). */
+    public boolean hasUndergroundCaveScaling() {
+        if (this.undergroundBiomesById == null) return false;
+        for (IBiome b : this.undergroundBiomesById) {
+            if (b == null) continue;
+            com.pg85.otg.config.settings.biome.UndergroundBiomeSettings ubs = b.getBiomeSettings().getUndergroundSettings();
+            if (ubs == null || !ubs.isUndergroundBiome()) continue;
+            for (float s : ubs.getCaveScales()) {
+                if (s != 1.0f) return true;
+            }
+        }
+        return false;
     }
 
     public ICachedBiomeProvider getCachedBiomeProvider() {
@@ -529,6 +546,7 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
         com.pg85.otg.gen.biome.UndergroundBiomeMap undergroundMap = GENERATING_SHADOW_CHUNK.get()
                 ? com.pg85.otg.gen.biome.UndergroundBiomeMap.empty()
                 : buildUndergroundBiomeMap(chunkCoord, worldHeight);
+        CURRENT_CAVE_MAP.set(undergroundMap);
         SurfaceSettings[] ugSurfaceById = new SurfaceSettings[this.undergroundBiomesById.length];
 
         // --- Phase 1: Biome lookup ---

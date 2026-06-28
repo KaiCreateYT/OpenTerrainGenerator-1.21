@@ -486,16 +486,20 @@ public abstract class SharedOTGChunkGenerator extends ChunkGenerator {
         ChunkBuffer buffer = createChunkBuffer(chunkAccess);
         Random random = getRandomFromChunkCoord(chunkCoord);
         long tNoise = System.nanoTime();
-        this.internalGenerator.populateNoise(otgWorldInfo, buffer,
-                buffer.getChunkCoordinate(), structures, random);
-        long noiseElapsed = System.nanoTime() - tNoise;
-        populateNoiseTotalNs.addAndGet(noiseElapsed);
+        try {
+            this.internalGenerator.populateNoise(otgWorldInfo, buffer,
+                    buffer.getChunkCoordinate(), structures, random);
+            long noiseElapsed = System.nanoTime() - tNoise;
+            populateNoiseTotalNs.addAndGet(noiseElapsed);
 
-        if (this.preset.getConfig().getCarverSettings().isUseModernCaves()) {
-            long tCarve = System.nanoTime();
-            carveWithNoise(blender, randomState, structureManager, chunkAccess, buffer);
-            long carveElapsed = System.nanoTime() - tCarve;
-            carveWithNoiseTotalNs.addAndGet(carveElapsed);
+            if (this.preset.getConfig().getCarverSettings().isUseModernCaves()) {
+                long tCarve = System.nanoTime();
+                carveWithNoise(blender, randomState, structureManager, chunkAccess, buffer);
+                long carveElapsed = System.nanoTime() - tCarve;
+                carveWithNoiseTotalNs.addAndGet(carveElapsed);
+            }
+        } finally {
+            OTGChunkGenerator.CURRENT_CAVE_MAP.remove();
         }
 
         long totalElapsed = System.nanoTime() - t0;
