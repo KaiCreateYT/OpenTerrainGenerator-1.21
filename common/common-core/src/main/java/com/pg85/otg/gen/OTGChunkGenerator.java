@@ -546,6 +546,10 @@ public class OTGChunkGenerator implements ISurfaceGeneratorNoiseProvider {
         com.pg85.otg.gen.biome.UndergroundBiomeMap undergroundMap = GENERATING_SHADOW_CHUNK.get()
                 ? com.pg85.otg.gen.biome.UndergroundBiomeMap.empty()
                 : buildUndergroundBiomeMap(chunkCoord, worldHeight);
+        // Bind the chunk's underground map for the cave-density graph (read per-block in carveWithNoise via
+        // RegionScaleFunction). MUST stay bound until carving finishes: nothing between here and the carve may
+        // re-trigger shadow-chunk gen (which would rebind EMPTY and silently disable cave scaling). Cleared in
+        // SharedOTGChunkGenerator.fillFromNoise's finally.
         CURRENT_CAVE_MAP.set(undergroundMap);
         SurfaceSettings[] ugSurfaceById = new SurfaceSettings[this.undergroundBiomesById.length];
 

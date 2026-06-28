@@ -28,6 +28,9 @@ public class UndergroundBiomeResolver {
     /** Width (in noise-value units) of the cross-fade band straddling each region's coverage threshold. */
     private static final double BLEND_BAND = 0.12;
 
+    /** Returned (shared, never mutated by callers) when a position has no cave-scale influence. */
+    private static final float[] ALL_ONES = { 1f, 1f, 1f, 1f, 1f };
+
     public record UndergroundCandidate(
             int otgBiomeId, int minY, int maxY, int priority,
             float coverage, int regionSize, float verticalScale, float[] caveScale) {}
@@ -38,6 +41,9 @@ public class UndergroundBiomeResolver {
 
     /** Sorted empirical samples of the noise value distribution; maps coverage -> threshold. */
     private final float[] coverageQuantiles;
+
+    /** True if any underground biome defines a non-1.0 cave scale; when false, cave-scale resolution is skipped entirely. */
+    private final boolean hasCaveScaling;
 
     public UndergroundBiomeResolver(IBiome[] biomesById, long worldSeed) {
         this.candidatesBySurfaceBiome = new Int2ObjectOpenHashMap<>();
@@ -63,6 +69,15 @@ public class UndergroundBiomeResolver {
         }
 
         this.coverageQuantiles = buildCoverageQuantiles(worldSeed);
+
+        boolean anyScaling = false;
+        for (UndergroundBiomeInfo ub : undergroundBiomes) {
+            for (float s : ub.caveScale()) {
+                if (s != 1.0f) { anyScaling = true; break; }
+            }
+            if (anyScaling) break;
+        }
+        this.hasCaveScaling = anyScaling;
 
         for (int surfaceId = 0; surfaceId < biomesById.length; surfaceId++) {
             if (biomesById[surfaceId] == null) continue;
@@ -177,15 +192,15 @@ public class UndergroundBiomeResolver {
      * @return length-{@link IUndergroundBiomeMap#CAVE_SCALE_COUNT} array; all 1.0 when no region applies.
      */
     public float[] resolveCaveScales(int surfaceBiomeId, int worldX, int worldY, int worldZ, int estimatedSurfaceY) {
-        float[] out = new float[] { 1f, 1f, 1f, 1f, 1f };
+        if (!this.hasCaveScaling) return ALL_ONES;
 
         Integer startOffset = this.startOffsetBySurfaceBiome.get(surfaceBiomeId);
-        if (startOffset == null) return out;
+        if (startOffset == null) return ALL_ONES;
         List<UndergroundCandidate> candidates = this.candidatesBySurfaceBiome.get(surfaceBiomeId);
-        if (candidates == null) return out;
+        if (candidates == null) return ALL_ONES;
 
         int undergroundStart = estimatedSurfaceY - startOffset.intValue();
-        if (worldY >= undergroundStart) return out;
+        if (worldY >= undergroundStart) return ALL_ONES;
 
         double depthWeight = (undergroundStart - worldY) / (double) DEPTH_TRANSITION;
         if (depthWeight > 1.0) depthWeight = 1.0;
@@ -210,13 +225,14 @@ public class UndergroundBiomeResolver {
             weights[i] = w;
             total += w;
         }
-        if (weights == null) return out; // no region present -> all normal (1.0)
+        if (weights == null) return ALL_ONES;
 
         double scaleFactor;
         double normalWeight;
         if (total > 1.0) { scaleFactor = 1.0 / total; normalWeight = 0.0; }
         else { scaleFactor = 1.0; normalWeight = 1.0 - total; }
 
+        float[] out = new float[] { 1f, 1f, 1f, 1f, 1f };
         for (int t = 0; t < IUndergroundBiomeMap.CAVE_SCALE_COUNT; t++) {
             double acc = normalWeight; // normal contributes a multiplier of 1.0
             for (int i = 0; i < n; i++) {
