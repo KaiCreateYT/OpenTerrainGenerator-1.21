@@ -20,6 +20,11 @@ public class UndergroundBiomeSettings extends ConfigSection {
     private final float undergroundBiomeRarity;
     private final int undergroundRegionSize;
     private final float undergroundVerticalScale;
+    private final float caveCheeseScale;
+    private final float caveSpaghetti3dScale;
+    private final float caveSpaghetti2dScale;
+    private final float caveNoodleScale;
+    private final float cavePillarScale;
     private final float minSurfaceTemperature;
     private final float maxSurfaceTemperature;
     private final float minSurfaceWetness;
@@ -99,6 +104,38 @@ public class UndergroundBiomeSettings extends ConfigSection {
             "Default 0.7."
     );
 
+    // === Per-region cave shaping (Phase 2) ===
+
+    public static final Setting<Float> CAVE_CHEESE_SCALE = Settings.floatSetting(
+            "CaveCheeseScale", 1.0f, 0.0f, 8.0f,
+            t -> ((UndergroundBiomeSettings) t).getCaveCheeseScale(),
+            "Density multiplier for cheese (large cavern) caves inside this biome's region.",
+            "1.0 = unchanged, >1 = bigger/more open caverns, <1 = smaller, 0 = none. Default 1.0.");
+
+    public static final Setting<Float> CAVE_SPAGHETTI3D_SCALE = Settings.floatSetting(
+            "CaveSpaghetti3dScale", 1.0f, 0.0f, 8.0f,
+            t -> ((UndergroundBiomeSettings) t).getCaveSpaghetti3dScale(),
+            "Density multiplier for 3D spaghetti tunnels and cave entrances inside this biome's region.",
+            "1.0 = unchanged, >1 = more/wider tunnels, 0 = none. Default 1.0.");
+
+    public static final Setting<Float> CAVE_SPAGHETTI2D_SCALE = Settings.floatSetting(
+            "CaveSpaghetti2dScale", 1.0f, 0.0f, 8.0f,
+            t -> ((UndergroundBiomeSettings) t).getCaveSpaghetti2dScale(),
+            "Density multiplier for 2D spaghetti tunnels inside this biome's region.",
+            "1.0 = unchanged, >1 = more/wider tunnels, 0 = none. Default 1.0.");
+
+    public static final Setting<Float> CAVE_NOODLE_SCALE = Settings.floatSetting(
+            "CaveNoodleScale", 1.0f, 0.0f, 8.0f,
+            t -> ((UndergroundBiomeSettings) t).getCaveNoodleScale(),
+            "Density multiplier for noodle (thin) caves inside this biome's region.",
+            "1.0 = unchanged, >1 = more thin caves, 0 = none. Default 1.0.");
+
+    public static final Setting<Float> CAVE_PILLAR_SCALE = Settings.floatSetting(
+            "CavePillarScale", 1.0f, 0.0f, 8.0f,
+            t -> ((UndergroundBiomeSettings) t).getCavePillarScale(),
+            "Density multiplier for pillars (solid columns that block carving) inside this biome's region.",
+            "1.0 = unchanged, >1 = more/thicker pillars, 0 = none. Default 1.0.");
+
     // === Conditions based on surface biome ===
 
     public static final Setting<Float> MIN_SURFACE_TEMPERATURE = Settings.floatSetting(
@@ -149,6 +186,11 @@ public class UndergroundBiomeSettings extends ConfigSection {
             "Example: DisallowedUndergroundBiomes: DeepDark"
     );
 
+    /** @return cave-type density multipliers ordered {cheese, spaghetti3d, spaghetti2d, noodle, pillar}. */
+    public float[] getCaveScales() {
+        return new float[] { caveCheeseScale, caveSpaghetti3dScale, caveSpaghetti2dScale, caveNoodleScale, cavePillarScale };
+    }
+
     // === Factory method ===
 
     public static UndergroundBiomeSettings getUndergroundBiomeSettings(SettingsMap reader) {
@@ -161,6 +203,11 @@ public class UndergroundBiomeSettings extends ConfigSection {
         builder.undergroundBiomeRarity(reader.getSetting(UNDERGROUND_BIOME_RARITY));
         builder.undergroundRegionSize(reader.getSetting(UNDERGROUND_REGION_SIZE));
         builder.undergroundVerticalScale(reader.getSetting(UNDERGROUND_VERTICAL_SCALE));
+        builder.caveCheeseScale(reader.getSetting(CAVE_CHEESE_SCALE));
+        builder.caveSpaghetti3dScale(reader.getSetting(CAVE_SPAGHETTI3D_SCALE));
+        builder.caveSpaghetti2dScale(reader.getSetting(CAVE_SPAGHETTI2D_SCALE));
+        builder.caveNoodleScale(reader.getSetting(CAVE_NOODLE_SCALE));
+        builder.cavePillarScale(reader.getSetting(CAVE_PILLAR_SCALE));
         builder.minSurfaceTemperature(reader.getSetting(MIN_SURFACE_TEMPERATURE));
         builder.maxSurfaceTemperature(reader.getSetting(MAX_SURFACE_TEMPERATURE));
         builder.minSurfaceWetness(reader.getSetting(MIN_SURFACE_WETNESS));
