@@ -23,6 +23,9 @@ public class WorldSettingsScreen extends Screen {
 
     private final DimensionPreset preset;
     private final int hubPresetIndex;
+    // When set, Back returns to this screen (and selects the preset if it's the
+    // Manage list) instead of the EditorHub. Used by the create-preset wizard.
+    private final Screen returnTo;
     private PropertyGridWidget propertyGrid;
     private List<PropertyValue> properties = List.of();
     private List<String> rawLines = List.of();
@@ -33,10 +36,15 @@ public class WorldSettingsScreen extends Screen {
     private final List<EditBox> registeredPropertyEditBoxes = new ArrayList<>();
 
     public WorldSettingsScreen(DimensionPreset preset, int hubPresetIndex) {
+        this(preset, hubPresetIndex, null);
+    }
+
+    public WorldSettingsScreen(DimensionPreset preset, int hubPresetIndex, Screen returnTo) {
         super(Component.literal("OTG Editor — World Settings — " +
             (preset != null ? preset.getFolderName() : "?")));
         this.preset = preset;
         this.hubPresetIndex = hubPresetIndex;
+        this.returnTo = returnTo;
     }
 
     @Override
@@ -170,7 +178,16 @@ public class WorldSettingsScreen extends Screen {
 
     @Override
     public void onClose() {
-        minecraft.setScreen(new EditorHubScreen(hubPresetIndex));
+        if (returnTo != null) {
+            // Returning to the Manage list (e.g. straight after the create wizard):
+            // refresh happens in its init(); also pre-select the preset we just edited.
+            if (returnTo instanceof ManageDimensionPresetsScreen manage && preset != null) {
+                manage.selectByFolder(preset.getFolderName());
+            }
+            minecraft.setScreen(returnTo);
+        } else {
+            minecraft.setScreen(new EditorHubScreen(hubPresetIndex));
+        }
     }
 
     @Override

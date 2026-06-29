@@ -168,6 +168,7 @@ public class DimensionPresetWizardScreen extends Screen {
             if (folderName == null || folderName.isBlank()) return false;
             if (isDuplicateFolderName(folderName)) return false;
             if (isDuplicateDisplayName(displayName)) return false;
+            if (isDuplicateRegistryName()) return false;
             return true;
         }
         return true;
@@ -190,6 +191,35 @@ public class DimensionPresetWizardScreen extends Screen {
         return false;
     }
 
+    /**
+     * The RegistryName value that finishWizard() will actually write to disk:
+     * the user's input (or the folder name when empty), normalized to a valid MC
+     * resource id. If the input normalizes to nothing (e.g. all-symbols), fall
+     * back to the normalized folder name.
+     */
+    private String effectiveRegistryName() {
+        String raw = (registryName != null && !registryName.isBlank()) ? registryName : folderName;
+        String normalized = (raw == null || raw.isBlank()) ? "" : WorldPresetRegistrar.normalizeId(raw);
+        if (normalized.isBlank() && folderName != null && !folderName.isBlank()) {
+            normalized = WorldPresetRegistrar.normalizeId(folderName);
+        }
+        return normalized;
+    }
+
+    /**
+     * A duplicate RegistryName makes loadDimensionPresetsFromDisk() silently drop the
+     * preset (it's keyed by registry name in the alias map), so block it up front.
+     */
+    private boolean isDuplicateRegistryName() {
+        String candidate = effectiveRegistryName();
+        if (candidate == null || candidate.isBlank()) return false;
+        for (DimensionPreset p : OTG.getEngine().getDimensionPresetLoader().getAllDimensionPresets()) {
+            String existing = p.getRegistryName();
+            if (existing != null && candidate.equalsIgnoreCase(existing)) return true;
+        }
+        return false;
+    }
+
     private void finishWizard() {
         if (templates.isEmpty()) {
             LOG.error("No templates available — DefaultPreset missing?");
@@ -203,7 +233,7 @@ public class DimensionPresetWizardScreen extends Screen {
             otgRoot, templateDir,
             folderName,
             displayName,
-            registryName.isBlank() ? folderName.toLowerCase(Locale.ROOT) : registryName,
+            effectiveRegistryName(),
             author,
             description
         );
@@ -218,7 +248,9 @@ public class DimensionPresetWizardScreen extends Screen {
 
         DimensionPreset created = findPresetByFolderName(result.getFileName().toString());
         if (created != null) {
-            minecraft.setScreen(new WorldSettingsScreen(created, 0));
+            // Back from the editor returns to the Manage list (refreshed via its
+            // init()), with the new preset selected — instead of the EditorHub.
+            minecraft.setScreen(new WorldSettingsScreen(created, 0, parent));
         } else {
             LOG.warn("Created DimensionPreset {} but failed to reload it — returning to parent",
                 result.getFileName());
@@ -261,6 +293,15 @@ public class DimensionPresetWizardScreen extends Screen {
                 g.drawString(font, "FolderName already exists on disk", x, errY, 0xFFFF6666);
             } else if (isDuplicateDisplayName(displayName)) {
                 g.drawString(font, "DisplayName already used by another preset", x, errY, 0xFFFF6666);
+            } else if (isDuplicateRegistryName()) {
+                g.drawString(font, "RegistryName already used by another preset", x, errY, 0xFFFF6666);
+            }
+
+            // Show what the RegistryName will be normalized to, if the user typed
+            // something that isn't already a valid resource id.
+            String effRn = effectiveRegistryName();
+            if (registryName != null && !registryName.isBlank() && !registryName.equals(effRn)) {
+                g.drawString(font, "RegistryName saved as: " + effRn, x, errY + 14, 0xFF888888);
             }
         }
 
@@ -284,7 +325,7 @@ public class DimensionPresetWizardScreen extends Screen {
             g.drawString(font, "Template:      " + tplLabel,       x, y, 0xFFCCCCCC); y += 14;
             g.drawString(font, "DisplayName:   " + displayName,    x, y, 0xFFCCCCCC); y += 14;
             g.drawString(font, "FolderName:    " + folderName,     x, y, 0xFFCCCCCC); y += 14;
-            g.drawString(font, "RegistryName:  " + registryName,   x, y, 0xFFCCCCCC); y += 14;
+            g.drawString(font, "RegistryName:  " + effectiveRegistryName(), x, y, 0xFFCCCCCC); y += 14;
             g.drawString(font, "Author:        " + nullSafe(author),      x, y, 0xFFCCCCCC); y += 14;
             g.drawString(font, "Description:   " + nullSafe(description), x, y, 0xFFCCCCCC); y += 20;
             g.drawString(font, "Folder will be created at:", x, y, 0xFFAAAAAA); y += 12;

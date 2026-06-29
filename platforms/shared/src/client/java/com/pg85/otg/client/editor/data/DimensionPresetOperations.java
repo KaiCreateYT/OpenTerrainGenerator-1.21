@@ -13,9 +13,13 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -88,8 +92,12 @@ public final class DimensionPresetOperations {
      * Clone an existing preset directory. Same as {@link #newFromTemplate}, but
      * preserves the original Author/Description (only DisplayName/RegistryName
      * change). The new folder name is derived from the new display name.
+     *
+     * @param registryName MC registry id for the clone — must already be unique
+     *                     (see {@link #resolveUniqueRegistryName}); a duplicate
+     *                     makes the loader silently drop the clone.
      */
-    public static Path cloneFrom(Path sourcePresetDir, Path otgRoot, String newDisplayName) {
+    public static Path cloneFrom(Path sourcePresetDir, Path otgRoot, String newDisplayName, String registryName) {
         if (sourcePresetDir == null || !Files.isDirectory(sourcePresetDir)) {
             LOG.error("Source preset directory missing: {}", sourcePresetDir);
             return null;
@@ -108,7 +116,7 @@ public final class DimensionPresetOperations {
         if (configFile != null) {
             Map<String, String> patches = new LinkedHashMap<>();
             patches.put("DisplayName", newDisplayName);
-            patches.put("RegistryName", folderName);
+            patches.put("RegistryName", registryName);
             patchIniSettings(configFile, patches);
         } else {
             LOG.warn("Cloned {} but no config file found — RegistryName collision likely",
@@ -116,6 +124,29 @@ public final class DimensionPresetOperations {
         }
         LOG.info("Cloned DimensionPreset: {} → {}", sourcePresetDir.getFileName(), target.getFileName());
         return target;
+    }
+
+    /**
+     * Pick a registry id derived from {@code base} that none of {@code existing}
+     * already uses (case-insensitive), appending {@code _1}, {@code _2}, ... on
+     * collision. Mirrors {@link #resolveUniqueFolder} for the registry-name space,
+     * so clones never collide into a silently-dropped preset.
+     */
+    public static String resolveUniqueRegistryName(Collection<String> existing, String base) {
+        String candidate = (base == null || base.isEmpty()) ? "dimensionpreset" : base;
+        Set<String> taken = new HashSet<>();
+        if (existing != null) {
+            for (String r : existing) {
+                if (r != null) taken.add(r.toLowerCase(Locale.ROOT));
+            }
+        }
+        String result = candidate;
+        int counter = 1;
+        while (taken.contains(result.toLowerCase(Locale.ROOT))) {
+            result = candidate + "_" + counter;
+            counter++;
+        }
+        return result;
     }
 
     /**

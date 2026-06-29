@@ -6,6 +6,7 @@ import com.pg85.otg.client.editor.data.PresetReloader;
 import com.pg85.otg.client.editor.widget.ScrollableListWidget;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.presets.DimensionPreset;
+import com.pg85.otg.shared.registry.WorldPresetRegistrar;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.ConfirmScreen;
@@ -29,6 +30,9 @@ public class ManageDimensionPresetsScreen extends Screen {
     private final Screen parent;
     private List<DimensionPreset> presets = new ArrayList<>();
     private int selectedIdx = -1;
+    // Folder name to select after the next reload (set before returning to this
+    // screen, e.g. from the create wizard / world settings editor).
+    private String pendingSelectFolder;
     private ScrollableListWidget listWidget;
     private String statusMessage;
 
@@ -82,8 +86,22 @@ public class ManageDimensionPresetsScreen extends Screen {
             .bounds(width - 80, height - 30, 70, 20).build());
     }
 
+    /** Request that the preset with this folder name be selected after the next reload. */
+    public void selectByFolder(String folderName) {
+        this.pendingSelectFolder = folderName;
+    }
+
     private void reloadEntries() {
         presets = new ArrayList<>(OTG.getEngine().getDimensionPresetLoader().getAllDimensionPresets());
+        if (pendingSelectFolder != null) {
+            for (int i = 0; i < presets.size(); i++) {
+                if (pendingSelectFolder.equals(presets.get(i).getFolderName())) {
+                    selectedIdx = i;
+                    break;
+                }
+            }
+            pendingSelectFolder = null;
+        }
         if (selectedIdx >= presets.size()) selectedIdx = -1;
     }
 
@@ -118,9 +136,16 @@ public class ManageDimensionPresetsScreen extends Screen {
         if (origDisplay == null || origDisplay.isBlank()) origDisplay = preset.getFolderName();
         String newDisplay = origDisplay + " (copy)";
 
+        // Derive a registry id that isn't already taken — otherwise the loader
+        // silently drops the clone (e.g. cloning the same preset twice).
+        List<String> existingRegistry = OTG.getEngine().getDimensionPresetLoader()
+            .getAllDimensionPresets().stream().map(DimensionPreset::getRegistryName).toList();
+        String registryName = DimensionPresetOperations.resolveUniqueRegistryName(
+            existingRegistry, WorldPresetRegistrar.normalizeId(newDisplay));
+
         Path source = preset.getFolder();
         Path otgRoot = OTG.getEngine().getOTGRootFolder();
-        Path result = DimensionPresetOperations.cloneFrom(source, otgRoot, newDisplay);
+        Path result = DimensionPresetOperations.cloneFrom(source, otgRoot, newDisplay, registryName);
         if (result != null) {
             statusMessage = "Cloned to " + result.getFileName();
             PresetReloader.reload();
