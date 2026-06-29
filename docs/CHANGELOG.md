@@ -1,5 +1,35 @@
 ## Minecraft 1.21.1 — Fabric + NeoForge
 
+### Release: 0.6.0-dev1
+
+---
+
+**2026-06-29**
+
+- **Edytor: nowy DimensionPreset widoczny od razu, bez restartu gry.** Po stworzeniu
+  presetu kreatorem (`DimensionPresetWizardScreen`) `PresetReloader.reload()` już
+  aktualizował listę w pamięci, ale przepływ nawigacji nigdy nie wracał na ekran listy:
+  kreator otwierał `WorldSettingsScreen`, a jego „Back" prowadził do `EditorHubScreen`,
+  więc user nie widział nowego presetu i błędnie zakładał, że trzeba zrestartować grę.
+  `WorldSettingsScreen` dostał opcjonalny `returnTo` — przy tworzeniu z kreatora „Back"
+  wraca teraz na odświeżony `ManageDimensionPresetsScreen` z zaznaczonym nowym presetem
+  (`selectByFolder`). Pozostałe wejścia (EditorHub, edycja z listy) bez zmian — fallback
+  do EditorHub.
+- **Edytor: koniec cichego gubienia presetów przez duplikat RegistryName.**
+  `loadDimensionPresetsFromDisk()` po cichu odrzuca preset, którego RegistryName już
+  istnieje (mapa aliasów jest kluczowana po nim). Kreator walidował tylko FolderName
+  i DisplayName, więc dało się stworzyć „cichego trupa". Dodano walidację RegistryName
+  w `DimensionPresetWizardScreen` (komunikat błędu + blokada „Next/Finish"). Ścieżka
+  Clone (która dwukrotnym klonowaniem tego samego presetu generowała identyczny
+  RegistryName) używa teraz `resolveUniqueRegistryName` — dokleja `_1`, `_2`… przy
+  kolizji, analogicznie do unikalności nazwy folderu.
+- **Edytor: RegistryName zawsze normalizowany do poprawnego MC id.** Ręcznie wpisany
+  RegistryName (spacje, wielkie litery, znaki specjalne) był zapisywany dosłownie,
+  dając nieprawidłowy resource id. `effectiveRegistryName()` przepuszcza teraz wejście
+  przez `normalizeId` (z fallbackiem na nazwę folderu, gdy znormalizuje się do pustego),
+  ekran potwierdzenia pokazuje finalną wartość, a krok metadanych podgląda
+  „RegistryName saved as: …", gdy wpisana wartość zostanie wyczyszczona.
+
 **2026-06-20**
 
 - **3D underground biomes — Phase 2 (per-region cave shaping):** underground biomes can
