@@ -1,6 +1,6 @@
 ##  OpenTerrainGenerator by Team OTG
 
-OpenTerrainGenerator for MC 1.21.1 (Fabric & NeoForge). Alpha builds are available in the dev-releases channel of the OTG Discord.
+OpenTerrainGenerator for MC 1.21.5 (Fabric & NeoForge). Alpha builds are available in the dev-releases channel of the OTG Discord.
 
 
 
