@@ -17,7 +17,7 @@ jobs:
     - name: Set up JDK
       uses: actions/setup-java@v4
       with:
-        java-version: ${{ github.ref_name == '1.21.1' && '21' || '17' }}
+        java-version: '21'
         distribution: 'temurin'
 
     - name: Setup Gradle
