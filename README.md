@@ -12,10 +12,15 @@ OpenTerrainGenerator for MC 1.21.5 (Fabric & NeoForge). Alpha builds are availab
 * <a href="https://github.com/SuperCoder7979">SuperCoder79</a>
 * <a href="https://github.com/SXRWahrheit">Wahrheit</a>
 
-We're always looking for people to contribute or collaborate with. OTG 1.21.1 supports both Fabric and NeoForge. If you'd like to contribute, collaborate or become part of Team OTG, join us on the OTG Discord!
+We're always looking for people to contribute or collaborate with. OTG 1.21.1 supports both Fabric and NeoForge. If you'd like to contribute, collaborate or become part of Team OTG, join us on the [OTG Discord](https://discord.gg/YY2NECCBYN)!
+
+For more information on this specific fork, join [KaiCreate's Discord](https://discord.gg/bNgExMxppJ).
 
 ## Installation / building
 
+Download the latest JAR from the [Releases](https://github.com/KaiCreateYT/OpenTerrainGenerator-1.21/releases) tab, corresponding to the Minecraft version and mod loader you need. [Cardinal Componenets API](https://www.curseforge.com/minecraft/mc-mods/cardinal-components-api) and [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api) are both required for the Fabric version.
+
+Alternatively, download this repo and build it yourself via command prompt or IDE.
 ```bash
 # Build both platforms (Fabric + NeoForge)
 ./gradlew build
@@ -53,7 +58,7 @@ Supported dimension names for `/otg tp`:
 - `overworld`, `the_nether`, `the_end` - vanilla dimensions
 - Any OTG dimension name (e.g., `void`, `biome_bundle`)
 
-## Known Issues (1.21.1)
+## Known Issues (1.21.5)
 
 ### Portals
 
