@@ -1,0 +1,14 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:poppy",
+    "minecraft:red_tulip",
+    "minecraft:blue_orchid",
+    "minecraft:azure_bluet",
+    "minecraft:allium",
+    "minecraft:pink_tulip",
+    "minecraft:white_tulip",
+    "minecraft:orange_tulip",
+    "minecraft:oxeye_daisy"
+  ]
+}

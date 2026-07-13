@@ -1,0 +1,173 @@
+package com.pg85.otg.shared.portals;
+
+import com.pg85.otg.OTG;
+import com.pg85.otg.config.dimensions.WorldPresetConfig;
+import com.pg85.otg.config.dimensions.WorldPresetConfig.OTGDimension;
+import com.pg85.otg.config.settings.preset.PortalColors;
+import com.pg85.otg.config.settings.preset.PortalSettings;
+import com.pg85.otg.shared.gen.SharedOTGChunkGenerator;
+import com.pg85.otg.presets.DimensionPreset;
+import com.pg85.otg.util.DimensionNameUtils;
+import com.pg85.otg.util.materials.LocalMaterialData;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+
+public final class SharedPortalIgnitionHandler {
+
+    private SharedPortalIgnitionHandler() {}
+
+    public static InteractionResult onUseBlock(Player player, Level level, InteractionHand hand, BlockHitResult hitResult) {
+        if (level.isClientSide) return InteractionResult.PASS;
+        if (!(level instanceof ServerLevel serverLevel)) return InteractionResult.PASS;
+
+        if (serverLevel.dimension() != Level.OVERWORLD &&
+            !(serverLevel.getChunkSource().getGenerator() instanceof SharedOTGChunkGenerator)) {
+            return InteractionResult.PASS;
+        }
+
+        ItemStack stack = player.getItemInHand(hand);
+        BlockPos hitPos = hitResult.getBlockPos();
+        BlockPos portalPos = hitPos.relative(hitResult.getDirection());
+
+        List<PortalConfig> configs = getPortalConfigs(serverLevel);
+
+        for (PortalConfig config : configs) {
+            if (!isIgnitionSource(stack, config.ignitionSource)) {
+                continue;
+            }
+
+            boolean adjacentToFrame = false;
+            for (Direction dir : Direction.values()) {
+                if (SharedPortalConfigResolver.isFrameBlock(serverLevel.getBlockState(portalPos.relative(dir)), config.frameBlocks())) {
+                    adjacentToFrame = true;
+                    break;
+                }
+            }
+
+            if (!adjacentToFrame) {
+                continue;
+            }
+
+            if (SharedOTGPortalBlock.tryCreatePortal(serverLevel, portalPos, config.frameBlocks, config.portalColor,
+                    config.minWidth, config.maxWidth, config.minHeight, config.maxHeight)) {
+                player.playSound(SoundEvents.FLINTANDSTEEL_USE, 1.0F, 1.0F);
+                player.swing(hand);
+
+                if (!player.isCreative()) {
+                    if (stack.isDamageableItem()) {
+                        stack.hurtAndBreak(1, player,
+                                hand == InteractionHand.MAIN_HAND
+                                        ? net.minecraft.world.entity.EquipmentSlot.MAINHAND
+                                        : net.minecraft.world.entity.EquipmentSlot.OFFHAND);
+                    } else {
+                        stack.shrink(1);
+                    }
+                }
+
+                return InteractionResult.SUCCESS;
+            }
+        }
+
+        return InteractionResult.PASS;
+    }
+
+    private static List<PortalConfig> getPortalConfigs(ServerLevel level) {
+        List<PortalConfig> configs = new ArrayList<>();
+        List<String> usedColors = new ArrayList<>();
+
+        WorldPresetConfig activeWorldPreset = WorldPresetPortalResolver.getActiveWorldPreset();
+        Set<String> allowedPresets = WorldPresetPortalResolver.getAllowedPresetFolders(activeWorldPreset);
+
+        List<DimensionPreset> presets = new ArrayList<>(OTG.getEngine().getDimensionPresetLoader().getAllDimensionPresets());
+        presets.sort(Comparator.comparing(DimensionPreset::getFolderName));
+
+        for (DimensionPreset preset : presets) {
+            if (preset.getConfig() == null) continue;
+
+            // R2: Skip presets not in the active WorldPreset YAML
+            if (allowedPresets != null && !allowedPresets.contains(preset.getFolderName())) {
+                continue;
+            }
+
+            PortalSettings portalSettings = preset.getConfig().getPortalSettings();
+            if (portalSettings == null) continue;
+
+            // Start with DimensionPreset defaults
+            List<LocalMaterialData> frameBlocks = portalSettings.getPortalBlocks();
+            String ignitionSource = portalSettings.getPortalIgnitionSource();
+            String rawColor = portalSettings.getPortalColor();
+
+            // R1: Apply YAML overrides if present
+            if (activeWorldPreset != null) {
+                OTGDimension dimEntry = WorldPresetPortalResolver.findDimensionEntry(activeWorldPreset, preset.getFolderName());
+                if (dimEntry != null) {
+                    ArrayList<LocalMaterialData> overrideBlocks = WorldPresetPortalResolver.parsePortalBlocks(dimEntry.PortalBlocks);
+                    if (overrideBlocks != null) {
+                        frameBlocks = overrideBlocks;
+                    }
+                    if (WorldPresetPortalResolver.hasOverride(dimEntry.PortalColor)) {
+                        rawColor = dimEntry.PortalColor;
+                    }
+                    if (WorldPresetPortalResolver.hasOverride(dimEntry.PortalIgnitionSource)) {
+                        ignitionSource = dimEntry.PortalIgnitionSource;
+                    }
+                }
+            }
+
+            if (frameBlocks == null || frameBlocks.isEmpty()) {
+                continue;
+            }
+
+            String color = DimensionNameUtils.normalizeColor(rawColor);
+            while (usedColors.contains(color)) {
+                color = PortalColors.getNextColor(color);
+            }
+            usedColors.add(color);
+
+            configs.add(new PortalConfig(
+                    preset.getFolderName(),
+                    frameBlocks,
+                    ignitionSource,
+                    color,
+                    portalSettings.getPortalMinWidth(),
+                    portalSettings.getPortalMaxWidth(),
+                    portalSettings.getPortalMinHeight(),
+                    portalSettings.getPortalMaxHeight()
+            ));
+        }
+
+        return configs;
+    }
+
+    private static boolean isIgnitionSource(ItemStack stack, String ignitionSource) {
+        if (ignitionSource == null || ignitionSource.isEmpty()) return false;
+        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        return itemId.toString().equals(ignitionSource);
+    }
+
+    private record PortalConfig(
+            String presetName,
+            List<LocalMaterialData> frameBlocks,
+            String ignitionSource,
+            String portalColor,
+            int minWidth,
+            int maxWidth,
+            int minHeight,
+            int maxHeight
+    ) {}
+}

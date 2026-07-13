@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.pg85.otg.neoforge.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "BuiltInRegistriesMixin",
+    "RegistryLoaderMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

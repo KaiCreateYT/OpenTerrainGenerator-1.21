@@ -1,0 +1,12 @@
+accessWidener v2 named
+
+# RegistryDataLoader inner types needed for RegistryLoaderMixin
+accessible class net/minecraft/resources/RegistryDataLoader$Loader
+accessible class net/minecraft/resources/RegistryDataLoader$LoadingFunction
+
+# DensityFunctions inner types needed for OTGNoiseRouterData
+accessible class net/minecraft/world/level/levelgen/DensityFunctions$WeirdScaledSampler
+accessible class net/minecraft/world/level/levelgen/DensityFunctions$WeirdScaledSampler$RarityValueMapper
+
+# NoiseRouterData.overworld() needed for OTGNoiseRouterBuilder fallback
+accessible method net/minecraft/world/level/levelgen/NoiseRouterData overworld (Lnet/minecraft/core/HolderGetter;Lnet/minecraft/core/HolderGetter;ZZ)Lnet/minecraft/world/level/levelgen/NoiseRouter;
